@@ -1,0 +1,8 @@
+@"
+.env
+node_modules/
+dist/
+data/cms-db.json
+server.log
+server.err.log
+"@ | Set-Content .gitignore

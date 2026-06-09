@@ -62,6 +62,7 @@ export const modelSchemas = {
     createdAt: "date",
   },
   Media: {
+    title: "string",
     url: "string",
     publicId: "string",
     altText: "string",
@@ -69,10 +70,15 @@ export const modelSchemas = {
     createdAt: "date",
   },
   Settings: {
+    siteName: "string",
     siteLogoUrl: "string",
+    footerLogoUrl: "string",
     faviconUrl: "string",
     contactInfo: "object",
     socialLinks: "object",
+    defaultSeoTitle: "string",
+    defaultSeoDescription: "string",
+    defaultOgImage: "string",
   },
 };
 

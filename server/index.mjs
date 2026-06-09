@@ -5,10 +5,25 @@ import { extname, join, normalize, resolve } from "node:path";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { collections } from "./models.mjs";
 import * as store from "./store.mjs";
+import { loadEnvironment } from "./load-env.mjs";
+
+await loadEnvironment();
+
+validateAdminEnvironment();
 
 const root = resolve(process.env.PUBLIC_DIR || "dist");
 const port = Number(process.env.PORT || 5173);
 const tokenTtlMs = 1000 * 60 * 60 * 8;
+
+function validateAdminEnvironment() {
+  const missing = ["ADMIN_EMAIL", "ADMIN_PASSWORD"].filter((key) => !process.env[key]);
+  console.log(`Admin email loaded: ${process.env.ADMIN_EMAIL || "not configured"}`);
+  if (missing.length) {
+    console.error(`Startup error: missing required admin environment variable(s): ${missing.join(", ")}`);
+    console.error("Create a .env file or configure these variables in your deployment environment before starting the server.");
+    process.exit(1);
+  }
+}
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -38,7 +53,10 @@ async function readBody(request) {
 }
 
 function send(response, status, payload) {
-  response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  response.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+  });
   response.end(JSON.stringify(payload));
 }
 
@@ -137,7 +155,7 @@ async function handleApi(request, response, pathname) {
       send(response, 200, { items });
       return;
     }
-    if (["pages", "countries", "blogs"].includes(collection)) {
+    if (["pages", "countries", "blogs", "settings"].includes(collection)) {
       send(response, 200, { items: publishedOnly(items) });
       return;
     }

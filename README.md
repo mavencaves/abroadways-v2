@@ -30,10 +30,14 @@ The backend is a Node REST API with CMS collections for public pages, countries,
 Admin CMS access requires:
 
 ```bash
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
-ADMIN_SESSION_SECRET=
+ADMIN_EMAIL=admin@abroadways.com.bd
+ADMIN_PASSWORD=Abroadways@12345
+ADMIN_SESSION_SECRET=change-this-local-secret
 ```
+
+Create a `.env` file in the project root with those variables for local development. Do not print or commit production passwords.
+
+To change admin credentials later, update `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` locally and in your deployment environment variables. Use a long random value for `ADMIN_SESSION_SECRET` in production.
 
 It uses a local JSON store for development at `data/cms-db.json`. For MongoDB Atlas Data API, set:
 
