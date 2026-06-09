@@ -30,6 +30,7 @@ body {
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 img {
@@ -1841,6 +1842,10 @@ a.contact-line:hover,
   line-height: 0.98;
 }
 
+.hero-title span {
+  display: block;
+}
+
 .page-hero h1 {
   font-size: 4.4rem;
   line-height: 1;
@@ -2528,6 +2533,66 @@ a.contact-line:hover,
     width: auto;
     margin-top: 12px;
   }
+
+  .hero h1 {
+    max-width: 100%;
+    font-size: clamp(2.42rem, 10.4vw, 2.9rem);
+    line-height: 1.02;
+  }
+
+  .hero-copy {
+    min-width: 0;
+    width: min(100%, calc(100vw - 28px));
+  }
+
+  .hero-subtitle {
+    max-width: 31ch;
+  }
+
+  .page-hero-content,
+  .page-hero p,
+  .contact-grid,
+  .contact-grid > *,
+  .contact-card,
+  .planner-layout,
+  .planner-layout > *,
+  .planner-side-card,
+  .planner-shell,
+  .country-detail-grid,
+  .country-detail-grid > *,
+  .article-layout,
+  .article-layout > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .contact-grid,
+  .planner-layout,
+  .country-detail-grid,
+  .article-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contact-card,
+  .planner-side-card,
+  .planner-shell {
+    width: 100%;
+  }
+
+  .page-hero p,
+  .contact-primary > p,
+  .planner-side-card p,
+  .article-aside p {
+    max-width: 28ch;
+  }
+
+  .contact-primary h2,
+  .planner-side-card h2 {
+    max-width: 100%;
+    font-size: clamp(2rem, 9vw, 2.35rem);
+    line-height: 1.08;
+    overflow-wrap: break-word;
+  }
 }
 
 /* Public-only polish pass */
@@ -2697,5 +2762,19 @@ a.contact-line:hover,
   .hero-image-frame img,
   .process-card:nth-child(even) {
     transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .contact-primary h2 {
+    max-width: 11ch;
+    font-size: clamp(1.9rem, 8vw, 2.1rem);
+    overflow-wrap: normal;
+  }
+
+  .contact-primary > p,
+  .planner-side-card p,
+  .page-hero p {
+    max-width: 28ch;
   }
 }

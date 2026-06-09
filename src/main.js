@@ -612,7 +612,7 @@ function Hero({ page, destinations: destinationItems }) {
         "div",
         { className: "hero-copy" },
         h("span", { className: "eyebrow" }, page.eyebrow),
-        h("h1", null, page.title),
+        h(HeroTitle, { title: page.title }),
         h("p", { className: "hero-subtitle" }, page.copy),
         h("div", { className: "hero-actions" }, h(ButtonLink, { href: page.ctaButtonLink || routes.planner }, page.ctaButtonText || "Book Free Consultation"), h(ButtonLink, { href: routes.studyAbroad, variant: "secondary" }, "Explore Countries")),
         h("div", { className: "hero-chips" }, destinationItems.map((destination) => h("span", { key: destination.slug }, destination.chip))),
@@ -620,6 +620,13 @@ function Hero({ page, destinations: destinationItems }) {
       h("div", { className: "hero-visual" }, h("div", { className: "hero-image-frame" }, h("img", { src: page.image, alt: "Students walking across a university campus" })), h("div", { className: "hero-floating-card" }, h(GraduationCap, { size: 24 }), h("div", null, h("strong", null, "5 focused destinations"), h("span", null, "Counselling, applications, visa support"))), h("div", { className: "hero-stat-strip" }, ["Profile review", "Applications", "Visa guidance"].map((item) => h("span", { key: item }, item)))),
     ),
   );
+}
+
+function HeroTitle({ title }) {
+  const words = String(title || "").trim().split(/\s+/).filter(Boolean);
+  const firstLine = words.slice(0, 2).join(" ");
+  const secondLine = words.slice(2).join(" ");
+  return h("h1", { className: "hero-title" }, firstLine && h("span", null, firstLine), secondLine && h("span", null, secondLine));
 }
 
 function DestinationShowcase({ compact = false, destinations: destinationItems = destinations }) {

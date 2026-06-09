@@ -39,14 +39,15 @@ Create a `.env` file in the project root with those variables for local developm
 
 To change admin credentials later, update `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` locally and in your deployment environment variables. Use a long random value for `ADMIN_SESSION_SECRET` in production.
 
-It uses a local JSON store for development at `data/cms-db.json`. For MongoDB Atlas Data API, set:
+The CMS uses the official MongoDB Node driver when `MONGODB_URI` is configured. The database name is `abroadways_v2`, with collections for `pages`, `countries`, `blogs`, `leads`, `media`, and `settings`.
 
 ```bash
-MONGODB_DATA_API_URL=
-MONGODB_DATA_API_KEY=
-MONGODB_DATA_SOURCE=
-MONGODB_DATABASE=
+MONGODB_URI=your-mongodb-connection-string
 ```
+
+When `MONGODB_URI` is missing, the backend falls back to the local JSON development store at `data/cms-db.json`.
+
+On first MongoDB startup, the backend creates the CMS collections and seeds the homepage, the five Abroadways country pages, and site settings.
 
 ## Deployment
 

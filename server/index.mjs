@@ -45,6 +45,29 @@ function safePath(urlPath) {
   return resolve(join(root, clean));
 }
 
+function spaStatus(pathname) {
+  const publicRoutes = new Set([
+    "/",
+    "/login",
+    "/study-abroad",
+    "/study-abroad/new-zealand",
+    "/study-abroad/united-kingdom",
+    "/study-abroad/uk",
+    "/study-abroad/australia",
+    "/study-abroad/canada",
+    "/study-abroad/malaysia",
+    "/services",
+    "/pathway-planner",
+    "/blog",
+    "/about-us",
+    "/contact",
+  ]);
+  if (publicRoutes.has(pathname)) return 200;
+  if (pathname.startsWith("/dashboard")) return 200;
+  if (pathname.startsWith("/blog/") && pathname.split("/").filter(Boolean).length === 2) return 200;
+  return 404;
+}
+
 async function readBody(request) {
   const chunks = [];
   for await (const chunk of request) chunks.push(chunk);
@@ -199,13 +222,14 @@ createServer(async (request, response) => {
       return;
     }
 
-    const filePath = existsSync(requestedPath) && !url.pathname.endsWith("/") ? requestedPath : join(root, "index.html");
+    const hasStaticFile = existsSync(requestedPath) && !url.pathname.endsWith("/");
+    const filePath = hasStaticFile ? requestedPath : join(root, "index.html");
     if (!existsSync(filePath)) {
       response.writeHead(404);
       response.end("Not found");
       return;
     }
-    response.writeHead(200, { "Content-Type": mime[extname(filePath)] || "application/octet-stream" });
+    response.writeHead(hasStaticFile ? 200 : spaStatus(url.pathname), { "Content-Type": mime[extname(filePath)] || "application/octet-stream" });
     createReadStream(filePath).pipe(response);
   } catch (error) {
     send(response, 500, { error: error instanceof Error ? error.message : "Server error" });
@@ -213,5 +237,7 @@ createServer(async (request, response) => {
 }).listen(port, async () => {
   const index = await readFile(join(root, "index.html"), "utf8").catch(() => "");
   const title = index.match(/<title>(.*?)<\/title>/)?.[1] || "Abroadways V2 Pro";
+  const storage = await store.storageStatus();
+  console.log(`CMS storage: ${storage.driver}${storage.database ? ` (${storage.database})` : ""}`);
   console.log(`${title} full-stack server running at http://localhost:${port}`);
 });
