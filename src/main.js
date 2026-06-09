@@ -276,9 +276,26 @@ function setSeo({ title, description, image = "/images/abroadways-hero-campus.pn
   }, [title, description, image]);
 }
 
+function apiBaseUrl() {
+  return String(window.ABROADWAYS_API_BASE || localStorage.getItem("ABROADWAYS_API_BASE") || "").trim().replace(/\/+$/, "");
+}
+
+function apiEndpoint(path) {
+  const endpoint = `${apiBaseUrl()}/api${path}`;
+  return new URL(endpoint, window.location.origin).href;
+}
+
+function logLoginEndpoint(endpoint, method) {
+  console.info("[TEMP AUTH DEBUG] Frontend API base URL:", apiBaseUrl() || "same-origin");
+  console.info("[TEMP AUTH DEBUG] Login API endpoint:", endpoint);
+  console.info("[TEMP AUTH DEBUG] Login API method:", method);
+}
+
 async function api(path, options = {}) {
   const token = getAdminToken();
-  const response = await fetch(`/api${path}`, {
+  const endpoint = apiEndpoint(path);
+  if (path === "/auth/login") logLoginEndpoint(endpoint, options.method || "GET");
+  const response = await fetch(endpoint, {
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -292,7 +309,7 @@ async function api(path, options = {}) {
 
 async function publicApi(path) {
   const separator = path.includes("?") ? "&" : "?";
-  const response = await fetch(`/api${path}${separator}_=${Date.now()}`, {
+  const response = await fetch(apiEndpoint(`${path}${separator}_=${Date.now()}`), {
     cache: "no-store",
     headers: { "Cache-Control": "no-store" },
   });

@@ -52,3 +52,11 @@ On first MongoDB startup, the backend creates the CMS collections and seeds the 
 ## Deployment
 
 The frontend build is Vercel-ready through `vercel.json`. The full-stack Node server can be deployed to Render or another Node host with `node server/index.mjs`.
+
+If Vercel serves the public frontend and Render serves the API, set this during the Vercel build so browser requests go to Render:
+
+```bash
+ABROADWAYS_API_BASE=https://your-render-service.onrender.com
+```
+
+Leave `ABROADWAYS_API_BASE` blank when the frontend and backend are served from the same origin.

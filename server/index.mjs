@@ -9,21 +9,51 @@ import { loadEnvironment } from "./load-env.mjs";
 
 await loadEnvironment();
 
-validateAdminEnvironment();
-
 const root = resolve(process.env.PUBLIC_DIR || "dist");
 const port = Number(process.env.PORT || 5173);
 const tokenTtlMs = 1000 * 60 * 60 * 8;
+const authDebugEnabled = process.env.AUTH_DEBUG !== "false";
+
+function normalizeCredential(value) {
+  return String(value ?? "").trim();
+}
+
+function hasOuterWhitespace(value) {
+  if (value === undefined || value === null) return false;
+  return String(value) !== normalizeCredential(value);
+}
+
+function authDebug(...args) {
+  if (authDebugEnabled) console.log("[TEMP AUTH DEBUG]", ...args);
+}
+
+function configuredAdminEmail() {
+  return normalizeCredential(process.env.ADMIN_EMAIL);
+}
+
+function configuredAdminPassword() {
+  return normalizeCredential(process.env.ADMIN_PASSWORD);
+}
 
 function validateAdminEnvironment() {
-  const missing = ["ADMIN_EMAIL", "ADMIN_PASSWORD"].filter((key) => !process.env[key]);
-  console.log(`Admin email loaded: ${process.env.ADMIN_EMAIL || "not configured"}`);
+  const adminEmail = configuredAdminEmail();
+  const adminPassword = configuredAdminPassword();
+  const sessionSecret = process.env.ADMIN_SESSION_SECRET;
+  authDebug(`ADMIN_EMAIL loaded: ${adminEmail ? "yes" : "no"}${adminEmail ? `; value: ${adminEmail}` : ""}; trimmed: ${hasOuterWhitespace(process.env.ADMIN_EMAIL) ? "yes" : "no"}`);
+  authDebug(`ADMIN_PASSWORD loaded: ${adminPassword ? "yes" : "no"}; length: ${adminPassword.length}; trimmed: ${hasOuterWhitespace(process.env.ADMIN_PASSWORD) ? "yes" : "no"}`);
+  authDebug(`ADMIN_SESSION_SECRET loaded: ${sessionSecret ? "yes" : "no"}`);
+  const missing = [
+    ["ADMIN_EMAIL", adminEmail],
+    ["ADMIN_PASSWORD", adminPassword],
+  ].filter(([, value]) => !value).map(([key]) => key);
   if (missing.length) {
     console.error(`Startup error: missing required admin environment variable(s): ${missing.join(", ")}`);
     console.error("Create a .env file or configure these variables in your deployment environment before starting the server.");
     process.exit(1);
   }
 }
+
+validateAdminEnvironment();
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -83,6 +113,55 @@ function send(response, status, payload) {
   response.end(JSON.stringify(payload));
 }
 
+function allowedOrigins() {
+  return String(process.env.CORS_ORIGINS || process.env.FRONTEND_BASE_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function applyCors(request, response) {
+  const origin = request.headers.origin;
+  const origins = allowedOrigins();
+  if (origin && (origins.includes("*") || origins.includes(origin))) {
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Vary", "Origin");
+  }
+  response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.setHeader("Access-Control-Max-Age", "86400");
+}
+
+function describeApiRoute(pathname, method) {
+  if (method === "OPTIONS" && pathname.startsWith("/api/")) {
+    return { matched: true, route: "api preflight", allowedMethods: ["OPTIONS"] };
+  }
+  if (pathname === "/api/auth/login") {
+    return { matched: method === "POST", route: "admin login", allowedMethods: ["POST"] };
+  }
+  if (pathname === "/api/auth/me") {
+    return { matched: method === "GET", route: "admin session", allowedMethods: ["GET"] };
+  }
+  const [, , collection, id] = pathname.split("/");
+  if (collections.includes(collection)) {
+    const allowedMethods = id ? ["GET", "PUT", "DELETE"] : ["GET", "POST"];
+    return { matched: allowedMethods.includes(method), route: `cms ${collection}`, allowedMethods };
+  }
+  return { matched: false, route: "none", allowedMethods: [] };
+}
+
+function logApiRoute(request, url, pathname) {
+  if (!pathname.startsWith("/api/")) return;
+  const route = describeApiRoute(pathname, request.method);
+  console.log("[API ROUTE DEBUG]", {
+    requestUrl: url.href,
+    requestMethod: request.method,
+    backendRouteMatched: route.matched,
+    backendRoute: route.route,
+    allowedMethods: route.allowedMethods.join(", "),
+  });
+}
+
 function base64url(value) {
   return Buffer.from(value).toString("base64url");
 }
@@ -134,22 +213,44 @@ function requireAdmin(request, response) {
 }
 
 async function handleAuth(request, response, pathname) {
-  if (pathname === "/api/auth/login" && request.method === "POST") {
+  if (pathname === "/api/auth/login") {
+    if (request.method !== "POST") {
+      send(response, 405, { error: "Method not allowed" });
+      return;
+    }
     const { email, password } = await readBody(request);
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const submittedEmail = normalizeCredential(email);
+    const submittedPassword = normalizeCredential(password);
+    const adminEmail = configuredAdminEmail();
+    const adminPassword = configuredAdminPassword();
     if (!adminEmail || !adminPassword) {
       send(response, 503, { error: "Admin credentials are not configured" });
       return;
     }
-    if (!safeEqual(email, adminEmail) || !safeEqual(password, adminPassword)) {
+    const emailMatches = safeEqual(submittedEmail, adminEmail);
+    const passwordMatches = safeEqual(submittedPassword, adminPassword);
+    authDebug("Login attempt", {
+      submittedEmail,
+      expectedEmail: adminEmail,
+      emailMatch: emailMatches,
+      submittedPasswordLength: submittedPassword.length,
+      expectedPasswordLength: adminPassword.length,
+      passwordMatch: passwordMatches,
+      submittedEmailTrimmed: hasOuterWhitespace(email),
+      submittedPasswordTrimmed: hasOuterWhitespace(password),
+    });
+    if (!emailMatches || !passwordMatches) {
       send(response, 401, { error: "Invalid admin email or password" });
       return;
     }
     send(response, 200, { token: createToken(adminEmail), admin: { email: adminEmail } });
     return;
   }
-  if (pathname === "/api/auth/me" && request.method === "GET") {
+  if (pathname === "/api/auth/me") {
+    if (request.method !== "GET") {
+      send(response, 405, { error: "Method not allowed" });
+      return;
+    }
     const admin = adminFromRequest(request);
     if (!admin) {
       send(response, 401, { error: "Login expired" });
@@ -206,12 +307,20 @@ async function handleApi(request, response, pathname) {
 createServer(async (request, response) => {
   try {
     const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
-    if (url.pathname.startsWith("/api/auth/")) {
-      await handleAuth(request, response, url.pathname);
+    const pathname = (url.pathname.replace(/\/+$/, "") || "/");
+    applyCors(request, response);
+    logApiRoute(request, url, pathname);
+    if (request.method === "OPTIONS" && pathname.startsWith("/api/")) {
+      response.writeHead(204);
+      response.end();
       return;
     }
-    if (url.pathname.startsWith("/api/")) {
-      await handleApi(request, response, url.pathname);
+    if (pathname.startsWith("/api/auth/")) {
+      await handleAuth(request, response, pathname);
+      return;
+    }
+    if (pathname.startsWith("/api/")) {
+      await handleApi(request, response, pathname);
       return;
     }
 
