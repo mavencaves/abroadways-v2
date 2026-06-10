@@ -22,13 +22,6 @@ function proxyTarget(request) {
 
 export default async function handler(request, response) {
   const target = proxyTarget(request);
-  console.log("[VERCEL API PROXY]", {
-    requestUrl: request.url,
-    requestMethod: request.method,
-    targetUrl: target.baseUrl ? target.url : "not configured",
-    backendRouteMatched: Boolean(target.baseUrl),
-  });
-
   if (!target.baseUrl) {
     response.status(500).json({ error: "ABROADWAYS_API_BASE is not configured on Vercel" });
     return;

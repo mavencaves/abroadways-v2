@@ -12,19 +12,9 @@ await loadEnvironment();
 const root = resolve(process.env.PUBLIC_DIR || "dist");
 const port = Number(process.env.PORT || 5173);
 const tokenTtlMs = 1000 * 60 * 60 * 8;
-const authDebugEnabled = process.env.AUTH_DEBUG !== "false";
 
 function normalizeCredential(value) {
   return String(value ?? "").trim();
-}
-
-function hasOuterWhitespace(value) {
-  if (value === undefined || value === null) return false;
-  return String(value) !== normalizeCredential(value);
-}
-
-function authDebug(...args) {
-  if (authDebugEnabled) console.log("[TEMP AUTH DEBUG]", ...args);
 }
 
 function configuredAdminEmail() {
@@ -38,10 +28,7 @@ function configuredAdminPassword() {
 function validateAdminEnvironment() {
   const adminEmail = configuredAdminEmail();
   const adminPassword = configuredAdminPassword();
-  const sessionSecret = process.env.ADMIN_SESSION_SECRET;
-  authDebug(`ADMIN_EMAIL loaded: ${adminEmail ? "yes" : "no"}${adminEmail ? `; value: ${adminEmail}` : ""}; trimmed: ${hasOuterWhitespace(process.env.ADMIN_EMAIL) ? "yes" : "no"}`);
-  authDebug(`ADMIN_PASSWORD loaded: ${adminPassword ? "yes" : "no"}; length: ${adminPassword.length}; trimmed: ${hasOuterWhitespace(process.env.ADMIN_PASSWORD) ? "yes" : "no"}`);
-  authDebug(`ADMIN_SESSION_SECRET loaded: ${sessionSecret ? "yes" : "no"}`);
+  console.log(`Admin email loaded: ${adminEmail ? "yes" : "no"}`);
   const missing = [
     ["ADMIN_EMAIL", adminEmail],
     ["ADMIN_PASSWORD", adminPassword],
@@ -132,36 +119,6 @@ function applyCors(request, response) {
   response.setHeader("Access-Control-Max-Age", "86400");
 }
 
-function describeApiRoute(pathname, method) {
-  if (method === "OPTIONS" && pathname.startsWith("/api/")) {
-    return { matched: true, route: "api preflight", allowedMethods: ["OPTIONS"] };
-  }
-  if (pathname === "/api/auth/login") {
-    return { matched: method === "POST", route: "admin login", allowedMethods: ["POST"] };
-  }
-  if (pathname === "/api/auth/me") {
-    return { matched: method === "GET", route: "admin session", allowedMethods: ["GET"] };
-  }
-  const [, , collection, id] = pathname.split("/");
-  if (collections.includes(collection)) {
-    const allowedMethods = id ? ["GET", "PUT", "DELETE"] : ["GET", "POST"];
-    return { matched: allowedMethods.includes(method), route: `cms ${collection}`, allowedMethods };
-  }
-  return { matched: false, route: "none", allowedMethods: [] };
-}
-
-function logApiRoute(request, url, pathname) {
-  if (!pathname.startsWith("/api/")) return;
-  const route = describeApiRoute(pathname, request.method);
-  console.log("[API ROUTE DEBUG]", {
-    requestUrl: url.href,
-    requestMethod: request.method,
-    backendRouteMatched: route.matched,
-    backendRoute: route.route,
-    allowedMethods: route.allowedMethods.join(", "),
-  });
-}
-
 function base64url(value) {
   return Buffer.from(value).toString("base64url");
 }
@@ -229,16 +186,6 @@ async function handleAuth(request, response, pathname) {
     }
     const emailMatches = safeEqual(submittedEmail, adminEmail);
     const passwordMatches = safeEqual(submittedPassword, adminPassword);
-    authDebug("Login attempt", {
-      submittedEmail,
-      expectedEmail: adminEmail,
-      emailMatch: emailMatches,
-      submittedPasswordLength: submittedPassword.length,
-      expectedPasswordLength: adminPassword.length,
-      passwordMatch: passwordMatches,
-      submittedEmailTrimmed: hasOuterWhitespace(email),
-      submittedPasswordTrimmed: hasOuterWhitespace(password),
-    });
     if (!emailMatches || !passwordMatches) {
       send(response, 401, { error: "Invalid admin email or password" });
       return;
@@ -309,7 +256,6 @@ createServer(async (request, response) => {
     const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
     const pathname = (url.pathname.replace(/\/+$/, "") || "/");
     applyCors(request, response);
-    logApiRoute(request, url, pathname);
     if (request.method === "OPTIONS" && pathname.startsWith("/api/")) {
       response.writeHead(204);
       response.end();

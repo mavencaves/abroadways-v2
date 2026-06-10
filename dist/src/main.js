@@ -285,16 +285,9 @@ function apiEndpoint(path) {
   return new URL(endpoint, window.location.origin).href;
 }
 
-function logLoginEndpoint(endpoint, method) {
-  console.info("[TEMP AUTH DEBUG] Frontend API base URL:", apiBaseUrl() || "same-origin");
-  console.info("[TEMP AUTH DEBUG] Login API endpoint:", endpoint);
-  console.info("[TEMP AUTH DEBUG] Login API method:", method);
-}
-
 async function api(path, options = {}) {
   const token = getAdminToken();
   const endpoint = apiEndpoint(path);
-  if (path === "/auth/login") logLoginEndpoint(endpoint, options.method || "GET");
   const response = await fetch(endpoint, {
     headers: {
       "Content-Type": "application/json",
