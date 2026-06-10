@@ -3,6 +3,7 @@ import { createReadStream, existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { v2 as cloudinary } from "cloudinary";
 import { collections } from "./models.mjs";
 import * as store from "./store.mjs";
 import { loadEnvironment } from "./load-env.mjs";
@@ -25,6 +26,20 @@ function configuredAdminPassword() {
   return normalizeCredential(process.env.ADMIN_PASSWORD);
 }
 
+function cloudinaryReady() {
+  return Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+}
+
+function configureCloudinary() {
+  if (!cloudinaryReady()) return;
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
+
 function validateAdminEnvironment() {
   const adminEmail = configuredAdminEmail();
   const adminPassword = configuredAdminPassword();
@@ -41,6 +56,7 @@ function validateAdminEnvironment() {
 }
 
 validateAdminEnvironment();
+configureCloudinary();
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -213,6 +229,72 @@ function publishedOnly(items) {
   return items.filter((item) => !item.status || item.status === "published");
 }
 
+function assertUploadPayload(payload) {
+  const dataUrl = String(payload?.dataUrl || "");
+  const mimeType = String(payload?.mimeType || "");
+  if (!dataUrl) {
+    return "Choose an image to upload.";
+  }
+  if (!dataUrl.startsWith("data:image/") && !mimeType.startsWith("image/")) {
+    return "Only image uploads are allowed.";
+  }
+  if (dataUrl.length > 14 * 1024 * 1024) {
+    return "Image is too large. Please upload an image under 10MB.";
+  }
+  return "";
+}
+
+async function deleteCloudinaryAsset(media) {
+  if (!cloudinaryReady()) return;
+  const publicId = media?.cloudinaryPublicId || media?.publicId;
+  if (!publicId || media?.provider !== "cloudinary") return;
+  await cloudinary.uploader.destroy(publicId, { resource_type: "image" }).catch(() => null);
+}
+
+async function handleMediaUpload(request, response) {
+  if (request.method !== "POST") {
+    send(response, 405, { error: "Method not allowed" });
+    return;
+  }
+  const admin = requireAdmin(request, response);
+  if (!admin) return;
+  if (!cloudinaryReady()) {
+    send(response, 503, { error: "Cloudinary upload is not configured. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET." });
+    return;
+  }
+  const payload = await readBody(request);
+  const validationError = assertUploadPayload(payload);
+  if (validationError) {
+    send(response, 400, { error: validationError });
+    return;
+  }
+  const upload = await cloudinary.uploader.upload(payload.dataUrl, {
+    folder: payload.folder || "abroadways/media",
+    resource_type: "image",
+    use_filename: true,
+    unique_filename: true,
+    filename_override: payload.fileName,
+    context: payload.altText ? { alt: payload.altText } : undefined,
+  });
+  const title = String(payload.title || payload.fileName || upload.original_filename || "Uploaded image").trim();
+  const item = await store.create("media", {
+    title,
+    url: upload.secure_url,
+    secureUrl: upload.secure_url,
+    publicId: upload.public_id,
+    cloudinaryPublicId: upload.public_id,
+    provider: "cloudinary",
+    altText: payload.altText || title,
+    format: upload.format,
+    width: upload.width,
+    height: upload.height,
+    bytes: upload.bytes,
+    uploadedBy: admin.email,
+    status: "published",
+  });
+  send(response, 201, { item });
+}
+
 async function handleApi(request, response, pathname) {
   const [, , collection, id] = pathname.split("/");
   if (!collections.includes(collection)) {
@@ -245,6 +327,7 @@ async function handleApi(request, response, pathname) {
   }
   if (request.method === "DELETE" && id) {
     if (!requireAdmin(request, response)) return;
+    if (collection === "media") await deleteCloudinaryAsset(await store.get(collection, id));
     send(response, 200, await store.remove(collection, id));
     return;
   }
@@ -263,6 +346,10 @@ createServer(async (request, response) => {
     }
     if (pathname.startsWith("/api/auth/")) {
       await handleAuth(request, response, pathname);
+      return;
+    }
+    if (pathname === "/api/media/upload") {
+      await handleMediaUpload(request, response);
       return;
     }
     if (pathname.startsWith("/api/")) {

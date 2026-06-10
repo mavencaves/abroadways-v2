@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowRight,
@@ -52,6 +52,9 @@ const contactInfo = {
   phones: ["01898801960", "01898801961", "01898801962"],
   facebook: "https://www.facebook.com/abroadways",
   instagram: "https://instagram.com/abroadwaysbd",
+  linkedin: "",
+  youtube: "",
+  whatsappNumber: "01898801960",
 };
 
 const destinations = [
@@ -168,6 +171,7 @@ const blogPosts = [
   {
     title: "How to Choose the Right Study Abroad Destination",
     slug: "choose-right-study-abroad-destination",
+    language: "en",
     excerpt: "A practical guide for Bangladeshi students comparing country fit, budget, course goals, and documentation.",
     category: "Planning",
     tags: ["study abroad", "counselling"],
@@ -182,6 +186,7 @@ const blogPosts = [
   {
     title: "What to Prepare Before a University Application",
     slug: "prepare-before-university-application",
+    language: "en",
     excerpt: "Keep documents, timelines, intake choices, and budget evidence organised before you start applying.",
     category: "Applications",
     tags: ["applications", "documents"],
@@ -195,6 +200,7 @@ const blogPosts = [
   {
     title: "Budget Planning for Study Abroad",
     slug: "budget-planning-for-study-abroad",
+    language: "en",
     excerpt: "Tuition is only one part of the plan. Living costs, travel, visa fees, and settlement costs matter too.",
     category: "Budget",
     tags: ["budget", "scholarships"],
@@ -204,6 +210,65 @@ const blogPosts = [
       "Good budget planning includes tuition, living costs, accommodation, insurance, visa costs, travel, and emergency funds.",
       "Scholarships may help, but students should plan around realistic funding and transparent documentation.",
     ],
+  },
+];
+
+const softColors = ["#eef7ff", "#fff3e8", "#eefaf4", "#f3efff", "#fff9db", "#eaf9ff", "#fff0f6", "#f2fce9"];
+
+const defaultSupportChips = [
+  "Free Counselling",
+  "University Admission",
+  "Scholarship Assistance",
+  "Visa Processing",
+  "Documentation",
+  "Profile Evaluation",
+  "Interview Preparation",
+  "Accommodation Guidance",
+  "Pre-departure Support",
+];
+
+const defaultFeatureCards = [
+  {
+    title: "Choose the Right Study Destination",
+    text: "Compare country options, match budget and profile, and plan intake and documents.",
+    bullets: ["Compare country options", "Match budget and profile", "Plan intake and documents"],
+    imageUrl: "/images/abroadways-destination-planning.png",
+    ctaText: "Explore destinations",
+    ctaLink: routes.studyAbroad,
+    backgroundColor: "#fff3e8",
+  },
+  {
+    title: "How Abroadways Guides You Step by Step",
+    text: "Profile review, application checklist, document planning, and visa file preparation.",
+    bullets: ["Profile review", "Application checklist", "Visa file preparation"],
+    imageUrl: "/images/consultation-counsellor.png",
+    ctaText: "View services",
+    ctaLink: routes.services,
+    backgroundColor: "#dff2ff",
+  },
+];
+
+const defaultStories = [
+  {
+    studentName: "Student journey",
+    destination: "Canada",
+    qualification: "Application support",
+    text: "Counselling helped the student organise country, course, and document priorities.",
+    imageUrl: "/images/destination-canada.png",
+  },
+  {
+    studentName: "Counselling experience",
+    destination: "Australia",
+    qualification: "Profile review",
+    text: "A clear checklist made application planning easier for the student and family.",
+    imageUrl: "/images/destination-australia.png",
+  },
+  {
+    studentName: "Visa preparation",
+    destination: "United Kingdom",
+    qualification: "Document guidance",
+    text: "The student prepared a consistent file with Abroadways guidance.",
+    imageUrl: "/images/destination-uk.png",
   },
 ];
 
@@ -300,6 +365,33 @@ async function api(path, options = {}) {
   return response.json();
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("Could not read image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadMediaFile(file, details = {}) {
+  if (!file) throw new Error("Choose an image to upload.");
+  if (!String(file.type || "").startsWith("image/")) throw new Error("Only image files are supported.");
+  const dataUrl = await fileToDataUrl(file);
+  const result = await api("/media/upload", {
+    method: "POST",
+    body: JSON.stringify({
+      dataUrl,
+      fileName: file.name,
+      mimeType: file.type,
+      title: details.title || file.name,
+      altText: details.altText || details.title || file.name,
+      folder: details.folder || "abroadways/media",
+    }),
+  });
+  return result.item;
+}
+
 async function publicApi(path) {
   const separator = path.includes("?") ? "&" : "?";
   const response = await fetch(apiEndpoint(`${path}${separator}_=${Date.now()}`), {
@@ -347,6 +439,10 @@ const allowedCountryNames = destinations.map((item) => item.name);
 
 function itemId(item) {
   return item?.id || item?._id;
+}
+
+function mediaUrl(item = {}) {
+  return item.url || item.secureUrl || item.imageUrl || "";
 }
 
 function formatDate(value) {
@@ -451,12 +547,55 @@ function pageCopy(page, fallback) {
     image: firstImage(page, fallback.image),
     ctaTitle: page?.ctaTitle || fallback.ctaTitle,
     ctaText: page?.ctaText || fallback.ctaText,
-    ctaButtonText: page?.ctaButtonText || page?.ctaText || fallback.ctaButtonText,
-    ctaButtonLink: page?.ctaButtonLink || page?.ctaLink || fallback.ctaButtonLink,
+    ctaButtonText: page?.heroButtonText || page?.ctaButtonText || page?.ctaText || fallback.ctaButtonText,
+    ctaButtonLink: page?.heroButtonLink || page?.ctaButtonLink || page?.ctaLink || fallback.ctaButtonLink,
+    secondaryButtonText: page?.heroSecondaryButtonText || fallback.secondaryButtonText,
+    secondaryButtonLink: page?.heroSecondaryButtonLink || fallback.secondaryButtonLink,
+    badgeText: page?.heroBadgeText || fallback.badgeText,
     bodySections: page?.bodySections || fallback.bodySections || [],
     seoTitle: page?.seoTitle || fallback.seoTitle || fallback.title,
     seoDescription: page?.seoDescription || page?.metaDescription || fallback.seoDescription || fallback.copy,
   };
+}
+
+function sectionFor(page, key, fallback = {}) {
+  const sections = Array.isArray(page?.bodySections) ? page.bodySections : [];
+  return { ...fallback, ...(sections.find((section) => section?.key === key) || {}) };
+}
+
+function sectionCards(section, fallback = []) {
+  return Array.isArray(section?.cards) && section.cards.length ? section.cards : fallback;
+}
+
+function sectionItems(section, key, fallback = []) {
+  return Array.isArray(section?.[key]) && section[key].length ? section[key] : fallback;
+}
+
+function pathwayFallback(destinationItems = destinations) {
+  const destinationCards = destinationItems.map((destination, index) => ({
+    title: destination.name,
+    icon: destination.chip || destination.name.slice(0, 2),
+    backgroundColor: softColors[index % softColors.length],
+    link: `${routes.studyAbroad}/${destination.slug}`,
+  }));
+  return [
+    ...destinationCards,
+    { title: "University Application", icon: "UA", backgroundColor: "#eaf9ff", link: routes.services },
+    { title: "Visa Guidance", icon: "VG", backgroundColor: "#fff0f6", link: routes.services },
+    { title: "Scholarship Planning", icon: "SP", backgroundColor: "#f2fce9", link: routes.services },
+  ];
+}
+
+function defaultHomeSections() {
+  return [
+    { key: "hero", badgeText: "Focused guidance for five study destinations", decorativeImageUrls: ["/images/abroadways-destination-planning.png"] },
+    { key: "study-pathway", title: "Find Your Study Pathway", subtitle: "Explore destinations and support areas with clear next steps.", cards: pathwayFallback() },
+    { key: "feature-cards", title: "Plan with clarity", subtitle: "Two focused ways Abroadways helps students move from ideas to action.", cards: defaultFeatureCards },
+    { key: "success-stories", title: "Student Journey Stories", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"], stories: defaultStories },
+    { key: "service-bubbles", chips: defaultSupportChips },
+    { key: "blog-preview", title: "Study Abroad Guides", subtitle: "Read practical guides in English or Bangla.", numberOfPosts: 3, languageTabs: ["English", "বাংলা"] },
+    { key: "consultation-cta", heading: "Claim your free Abroadways consultation", subtitle: "Start with a short pathway planner and help our counsellors understand your goals.", imageUrl: "/images/consultation-counsellor.png", formHeading: "Ready to begin?", ctaText: "Book Free Consultation", formFieldsEnabled: false },
+  ];
 }
 
 function mergeDestinations(cmsCountries = []) {
@@ -483,6 +622,7 @@ function mergeDestinations(cmsCountries = []) {
       requirements: splitList(record.requirements, fallback.requirements),
       visaNotes: record.visaNotes || fallback.visaNotes,
       faqs: normalizeFaqs(record.faqs, fallback.faqs),
+      galleryImages: splitList(record.galleryImages || record.imageGallery, []),
       ctaText: record.ctaText || "Start Pathway Planner",
       ctaLink: record.ctaLink || routes.planner,
       seoTitle: record.seoTitle,
@@ -498,6 +638,7 @@ function mergeBlogs(cmsBlogs = []) {
   return records.map((record) => ({
     title: record.title || record.name || "Study abroad guide",
     slug: record.slug || slugify(record.title || record.name || "study-abroad-guide"),
+    language: record.language || "en",
     excerpt: record.excerpt || record.metaDescription || "A practical Abroadways study abroad guide for students and families.",
     category: record.category || "Guide",
     tags: splitList(record.tags, []),
@@ -510,16 +651,31 @@ function mergeBlogs(cmsBlogs = []) {
 function mergeSettings(cmsSettings = []) {
   const settings = published(cmsSettings)[0] || cmsSettings[0] || {};
   const contact = settings.contactInfo || {};
+  const social = settings.socialLinks || {};
   return {
     ...contactInfo,
     ...contact,
     siteName: settings.siteName || "Abroadways",
-    siteLogoUrl: settings.siteLogoUrl || "",
+    navbarLogoUrl: settings.navbarLogoUrl || settings.siteLogoUrl || "",
+    navbarLogoAlt: settings.navbarLogoAlt || `${settings.siteName || "Abroadways"} logo`,
+    navbarTagline: settings.navbarTagline || settings.logoCaption || settings.logoTagline || "Your pathway to global education",
+    logoCaption: settings.logoCaption || settings.navbarTagline || settings.logoTagline || "Your pathway to global education",
+    logoTagline: settings.logoTagline || settings.navbarTagline || settings.logoCaption || "Your pathway to global education",
+    siteLogoUrl: settings.siteLogoUrl || settings.navbarLogoUrl || "",
     footerLogoUrl: settings.footerLogoUrl || "",
+    footerLogoAlt: settings.footerLogoAlt || `${settings.siteName || "Abroadways"} logo`,
+    footerTagline: settings.footerTagline || settings.navbarTagline || settings.logoCaption || "Your pathway to global education",
+    footerDescription: settings.footerDescription || "Premium study abroad counselling for New Zealand, United Kingdom, Australia, Canada, and Malaysia.",
     faviconUrl: settings.faviconUrl || "",
+    primaryColor: settings.primaryColor || "#1877f2",
+    accentColor: settings.accentColor || "#f8c84e",
     phones: contact.phones || contactInfo.phones,
-    facebook: settings.socialLinks?.facebook || settings.facebook || contactInfo.facebook,
-    instagram: settings.socialLinks?.instagram || settings.instagram || contactInfo.instagram,
+    email: contact.email || settings.email || "",
+    facebook: social.facebook || settings.facebook || contactInfo.facebook,
+    instagram: social.instagram || settings.instagram || contactInfo.instagram,
+    linkedin: social.linkedin || settings.linkedin || "",
+    youtube: social.youtube || settings.youtube || "",
+    whatsappNumber: settings.whatsappNumber || contact.whatsappNumber || contactInfo.whatsappNumber,
     defaultSeoTitle: settings.defaultSeoTitle,
     defaultSeoDescription: settings.defaultSeoDescription,
     defaultOgImage: settings.defaultOgImage,
@@ -540,7 +696,29 @@ function logoutAdmin() {
   navigateTo(routes.login);
 }
 
-function Navbar({ items = destinations }) {
+function BrandLogo({ settings = contactInfo, footer = false }) {
+  const logoUrl = footer ? settings.footerLogoUrl || settings.navbarLogoUrl : settings.navbarLogoUrl || settings.siteLogoUrl;
+  const alt = footer ? settings.footerLogoAlt || settings.navbarLogoAlt : settings.navbarLogoAlt;
+  const tagline = footer ? settings.footerTagline || settings.navbarTagline : settings.navbarTagline || settings.logoCaption || settings.logoTagline;
+  return h(
+    "span",
+    { className: cx("brand-lockup", footer && "brand-lockup-footer") },
+    logoUrl ? h("img", { className: "brand-logo-img", src: logoUrl, alt: alt || `${settings.siteName || "Abroadways"} logo` }) : h("span", { className: "brand-mark" }, "A"),
+    h("span", { className: "brand-copy" }, !logoUrl && h("strong", null, settings.siteName || "Abroadways"), tagline && h("small", null, tagline)),
+  );
+}
+
+function SocialDots({ settings = contactInfo }) {
+  const socials = [
+    ["Facebook", settings.facebook],
+    ["Instagram", settings.instagram],
+    ["LinkedIn", settings.linkedin],
+    ["YouTube", settings.youtube],
+  ].filter(([, href]) => href);
+  return h("div", { className: "social-dots" }, socials.map(([label, href]) => h("a", { key: label, href, target: "_blank", rel: "noreferrer", "aria-label": label }, label.slice(0, 1))));
+}
+
+function Navbar({ items = destinations, settings = contactInfo }) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const closeAll = () => {
@@ -554,7 +732,7 @@ function Navbar({ items = destinations }) {
     h(
       "nav",
       { className: "navbar container" },
-      h(Link, { href: routes.home, className: "brand", onClick: closeAll, "aria-label": "Abroadways home" }, h("span", { className: "brand-mark" }, "A"), h("span", { className: "brand-text" }, "Abroadways")),
+      h(Link, { href: routes.home, className: "brand", onClick: closeAll, "aria-label": "Abroadways home" }, h(BrandLogo, { settings })),
       h(
         "div",
         { className: "desktop-nav" },
@@ -570,7 +748,7 @@ function Navbar({ items = destinations }) {
         h(Link, { href: routes.about, className: "nav-link" }, "About Us"),
         h(Link, { href: routes.contact, className: "nav-link" }, "Contact"),
       ),
-      h(ButtonLink, { href: routes.planner, className: "desktop-cta" }, "Book Free Consultation"),
+      h("div", { className: "navbar-actions" }, h(SocialDots, { settings }), h(ButtonLink, { href: routes.planner, className: "desktop-cta" }, "Book Free Consultation")),
       h("button", { className: "mobile-menu-button", type: "button", onClick: () => setOpen((value) => !value), "aria-label": open ? "Close navigation" : "Open navigation" }, open ? h(X, { size: 24 }) : h(Menu, { size: 24 })),
     ),
     h(
@@ -583,6 +761,7 @@ function Navbar({ items = destinations }) {
       h(Link, { href: routes.blog, onClick: closeAll }, "Blog"),
       h(Link, { href: routes.about, onClick: closeAll }, "About Us"),
       h(Link, { href: routes.contact, onClick: closeAll }, "Contact"),
+      h(SocialDots, { settings }),
       h(ButtonLink, { href: routes.planner, className: "mobile-cta" }, "Book Free Consultation"),
     ),
   );
@@ -595,9 +774,14 @@ function SectionHeading({ eyebrow, title, copy }) {
 function HomePage({ cms, destinations: destinationItems, blogs }) {
   const page = pageCopy(findPage(cms, "home", "/"), {
     eyebrow: "Abroadways Limited",
-    title: "Study Abroad with Confidence",
-    copy: "Clear counselling, university application, and visa guidance for Bangladeshi students.",
-    image: "/images/abroadways-hero-campus.png",
+    title: "Your Study Abroad Journey Starts Here",
+    copy: "Counselling, applications, and visa guidance for Bangladeshi students planning New Zealand, UK, Australia, Canada, and Malaysia.",
+    image: "/images/consultation-counsellor.png",
+    ctaButtonText: "Book Free Consultation",
+    ctaButtonLink: routes.planner,
+    secondaryButtonText: "Explore Destinations",
+    secondaryButtonLink: routes.studyAbroad,
+    badgeText: "Focused guidance for five study destinations",
     seoTitle: "Abroadways | Study Abroad with Confidence",
     seoDescription: "Premium study abroad counselling, university application, visa guidance, budget planning, and pre-departure support for Bangladeshi students.",
   });
@@ -607,27 +791,40 @@ function HomePage({ cms, destinations: destinationItems, blogs }) {
     image: page.image,
   });
 
-  return h(React.Fragment, null, h(Hero, { page, destinations: destinationItems }), h(FocusStrip), h(DestinationShowcase, { destinations: destinationItems }), h(PlannerPreview), h(ServicesSection), h(ProcessSection), h(BlogPreview, { blogs }), h(TrustSection), h(FinalCta));
+  return h(
+    React.Fragment,
+    null,
+    h(Hero, { page, destinations: destinationItems }),
+    h(StudyPathwaySection, { page, destinations: destinationItems }),
+    h(FeatureCardsSection, { page }),
+    h(SuccessStoriesSection, { page }),
+    h(ServiceBubbleSection, { page }),
+    h(BlogPreview, { blogs, page }),
+    h(ConsultationSection, { page }),
+  );
 }
 
 function Hero({ page, destinations: destinationItems }) {
+  const heroSection = sectionFor(page, "hero", {});
   return h(
     "section",
-    { className: "hero" },
-    h("img", { className: "hero-backdrop", src: page.image, alt: "", "aria-hidden": "true" }),
+    { className: "hero scholars-hero" },
+    h("span", { className: "doodle doodle-plane", "aria-hidden": "true" }, "✈"),
+    h("span", { className: "doodle doodle-pencil", "aria-hidden": "true" }, "✎"),
+    h("span", { className: "doodle doodle-ring", "aria-hidden": "true" }),
     h(
       "div",
       { className: "container hero-shell" },
       h(
-        "div",
-        { className: "hero-copy" },
-        h("span", { className: "eyebrow" }, page.eyebrow),
+      "div",
+      { className: "hero-copy" },
+        h("span", { className: "hero-badge" }, heroSection.badgeText || page.badgeText || page.eyebrow),
         h(HeroTitle, { title: page.title }),
         h("p", { className: "hero-subtitle" }, page.copy),
-        h("div", { className: "hero-actions" }, h(ButtonLink, { href: page.ctaButtonLink || routes.planner }, page.ctaButtonText || "Book Free Consultation"), h(ButtonLink, { href: routes.studyAbroad, variant: "secondary" }, "Explore Countries")),
+        h("div", { className: "hero-actions" }, h(ButtonLink, { href: page.ctaButtonLink || routes.planner }, page.ctaButtonText || "Book Free Consultation"), h(ButtonLink, { href: page.secondaryButtonLink || routes.studyAbroad, variant: "outline" }, page.secondaryButtonText || "Explore Destinations")),
         h("div", { className: "hero-chips" }, destinationItems.map((destination) => h("span", { key: destination.slug }, destination.chip))),
       ),
-      h("div", { className: "hero-visual" }, h("div", { className: "hero-image-frame" }, h("img", { src: page.image, alt: "Students walking across a university campus" })), h("div", { className: "hero-floating-card" }, h(GraduationCap, { size: 24 }), h("div", null, h("strong", null, "5 focused destinations"), h("span", null, "Counselling, applications, visa support"))), h("div", { className: "hero-stat-strip" }, ["Profile review", "Applications", "Visa guidance"].map((item) => h("span", { key: item }, item)))),
+      h("div", { className: "hero-visual" }, h("div", { className: "student-shape shape-blue" }), h("div", { className: "student-shape shape-gold" }), h("div", { className: "hero-image-frame" }, h("img", { src: page.image, alt: "Study abroad counselling visual" })), h("div", { className: "hero-floating-card" }, h(GraduationCap, { size: 24 }), h("div", null, h("strong", null, "5 focused destinations"), h("span", null, "Counselling, applications, visa support")))),
     ),
   );
 }
@@ -679,6 +876,48 @@ function FocusStrip() {
   return h("section", { className: "focus-strip" }, h("div", { className: "container focus-strip-grid" }, items.map(([title, copy]) => h("article", { key: title }, h("span", null, title), h("strong", null, copy)))));
 }
 
+function StudyPathwaySection({ page, destinations: destinationItems }) {
+  const section = sectionFor(page, "study-pathway", {
+    title: "Find Your Study Pathway",
+    subtitle: "Explore destinations and support areas with clear next steps.",
+  });
+  const cards = sectionCards(section, pathwayFallback(destinationItems));
+  return h(
+    "section",
+    { className: "section study-pathway-section" },
+    h(
+      "div",
+      { className: "container" },
+      h("div", { className: "section-heading centered" }, h("h2", null, section.title), h("span", { className: "scribble-line", "aria-hidden": "true" }), section.subtitle && h("p", null, section.subtitle)),
+      h("div", { className: "pathway-grid" }, cards.map((card, index) => h(Link, { key: `${card.title}-${index}`, href: card.link || routes.studyAbroad, className: "pathway-card", style: { background: card.backgroundColor || softColors[index % softColors.length] } }, card.imageUrl ? h("img", { src: card.imageUrl, alt: "" }) : h("span", { className: "pathway-icon" }, card.icon || String(card.title || "?").slice(0, 2)), h("strong", null, card.title), h(ArrowRight, { size: 18 })))),
+    ),
+  );
+}
+
+function FeatureCardsSection({ page }) {
+  const section = sectionFor(page, "feature-cards", {
+    title: "Plan with clarity",
+    subtitle: "Two focused ways Abroadways helps students move from ideas to action.",
+  });
+  const cards = sectionCards(section, defaultFeatureCards);
+  return h("section", { className: "section feature-card-section" }, h("div", { className: "container" }, h("div", { className: "feature-grid" }, cards.slice(0, 2).map((card, index) => h("article", { key: card.title, className: "big-feature-card", style: { background: card.backgroundColor || softColors[index] } }, h("div", null, h("span", { className: "eyebrow" }, "Bangladeshi students"), h("h2", null, card.title), h("ul", null, (card.bullets || splitList(card.text, [])).slice(0, 3).map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), item))), h(ButtonLink, { href: card.ctaLink || routes.services }, card.ctaText || "Learn more")), h("img", { src: card.imageUrl || "/images/abroadways-destination-planning.png", alt: "" }), h("span", { className: "feature-doodle", "aria-hidden": "true" }))))));
+}
+
+function SuccessStoriesSection({ page }) {
+  const section = sectionFor(page, "success-stories", { title: "Student Journey Stories", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"] });
+  const tabs = sectionItems(section, "tabs", ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"]);
+  const stories = sectionItems(section, "stories", defaultStories);
+  const [active, setActive] = useState("All");
+  const visible = stories.filter((story) => active === "All" || String(story.destination || "").toLowerCase().includes(active.toLowerCase()) || (active === "UK" && String(story.destination || "").toLowerCase().includes("kingdom")));
+  return h("section", { className: "section success-section" }, h("div", { className: "container" }, h("div", { className: "section-heading centered" }, h("h2", null, section.title), h("span", { className: "scribble-line", "aria-hidden": "true" })), h("div", { className: "tab-row" }, tabs.map((tab) => h("button", { key: tab, type: "button", className: cx(active === tab && "active"), onClick: () => setActive(tab) }, tab))), h("div", { className: "story-grid" }, (visible.length ? visible : stories).slice(0, 3).map((story) => h("article", { key: `${story.studentName}-${story.destination}`, className: "story-card" }, h("img", { src: story.imageUrl || "/images/consultation-counsellor.png", alt: "" }), h("div", null, h("span", null, story.destination), h("h3", null, story.studentName), h("strong", null, story.qualification), h("p", null, story.text)))))));
+}
+
+function ServiceBubbleSection({ page }) {
+  const section = sectionFor(page, "service-bubbles", {});
+  const chips = sectionItems(section, "chips", defaultSupportChips);
+  return h("section", { className: "section bubble-section" }, h("div", { className: "container bubble-cloud" }, chips.map((chip, index) => h("span", { key: chip, className: `bubble-chip bubble-${index % 6}` }, h(Sparkles, { size: 16 }), chip))));
+}
+
 function PlannerPreview() {
   return h(
     "section",
@@ -695,12 +934,20 @@ function ProcessSection() {
   return h("section", { className: "section process-section" }, h("div", { className: "container" }, h("div", { className: "process-top" }, h(SectionHeading, { eyebrow: "Process", title: "A structured journey from profile to departure", copy: "A clean process that keeps students and families informed at every step." }), h("div", { className: "process-image" }, h("img", { src: "/images/abroadways-destination-planning.png", alt: "Study abroad planning materials" }))), h("div", { className: "process-grid" }, process.map(([title, copy], index) => h("article", { key: title, className: "process-card" }, h("span", { className: "process-number" }, `0${index + 1}`), h("h3", null, title), h("p", null, copy))))));
 }
 
-function BlogPreview({ blogs = blogPosts }) {
-  return h("section", { className: "section blog-preview" }, h("div", { className: "container" }, h("div", { className: "split-heading" }, h(SectionHeading, { eyebrow: "Guides", title: "Latest study abroad guides", copy: "SEO-friendly planning notes for students and families." }), h(ButtonLink, { href: routes.blog, variant: "outline" }, "View Blog")), h("div", { className: "blog-grid" }, blogs.slice(0, 3).map((post) => h(BlogCard, { key: post.slug, post })))));
+function BlogPreview({ blogs = blogPosts, page }) {
+  const section = sectionFor(page, "blog-preview", { title: "Study Abroad Guides", subtitle: "Read practical guides in English or Bangla.", numberOfPosts: 3 });
+  const [language, setLanguage] = useState("en");
+  const filtered = blogs.filter((post) => (post.language || "en") === language);
+  const visible = filtered.slice(0, Number(section.numberOfPosts || 3));
+  return h("section", { className: "section blog-preview scholars-blog-preview" }, h("div", { className: "container" }, h("div", { className: "section-heading centered" }, h("h2", null, section.title), h("span", { className: "scribble-line", "aria-hidden": "true" }), section.subtitle && h("p", null, section.subtitle)), h(LanguageTabs, { language, setLanguage }), visible.length ? h("div", { className: "blog-grid blog-grid-large" }, visible.map((post) => h(BlogCard, { key: post.slug, post }))) : h("div", { className: "empty-card" }, language === "bn" ? "No Bangla guides published yet." : "No English guides published yet."), h("div", { className: "center-actions" }, h(ButtonLink, { href: routes.blog, variant: "outline" }, "View Blog"))));
 }
 
 function BlogCard({ post }) {
-  return h(Link, { href: `${routes.blog}/${post.slug}`, className: "blog-card" }, h("img", { src: post.image, alt: post.title }), h("div", { className: "blog-card-body" }, h("span", null, post.category), h("h3", null, post.title), h("p", null, post.excerpt), h("strong", null, "Read guide", h(ArrowRight, { size: 15 }))));
+  return h(Link, { href: `${routes.blog}/${post.slug}`, className: "blog-card" }, h("img", { src: post.image, alt: post.title }), h("div", { className: "blog-card-body" }, h("span", null, `${post.category} / ${formatDate(post.publishedAt)}`), h("h3", null, post.title), h("p", null, post.excerpt), h("strong", null, "Read more", h(ArrowRight, { size: 15 }))));
+}
+
+function LanguageTabs({ language, setLanguage }) {
+  return h("div", { className: "tab-row language-tabs" }, [["en", "English"], ["bn", "বাংলা"]].map(([value, label]) => h("button", { key: value, type: "button", className: cx(language === value && "active"), onClick: () => setLanguage(value) }, label)));
 }
 
 function TrustSection() {
@@ -710,6 +957,17 @@ function TrustSection() {
 
 function FinalCta() {
   return h("section", { className: "final-cta" }, h("div", { className: "container final-cta-inner" }, h("span", { className: "eyebrow" }, "Plan with confidence"), h("h2", null, "Ready to plan your study abroad journey?"), h("p", null, "Start with the pathway planner or contact Abroadways for a direct consultation."), h("div", { className: "hero-actions center" }, h(ButtonLink, { href: routes.planner, variant: "light" }, "Start Planner"), h(ButtonLink, { href: routes.contact, variant: "secondary" }, "Contact Abroadways"))));
+}
+
+function ConsultationSection({ page }) {
+  const section = sectionFor(page, "consultation-cta", {
+    heading: "Claim your free Abroadways consultation",
+    subtitle: "Start with a short pathway planner and help our counsellors understand your goals.",
+    imageUrl: "/images/consultation-counsellor.png",
+    formHeading: "Ready to begin?",
+    ctaText: "Book Free Consultation",
+  });
+  return h("section", { className: "section consultation-claim" }, h("div", { className: "container" }, h("div", { className: "section-heading centered" }, h("h2", null, section.heading), h("span", { className: "scribble-line", "aria-hidden": "true" }), section.subtitle && h("p", null, section.subtitle)), h("div", { className: "claim-card" }, h("div", { className: "claim-copy" }, h("span", { className: "eyebrow" }, section.formHeading || "Free counselling"), h("h3", null, "Tell us your country interest and study goal"), h("ol", null, ["Choose your preferred destination", "Share budget, intake, and document status", "An Abroadways counsellor reviews your pathway"].map((item) => h("li", { key: item }, item))), h(ButtonLink, { href: routes.planner }, section.ctaText || "Book Free Consultation")), h("img", { src: section.imageUrl || "/images/consultation-counsellor.png", alt: "Abroadways consultation" }))));
 }
 
 function StudyAbroadPage({ cms, destinations: destinationItems }) {
@@ -727,7 +985,26 @@ function StudyAbroadPage({ cms, destinations: destinationItems }) {
 
 function CountryPage({ destination }) {
   setSeo({ title: destination.seoTitle || `Study in ${destination.name} | Abroadways`, description: destination.seoDescription || destination.overview, image: destination.ogImage || destination.image });
-  return h(React.Fragment, null, h(PageHero, { eyebrow: "Study Abroad", title: destination.heroHeading || `Study in ${destination.name}`, copy: destination.heroSubtitle || destination.short, image: destination.image }), h(CountryAtGlance, { destination }), h("section", { className: "section country-detail country-landing" }, h("div", { className: "container country-detail-grid" }, h("div", { className: "country-story" }, h("span", { className: "eyebrow" }, "Overview"), h("h2", null, `Your ${destination.name} pathway, organised`), h("p", null, destination.overview), h("div", { className: "country-actions" }, h(ButtonLink, { href: destination.ctaLink || routes.planner }, destination.ctaText || "Start Pathway Planner"), h(ButtonLink, { href: routes.contact, variant: "outline" }, "Talk to Counsellor"))), h("aside", { className: "country-panel country-benefits" }, h("h3", null, "Why study there"), h("ul", null, destination.benefits.map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), h("span", null, item)))), h("div", { className: "country-panel-note" }, "Profile-led planning for Bangladeshi students")))), h(CountryInfoSections, { destination }), h(ProcessSection), h(FaqSection, { items: destination.faqs }), h(FinalCta));
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Study Abroad", title: destination.heroHeading || `Study in ${destination.name}`, copy: destination.heroSubtitle || destination.short, image: destination.image }),
+    h(CountryAtGlance, { destination }),
+    h("section", { className: "section country-detail country-landing" }, h("div", { className: "container country-detail-grid" },
+      h("div", { className: "country-story" }, h("span", { className: "eyebrow" }, "Overview"), h("h2", null, `Your ${destination.name} pathway, organised`), h("p", null, destination.overview), h("div", { className: "country-actions" }, h(ButtonLink, { href: destination.ctaLink || routes.planner }, destination.ctaText || "Start Pathway Planner"), h(ButtonLink, { href: routes.contact, variant: "outline" }, "Talk to Counsellor"))),
+      h("aside", { className: "country-panel country-benefits" }, h("h3", null, "Why study there"), h("ul", null, destination.benefits.map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), h("span", null, item)))), h("div", { className: "country-panel-note" }, "Profile-led planning for Bangladeshi students")),
+    )),
+    destination.galleryImages?.length ? h(CountryGallery, { images: destination.galleryImages, title: destination.name }) : null,
+    h(CountryInfoSections, { destination }),
+    h(ProcessSection),
+    h(FaqSection, { items: destination.faqs }),
+    h(FinalCta),
+  );
+}
+
+function CountryGallery({ images = [], title }) {
+  return h("section", { className: "section country-gallery-section" }, h("div", { className: "container" },
+    h(SectionHeading, { eyebrow: "Gallery", title: `${title} study visuals`, copy: "Images added from the Abroadways media library." }),
+    h("div", { className: "country-gallery-grid" }, images.slice(0, 6).map((image, index) => h("img", { key: `${image}-${index}`, src: image, alt: `${title} gallery ${index + 1}` }))),
+  ));
 }
 
 function CountryAtGlance({ destination }) {
@@ -762,13 +1039,16 @@ function ServicesPage({ cms }) {
 }
 
 function BlogPage({ blogs }) {
+  const [language, setLanguage] = useState("en");
+  const visible = blogs.filter((post) => (post.language || "en") === language);
   setSeo({ title: "Study Abroad Blog | Abroadways", description: "Study abroad guides for Bangladeshi students and families.", image: "/images/abroadways-destination-planning.png" });
-  return h(React.Fragment, null, h(PageHero, { eyebrow: "Blog", title: "Study abroad guides", copy: "Clear, practical notes for planning your next step.", image: "/images/abroadways-destination-planning.png" }), h("section", { className: "section blog-index-section" }, h("div", { className: "container" }, h("div", { className: "blog-index-head" }, h("span", { className: "eyebrow" }, "Latest insights"), h("h2", null, "Practical guides for focused decisions")), h("div", { className: "blog-grid blog-grid-large" }, blogs.map((post) => h(BlogCard, { key: post.slug, post }))))));
+  return h(React.Fragment, null, h(PageHero, { eyebrow: "Blog", title: "Study Abroad Guides", copy: "Clear, practical notes for planning your next step.", image: "/images/abroadways-destination-planning.png" }), h("section", { className: "section blog-index-section scholars-blog-preview" }, h("div", { className: "container" }, h("div", { className: "blog-index-head centered" }, h("span", { className: "eyebrow" }, "Latest insights"), h("h2", null, "Practical guides for focused decisions"), h("span", { className: "scribble-line", "aria-hidden": "true" })), h(LanguageTabs, { language, setLanguage }), visible.length ? h("div", { className: "blog-grid blog-grid-large" }, visible.map((post) => h(BlogCard, { key: post.slug, post }))) : h("div", { className: "empty-card" }, language === "bn" ? "No Bangla guides published yet." : "No English guides published yet."))));
 }
 
-function BlogDetailPage({ post }) {
+function BlogDetailPage({ post, blogs = [] }) {
+  const related = blogs.filter((item) => item.slug !== post.slug && (item.language || "en") === (post.language || "en")).slice(0, 2);
   setSeo({ title: `${post.title} | Abroadways`, description: post.excerpt, image: post.image });
-  return h(React.Fragment, null, h(PageHero, { eyebrow: post.category, title: post.title, copy: post.excerpt, image: post.image }), h("article", { className: "section article-section" }, h("div", { className: "container article-layout" }, h("div", { className: "article-body" }, post.content.map((paragraph) => h("p", { key: paragraph }, paragraph)), h(ButtonLink, { href: routes.planner }, "Plan My Pathway")), h("aside", { className: "article-aside" }, h("span", { className: "eyebrow" }, "Abroadways guide"), h("h3", null, "Need a profile review?"), h("p", null, "Share your country interest, study level, budget, and intake plan with an Abroadways counsellor."), h(ButtonLink, { href: routes.planner, variant: "outline" }, "Start Planner")))));
+  return h(React.Fragment, null, h(PageHero, { eyebrow: post.category, title: post.title, copy: post.excerpt, image: post.image }), h("article", { className: "section article-section", lang: post.language === "bn" ? "bn" : "en" }, h("div", { className: "container article-layout" }, h("div", { className: "article-body" }, h("span", { className: "article-meta" }, `${formatDate(post.publishedAt)} / ${post.category}`), post.content.map((paragraph) => h("p", { key: paragraph }, paragraph)), h(ButtonLink, { href: routes.planner }, "Plan My Pathway")), h("aside", { className: "article-aside" }, h("span", { className: "eyebrow" }, "Abroadways guide"), h("h3", null, "Need a profile review?"), h("p", null, "Share your country interest, study level, budget, and intake plan with an Abroadways counsellor."), h(ButtonLink, { href: routes.planner, variant: "outline" }, "Start Planner")))), related.length && h("section", { className: "section related-posts" }, h("div", { className: "container" }, h(SectionHeading, { eyebrow: "Related", title: "More study abroad guides" }), h("div", { className: "blog-grid" }, related.map((item) => h(BlogCard, { key: item.slug, post: item }))))));
 }
 
 function AboutPage({ cms }) {
@@ -1092,6 +1372,106 @@ function SelectInput({ label, value, onChange, options, className = "" }) {
   return h(Field, { label, className }, h("select", { value: value || "", onChange: (event) => onChange(event.target.value) }, options.map((item) => h("option", { key: item, value: item }, item || "All"))));
 }
 
+function ImageField({ label, value, onChange, className = "", folder = "abroadways/media" }) {
+  const inputRef = useRef(null);
+  const [media, setMedia] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [message, setMessage] = useState("");
+  React.useEffect(() => {
+    let active = true;
+    api("/media").then((data) => {
+      if (active) setMedia(data.items || []);
+    }).catch(() => null);
+    return () => {
+      active = false;
+    };
+  }, []);
+  const upload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    setMessage("");
+    try {
+      const item = await uploadMediaFile(file, { title: file.name, altText: label, folder });
+      setMedia((current) => [item, ...current]);
+      onChange(item.url || item.secureUrl || "");
+      setMessage("Uploaded and selected.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+  return h(Field, { label, className: cx("image-field", className) },
+    h("input", { value: value || "", placeholder: "Paste image URL or upload/select from media", onChange: (event) => onChange(event.target.value) }),
+    h("div", { className: "image-field-tools" },
+      h("select", { value: "", onChange: (event) => event.target.value && onChange(event.target.value) }, h("option", { value: "" }, "Select from Media Library"), media.filter(mediaUrl).map((item) => h("option", { key: itemId(item) || mediaUrl(item), value: mediaUrl(item) }, item.title || item.altText || item.publicId || mediaUrl(item)))),
+      h("button", { type: "button", className: "mini-button", onClick: () => inputRef.current?.click(), disabled: uploading }, h(ImageIcon, { size: 15 }), uploading ? "Uploading..." : "Upload Image"),
+      value && h("button", { type: "button", className: "mini-button", onClick: () => navigator.clipboard?.writeText(value).catch(() => null) }, h(Copy, { size: 15 }), "Copy URL"),
+      h("input", { ref: inputRef, type: "file", accept: "image/*", hidden: true, onChange: (event) => upload(event.target.files?.[0]) }),
+    ),
+    h("div", {
+      className: cx("image-dropzone", dragging && "dragging"),
+      onDragOver: (event) => {
+        event.preventDefault();
+        setDragging(true);
+      },
+      onDragLeave: () => setDragging(false),
+      onDrop: (event) => {
+        event.preventDefault();
+        setDragging(false);
+        upload(event.dataTransfer.files?.[0]);
+      },
+    }, value ? h("img", { src: value, alt: `${label} preview` }) : h("span", null, "Drag and drop an image here")),
+    message && h("small", { className: cx(message.includes("failed") || message.includes("Only") || message.includes("Choose") ? "field-error" : "field-success") }, message),
+  );
+}
+
+function MediaUploadPanel({ onUploaded, title = "Upload Image" }) {
+  const [status, setStatus] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef(null);
+  const upload = async (file) => {
+    if (!file) return;
+    setStatus("Uploading...");
+    try {
+      const item = await uploadMediaFile(file, { title: file.name, altText: file.name });
+      setStatus("Uploaded successfully.");
+      onUploaded?.(item);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Upload failed.");
+    }
+  };
+  return h("div", {
+    className: cx("media-upload-panel", dragging && "dragging"),
+    onDragOver: (event) => {
+      event.preventDefault();
+      setDragging(true);
+    },
+    onDragLeave: () => setDragging(false),
+    onDrop: (event) => {
+      event.preventDefault();
+      setDragging(false);
+      upload(event.dataTransfer.files?.[0]);
+    },
+  },
+    h("div", null, h("strong", null, title), h("p", null, "Drag and drop an image, or choose a file from your computer."), status && h("small", { className: status.includes("failed") || status.includes("Only") ? "field-error" : "field-success" }, status)),
+    h("button", { type: "button", className: "button button-primary", onClick: () => inputRef.current?.click() }, h(ImageIcon, { size: 18 }), "Upload Image"),
+    h("input", { ref: inputRef, type: "file", accept: "image/*", hidden: true, onChange: (event) => upload(event.target.files?.[0]) }),
+  );
+}
+
+function GalleryImageEditor({ label, value, onChange }) {
+  const images = lineList(value);
+  const append = (url) => onChange([...images, url].filter(Boolean).join("\n"));
+  const remove = (url) => onChange(images.filter((item) => item !== url).join("\n"));
+  return h("div", { className: "gallery-editor full" },
+    h(ImageField, { label: `${label}: add image`, value: "", onChange: append, folder: "abroadways/countries" }),
+    h(TextArea, { label: `${label} URLs`, value, onChange, placeholder: "One image URL per line" }),
+    images.length ? h("div", { className: "gallery-preview-grid" }, images.map((url) => h("figure", { key: url }, h("img", { src: url, alt: "" }), h("button", { type: "button", className: "mini-button danger", onClick: () => remove(url) }, h(Trash2, { size: 14 }), "Remove")))) : h("div", { className: "notice-card" }, "No gallery images added yet."),
+  );
+}
+
 function StatusBadge({ status = "published" }) {
   return h("em", { className: cx("status-badge", `status-${status}`) }, status);
 }
@@ -1121,11 +1501,46 @@ function PageManager() {
 }
 
 function normalizePageDraft(item = {}) {
-  return { ...item, imageUrl: firstImage(item, ""), bodySectionsText: jsonText(item.bodySections || []), ctaButtonText: item.ctaButtonText || item.ctaText || "", ctaButtonLink: item.ctaButtonLink || item.ctaLink || "" };
+  const isHome = item.routeKey === "home" || item.slug === "/";
+  const sections = Array.isArray(item.bodySections) && item.bodySections.some((section) => ["study-pathway", "feature-cards", "success-stories", "service-bubbles", "blog-preview", "consultation-cta"].includes(section.key)) ? item.bodySections : isHome ? defaultHomeSections() : item.bodySections || [];
+  return { ...item, imageUrl: firstImage(item, ""), bodySectionsText: jsonText(sections), heroButtonText: item.heroButtonText || item.ctaButtonText || item.ctaText || "", heroButtonLink: item.heroButtonLink || item.ctaButtonLink || item.ctaLink || "", heroSecondaryButtonText: item.heroSecondaryButtonText || "", heroSecondaryButtonLink: item.heroSecondaryButtonLink || "", heroBadgeText: item.heroBadgeText || "" };
 }
 
 function pagePayload(draft) {
-  return { id: draft.id, title: draft.title, routeKey: draft.routeKey || (draft.slug === "/" ? "home" : String(draft.slug || "").replace(/^\//, "")), slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, imageUrls: draft.imageUrl ? [draft.imageUrl] : [], ctaTitle: draft.ctaTitle, ctaText: draft.ctaText, ctaButtonText: draft.ctaButtonText, ctaButtonLink: draft.ctaButtonLink, ctaLink: draft.ctaButtonLink, bodySections: parseJsonText(draft.bodySectionsText, []), seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
+  return { id: draft.id, title: draft.title, routeKey: draft.routeKey || (draft.slug === "/" ? "home" : String(draft.slug || "").replace(/^\//, "")), slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, imageUrls: draft.imageUrl ? [draft.imageUrl] : [], heroButtonText: draft.heroButtonText, heroButtonLink: draft.heroButtonLink, heroSecondaryButtonText: draft.heroSecondaryButtonText, heroSecondaryButtonLink: draft.heroSecondaryButtonLink, heroBadgeText: draft.heroBadgeText, ctaTitle: draft.ctaTitle, ctaText: draft.heroButtonText || draft.ctaText, ctaButtonText: draft.heroButtonText, ctaButtonLink: draft.heroButtonLink, ctaLink: draft.heroButtonLink, bodySections: parseJsonText(draft.bodySectionsText, []), seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
+}
+
+function HomeSectionImageTools({ draft, setDraft }) {
+  const isHome = draft.routeKey === "home" || draft.slug === "/";
+  if (!isHome) return null;
+  const sections = parseJsonText(draft.bodySectionsText, []);
+  if (!Array.isArray(sections)) return h("div", { className: "notice-card full" }, "Homepage structured sections must be valid JSON before image tools can load.");
+  const targets = [];
+  sections.forEach((section, sectionIndex) => {
+    if (["study-pathway", "feature-cards"].includes(section.key) && Array.isArray(section.cards)) {
+      section.cards.forEach((card, cardIndex) => targets.push({ label: `${section.title || section.key}: ${card.title || `Card ${cardIndex + 1}`}`, path: [sectionIndex, "cards", cardIndex, "imageUrl"], value: card.imageUrl || "" }));
+    }
+    if (section.key === "success-stories" && Array.isArray(section.stories)) {
+      section.stories.forEach((story, storyIndex) => targets.push({ label: `Success story: ${story.studentName || `Story ${storyIndex + 1}`}`, path: [sectionIndex, "stories", storyIndex, "imageUrl"], value: story.imageUrl || "" }));
+    }
+    if (section.key === "consultation-cta") {
+      targets.push({ label: "Final consultation CTA image", path: [sectionIndex, "imageUrl"], value: section.imageUrl || "" });
+    }
+  });
+  const updatePath = (path, value) => {
+    const next = JSON.parse(JSON.stringify(sections));
+    let cursor = next;
+    path.slice(0, -1).forEach((key) => {
+      cursor = cursor[key];
+    });
+    cursor[path[path.length - 1]] = value;
+    setDraft((current) => ({ ...current, bodySectionsText: jsonText(next) }));
+  };
+  return h("div", { className: "home-image-tools full" },
+    h("h3", null, "Homepage Section Images"),
+    h("p", null, "Upload or select images for destination cards, feature cards, success stories, and the consultation CTA. The structured JSON updates automatically."),
+    targets.length ? h("div", { className: "home-image-grid" }, targets.map((target) => h(ImageField, { key: target.path.join("."), label: target.label, value: target.value, onChange: (value) => updatePath(target.path, value), folder: "abroadways/homepage" }))) : h("div", { className: "notice-card" }, "No editable homepage image slots found."),
+  );
 }
 
 function PageEditor({ draft, setDraft, onSave, onCancel }) {
@@ -1134,7 +1549,30 @@ function PageEditor({ draft, setDraft, onSave, onCancel }) {
     event.preventDefault();
     onSave(draft);
   };
-  return h("form", { className: "cms-editor", onSubmit: submit }, h("h2", null, draft.routeKey === "home" ? "Home Page Editor" : itemId(draft) ? "Edit Page" : "Create Page"), h("div", { className: "cms-form-grid" }, h(TextInput, { label: "Title", value: draft.title, onChange: (value) => set("title", value) }), h(TextInput, { label: "Route key", value: draft.routeKey, onChange: (value) => set("routeKey", value), placeholder: "home, study-abroad, services" }), h(TextInput, { label: "Slug/path", value: draft.slug, onChange: (value) => set("slug", value), placeholder: "/services" }), h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }), h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }), h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }), h(TextInput, { label: "Hero image URL", value: draft.imageUrl, onChange: (value) => set("imageUrl", value), className: "full" }), h(TextInput, { label: "CTA title", value: draft.ctaTitle, onChange: (value) => set("ctaTitle", value) }), h(TextInput, { label: "CTA text", value: draft.ctaText, onChange: (value) => set("ctaText", value) }), h(TextInput, { label: "CTA button text", value: draft.ctaButtonText, onChange: (value) => set("ctaButtonText", value) }), h(TextInput, { label: "CTA button link", value: draft.ctaButtonLink, onChange: (value) => set("ctaButtonLink", value) }), h(TextArea, { label: "Homepage structured sections JSON", value: draft.bodySectionsText, onChange: (value) => set("bodySectionsText", value), placeholder: "[{\"key\":\"hero\",\"heading\":\"...\",\"imageUrl\":\"...\"}]", className: "full" }), h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }), h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }), h(TextInput, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full" })), h(FormActions, { onCancel }));
+  return h("form", { className: "cms-editor", onSubmit: submit },
+    h("h2", null, draft.routeKey === "home" ? "Home Page Editor" : itemId(draft) ? "Edit Page" : "Create Page"),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "Title", value: draft.title, onChange: (value) => set("title", value) }),
+      h(TextInput, { label: "Route key", value: draft.routeKey, onChange: (value) => set("routeKey", value), placeholder: "home, study-abroad, services" }),
+      h(TextInput, { label: "Slug/path", value: draft.slug, onChange: (value) => set("slug", value), placeholder: "/services" }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }),
+      h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }),
+      h(ImageField, { label: "Hero image", value: draft.imageUrl, onChange: (value) => set("imageUrl", value), className: "full", folder: "abroadways/pages" }),
+      h(TextInput, { label: "Hero badge text", value: draft.heroBadgeText, onChange: (value) => set("heroBadgeText", value), className: "full" }),
+      h(TextInput, { label: "Hero primary button text", value: draft.heroButtonText, onChange: (value) => set("heroButtonText", value) }),
+      h(TextInput, { label: "Hero primary button link", value: draft.heroButtonLink, onChange: (value) => set("heroButtonLink", value) }),
+      h(TextInput, { label: "Hero secondary button text", value: draft.heroSecondaryButtonText, onChange: (value) => set("heroSecondaryButtonText", value) }),
+      h(TextInput, { label: "Hero secondary button link", value: draft.heroSecondaryButtonLink, onChange: (value) => set("heroSecondaryButtonLink", value) }),
+      h(TextInput, { label: "CTA title", value: draft.ctaTitle, onChange: (value) => set("ctaTitle", value) }),
+      h(TextArea, { label: "Homepage structured sections JSON", value: draft.bodySectionsText, onChange: (value) => set("bodySectionsText", value), placeholder: "[{\"key\":\"study-pathway\",\"title\":\"Find Your Study Pathway\",\"cards\":[{\"title\":\"New Zealand\",\"link\":\"/study-abroad/new-zealand\"}]}]", className: "full" }),
+      h(HomeSectionImageTools, { draft, setDraft }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/pages" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
 }
 
 function CountryManager() {
@@ -1149,11 +1587,11 @@ function CountryManager() {
 }
 
 function normalizeCountryDraft(item = {}) {
-  return { ...item, countryName: item.countryName || item.name || item.title || "", heroImage: firstImage(item, ""), benefitsText: lines(item.benefits), studyAreasText: lines(item.studyAreas), requirementsText: lines(item.requirements), faqsText: faqText(item.faqs) };
+  return { ...item, countryName: item.countryName || item.name || item.title || "", heroImage: firstImage(item, ""), galleryImagesText: lines(item.galleryImages || item.imageGallery), benefitsText: lines(item.benefits), studyAreasText: lines(item.studyAreas), requirementsText: lines(item.requirements), faqsText: faqText(item.faqs) };
 }
 
 function countryPayload(draft) {
-  return { id: draft.id, countryName: draft.countryName, slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, heroImage: draft.heroImage, overview: draft.overview, benefits: lineList(draft.benefitsText), studyAreas: lineList(draft.studyAreasText), intakes: draft.intakes, costGuide: draft.costGuide, requirements: lineList(draft.requirementsText), visaNotes: draft.visaNotes, faqs: parseFaqText(draft.faqsText), ctaText: draft.ctaText, ctaLink: draft.ctaLink, seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
+  return { id: draft.id, countryName: draft.countryName, slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, heroImage: draft.heroImage, galleryImages: lineList(draft.galleryImagesText), overview: draft.overview, benefits: lineList(draft.benefitsText), studyAreas: lineList(draft.studyAreasText), intakes: draft.intakes, costGuide: draft.costGuide, requirements: lineList(draft.requirementsText), visaNotes: draft.visaNotes, faqs: parseFaqText(draft.faqsText), ctaText: draft.ctaText, ctaLink: draft.ctaLink, seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
 }
 
 function CountryEditor({ draft, setDraft, onSave, onCancel }) {
@@ -1162,26 +1600,51 @@ function CountryEditor({ draft, setDraft, onSave, onCancel }) {
     event.preventDefault();
     onSave(draft);
   };
-  return h("form", { className: "cms-editor", onSubmit: submit }, h("h2", null, `Edit ${draft.countryName}`), h("div", { className: "cms-form-grid" }, h(SelectInput, { label: "Country", value: draft.countryName, onChange: (value) => set("countryName", value), options: allowedCountryNames }), h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", value) }), h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }), h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }), h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }), h(TextInput, { label: "Hero image", value: draft.heroImage, onChange: (value) => set("heroImage", value), className: "full" }), h(TextArea, { label: "Overview", value: draft.overview, onChange: (value) => set("overview", value), className: "full" }), h(TextArea, { label: "Why study there", value: draft.benefitsText, onChange: (value) => set("benefitsText", value) }), h(TextArea, { label: "Popular study areas", value: draft.studyAreasText, onChange: (value) => set("studyAreasText", value) }), h(TextArea, { label: "Intake guidance", value: draft.intakes, onChange: (value) => set("intakes", value) }), h(TextArea, { label: "Approximate cost guide", value: draft.costGuide, onChange: (value) => set("costGuide", value) }), h(TextArea, { label: "Requirements", value: draft.requirementsText, onChange: (value) => set("requirementsText", value) }), h(TextArea, { label: "Visa support notes", value: draft.visaNotes, onChange: (value) => set("visaNotes", value) }), h(TextArea, { label: "FAQs, one per line: Question | Answer", value: draft.faqsText, onChange: (value) => set("faqsText", value), className: "full" }), h(TextInput, { label: "CTA text", value: draft.ctaText, onChange: (value) => set("ctaText", value) }), h(TextInput, { label: "CTA link", value: draft.ctaLink, onChange: (value) => set("ctaLink", value) }), h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }), h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }), h(TextInput, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full" })), h(FormActions, { onCancel }));
+  return h("form", { className: "cms-editor", onSubmit: submit },
+    h("h2", null, `Edit ${draft.countryName}`),
+    h("div", { className: "cms-form-grid" },
+      h(SelectInput, { label: "Country", value: draft.countryName, onChange: (value) => set("countryName", value), options: allowedCountryNames }),
+      h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", value) }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }),
+      h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }),
+      h(ImageField, { label: "Hero image", value: draft.heroImage, onChange: (value) => set("heroImage", value), className: "full", folder: "abroadways/countries" }),
+      h(GalleryImageEditor, { label: "Gallery images", value: draft.galleryImagesText, onChange: (value) => set("galleryImagesText", value) }),
+      h(TextArea, { label: "Overview", value: draft.overview, onChange: (value) => set("overview", value), className: "full" }),
+      h(TextArea, { label: "Why study there", value: draft.benefitsText, onChange: (value) => set("benefitsText", value) }),
+      h(TextArea, { label: "Popular study areas", value: draft.studyAreasText, onChange: (value) => set("studyAreasText", value) }),
+      h(TextArea, { label: "Intake guidance", value: draft.intakes, onChange: (value) => set("intakes", value) }),
+      h(TextArea, { label: "Approximate cost guide", value: draft.costGuide, onChange: (value) => set("costGuide", value) }),
+      h(TextArea, { label: "Requirements", value: draft.requirementsText, onChange: (value) => set("requirementsText", value) }),
+      h(TextArea, { label: "Visa support notes", value: draft.visaNotes, onChange: (value) => set("visaNotes", value) }),
+      h(TextArea, { label: "FAQs, one per line: Question | Answer", value: draft.faqsText, onChange: (value) => set("faqsText", value), className: "full" }),
+      h(TextInput, { label: "CTA text", value: draft.ctaText, onChange: (value) => set("ctaText", value) }),
+      h(TextInput, { label: "CTA link", value: draft.ctaLink, onChange: (value) => set("ctaLink", value) }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/countries" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
 }
 
 function BlogManager() {
   const cms = useAdminCollection("blogs");
   const [editing, setEditing] = useState(null);
-  const newBlog = () => setEditing(normalizeBlogDraft({ status: "draft", category: "Guide", publishedAt: new Date().toISOString().slice(0, 10) }));
+  const newBlog = () => setEditing(normalizeBlogDraft({ status: "draft", language: "en", category: "Guide", publishedAt: new Date().toISOString().slice(0, 10) }));
   const save = async (draft) => {
     const saved = await cms.saveRecord(draft, blogPayload(draft));
     setEditing(normalizeBlogDraft(saved));
   };
-  return h("section", null, h(CmsHeader, { title: "Blog Manager", copy: "Create, edit, preview, publish, archive, and delete study abroad guides.", action: h("button", { className: "button button-primary", type: "button", onClick: newBlog }, h(Plus, { size: 18 }), "New Blog") }), h(renderAlerts, { ...cms }), editing && h(BlogEditor, { draft: editing, setDraft: setEditing, onSave: save, onCancel: () => setEditing(null) }), h("div", { className: "cms-table cms-table-wide" }, cms.loading ? h("article", null, "Loading blogs...") : cms.items.map((item) => h("article", { key: itemId(item) || item.slug }, h("div", { className: "cms-row-main" }, h("strong", null, item.title || "Untitled blog"), h("span", null, `Slug: ${item.slug || "not-set"}`), h("span", null, `Category: ${item.category || "Guide"}`), h("span", null, `Published: ${formatDate(item.publishedAt)}`), h("span", null, `Updated: ${formatDate(item.updatedAt || item.createdAt)}`)), h("div", { className: "cms-row-actions" }, h(StatusBadge, { status: item.status || "draft" }), h("button", { type: "button", className: "mini-button", onClick: () => setEditing(normalizeBlogDraft(item)) }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: `${routes.blog}/${item.slug}`, className: "mini-button" }, h(Eye, { size: 15 }), "Preview"), h("button", { type: "button", className: "mini-button", onClick: () => cms.patchRecord(item, { status: item.status === "published" ? "archived" : "published" }) }, h(Archive, { size: 15 }), item.status === "published" ? "Archive" : "Publish"), h("button", { type: "button", className: "mini-button danger", onClick: () => cms.deleteRecord(item, item.title || "blog post") }, h(Trash2, { size: 15 }), "Delete"))))));
+  return h("section", null, h(CmsHeader, { title: "Blog Manager", copy: "Create English or Bangla study abroad guides, preview, publish, archive, and delete posts.", action: h("button", { className: "button button-primary", type: "button", onClick: newBlog }, h(Plus, { size: 18 }), "New Blog") }), h(renderAlerts, { ...cms }), editing && h(BlogEditor, { draft: editing, setDraft: setEditing, onSave: save, onCancel: () => setEditing(null) }), h("div", { className: "cms-table cms-table-wide" }, cms.loading ? h("article", null, "Loading blogs...") : cms.items.map((item) => h("article", { key: itemId(item) || item.slug }, h("div", { className: "cms-row-main" }, h("strong", null, item.title || "Untitled blog"), h("span", null, `Slug: ${item.slug || "not-set"}`), h("span", null, `Language: ${(item.language || "en").toUpperCase()}`), h("span", null, `Category: ${item.category || "Guide"}`), h("span", null, `Published: ${formatDate(item.publishedAt)}`), h("span", null, `Updated: ${formatDate(item.updatedAt || item.createdAt)}`)), h("div", { className: "cms-row-actions" }, h(StatusBadge, { status: item.status || "draft" }), h("button", { type: "button", className: "mini-button", onClick: () => setEditing(normalizeBlogDraft(item)) }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: `${routes.blog}/${item.slug}`, className: "mini-button" }, h(Eye, { size: 15 }), "Preview"), h("button", { type: "button", className: "mini-button", onClick: () => cms.patchRecord(item, { status: item.status === "published" ? "archived" : "published" }) }, h(Archive, { size: 15 }), item.status === "published" ? "Archive" : "Publish"), h("button", { type: "button", className: "mini-button danger", onClick: () => cms.deleteRecord(item, item.title || "blog post") }, h(Trash2, { size: 15 }), "Delete"))))));
 }
 
 function normalizeBlogDraft(item = {}) {
-  return { ...item, tagsText: lines(item.tags), imageUrl: item.featuredImage || item.imageUrl || "" };
+  return { ...item, language: item.language || "en", tagsText: lines(item.tags), imageUrl: item.featuredImage || item.imageUrl || "" };
 }
 
 function blogPayload(draft) {
-  return { id: draft.id, title: draft.title, slug: draft.slug || slugify(draft.title), excerpt: draft.excerpt, content: draft.content, category: draft.category || "Guide", tags: lineList(draft.tagsText), featuredImage: draft.imageUrl, seoTitle: draft.seoTitle, metaDescription: draft.metaDescription, canonicalUrl: draft.canonicalUrl, status: draft.status || "draft", publishedAt: draft.publishedAt };
+  return { id: draft.id, title: draft.title, slug: draft.slug || slugify(draft.title), language: draft.language || "en", excerpt: draft.excerpt, content: draft.content, category: draft.category || "Guide", tags: lineList(draft.tagsText), featuredImage: draft.imageUrl, seoTitle: draft.seoTitle, metaDescription: draft.metaDescription, canonicalUrl: draft.canonicalUrl, status: draft.status || "draft", publishedAt: draft.publishedAt };
 }
 
 function BlogEditor({ draft, setDraft, onSave, onCancel }) {
@@ -1190,12 +1653,32 @@ function BlogEditor({ draft, setDraft, onSave, onCancel }) {
     event.preventDefault();
     onSave(draft);
   };
-  return h("form", { className: "cms-editor", onSubmit: submit }, h("h2", null, itemId(draft) ? "Edit Blog Post" : "Create Blog Post"), h("div", { className: "cms-form-grid" }, h(TextInput, { label: "Title", value: draft.title, onChange: (value) => setDraft((current) => ({ ...current, title: value, slug: current.slug || slugify(value) })) }), h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", slugify(value)) }), h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }), h(TextInput, { label: "Category", value: draft.category, onChange: (value) => set("category", value) }), h(TextInput, { label: "Published date", value: draft.publishedAt, onChange: (value) => set("publishedAt", value), type: "date" }), h(TextInput, { label: "Featured image URL", value: draft.imageUrl, onChange: (value) => set("imageUrl", value), className: "full" }), h(TextArea, { label: "Excerpt", value: draft.excerpt, onChange: (value) => set("excerpt", value), className: "full" }), h(TextArea, { label: "Content", value: draft.content, onChange: (value) => set("content", value), className: "full" }), h(TextArea, { label: "Tags", value: draft.tagsText, onChange: (value) => set("tagsText", value) }), h(TextInput, { label: "Canonical URL", value: draft.canonicalUrl, onChange: (value) => set("canonicalUrl", value) }), h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }), h(TextArea, { label: "Meta description", value: draft.metaDescription, onChange: (value) => set("metaDescription", value), className: "full" })), h(FormActions, { onCancel }));
+  return h("form", { className: "cms-editor", onSubmit: submit },
+    h("h2", null, itemId(draft) ? "Edit Blog Post" : "Create Blog Post"),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "Title", value: draft.title, onChange: (value) => setDraft((current) => ({ ...current, title: value, slug: current.slug || slugify(value) })) }),
+      h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", slugify(value)) }),
+      h(SelectInput, { label: "Language", value: draft.language, onChange: (value) => set("language", value), options: ["en", "bn"] }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(TextInput, { label: "Category", value: draft.category, onChange: (value) => set("category", value) }),
+      h(TextInput, { label: "Published date", value: draft.publishedAt, onChange: (value) => set("publishedAt", value), type: "date" }),
+      h(ImageField, { label: "Featured image", value: draft.imageUrl, onChange: (value) => set("imageUrl", value), className: "full", folder: "abroadways/blogs" }),
+      h(TextArea, { label: "Excerpt", value: draft.excerpt, onChange: (value) => set("excerpt", value), className: "full" }),
+      h(TextArea, { label: "Content", value: draft.content, onChange: (value) => set("content", value), className: "full" }),
+      h(TextArea, { label: "Tags", value: draft.tagsText, onChange: (value) => set("tagsText", value) }),
+      h(TextInput, { label: "Canonical URL", value: draft.canonicalUrl, onChange: (value) => set("canonicalUrl", value) }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "Meta description", value: draft.metaDescription, onChange: (value) => set("metaDescription", value), className: "full" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
 }
 
 function MediaManager() {
   const cms = useAdminCollection("media");
   const [draft, setDraft] = useState({ title: "", url: "", altText: "", publicId: "" });
+  const [editing, setEditing] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
   const submit = async (event) => {
     event.preventDefault();
@@ -1206,7 +1689,58 @@ function MediaManager() {
     await navigator.clipboard?.writeText(url).catch(() => null);
     cms.setMessage("Image URL copied.");
   };
-  return h("section", null, h(CmsHeader, { title: "Media Library", copy: "Add reusable images by URL and copy them into page, country, and blog editors." }), h(renderAlerts, { ...cms }), h("div", { className: "notice-card" }, "Upload provider is not configured. URL-based image management is active."), h("form", { className: "cms-editor", onSubmit: submit }, h("h2", null, "Add Image by URL"), h("div", { className: "cms-form-grid" }, h(TextInput, { label: "Image title", value: draft.title, onChange: (value) => set("title", value) }), h(TextInput, { label: "Public ID", value: draft.publicId, onChange: (value) => set("publicId", value) }), h(TextInput, { label: "Image URL", value: draft.url, onChange: (value) => set("url", value), className: "full" }), h(TextInput, { label: "Alt text", value: draft.altText, onChange: (value) => set("altText", value), className: "full" })), h("button", { className: "button button-primary", type: "submit" }, h(Plus, { size: 18 }), "Add Image")), h("div", { className: "media-grid" }, cms.items.map((item) => h("article", { key: itemId(item) || item.url, className: "media-card" }, h("img", { src: item.url, alt: item.altText || item.title || "CMS media" }), h("div", { className: "media-card-body" }, h("strong", null, item.title || item.publicId || "Image"), h("span", null, item.altText || "No alt text"), h("div", { className: "cms-row-actions" }, h("button", { type: "button", className: "mini-button", onClick: () => copyUrl(item.url) }, h(Copy, { size: 15 }), "Copy URL"), h("button", { type: "button", className: "mini-button danger", onClick: () => cms.deleteRecord(item, item.title || "media item") }, h(Trash2, { size: 15 }), "Delete")))))));
+  const saveEdit = async (event) => {
+    event.preventDefault();
+    const saved = await cms.saveRecord(editing, { title: editing.title, url: editing.url, publicId: editing.publicId, altText: editing.altText, uploadedBy: editing.uploadedBy || "admin" });
+    setEditing(null);
+    return saved;
+  };
+  return h("section", null,
+    h(CmsHeader, { title: "Media Library", copy: "Upload images to Cloudinary, add image URLs, preview, copy URLs, edit alt text, and delete media items." }),
+    h(renderAlerts, { ...cms }),
+    h(MediaUploadPanel, { title: "Upload Image to Cloudinary", onUploaded: (item) => {
+      cms.setMessage("Image uploaded successfully.");
+      setPreviewUrl(mediaUrl(item));
+      cms.refresh();
+    } }),
+    previewUrl && h("div", { className: "upload-preview-card" }, h("img", { src: previewUrl, alt: "Latest upload preview" }), h("button", { type: "button", className: "mini-button", onClick: () => copyUrl(previewUrl) }, h(Copy, { size: 15 }), "Copy URL")),
+    h("form", { className: "cms-editor", onSubmit: submit },
+      h("h2", null, "Add Image by URL"),
+      h("div", { className: "cms-form-grid" },
+        h(TextInput, { label: "Image title", value: draft.title, onChange: (value) => set("title", value) }),
+        h(TextInput, { label: "Public ID", value: draft.publicId, onChange: (value) => set("publicId", value) }),
+        h(TextInput, { label: "Image URL", value: draft.url, onChange: (value) => set("url", value), className: "full" }),
+        h(TextInput, { label: "Alt text", value: draft.altText, onChange: (value) => set("altText", value), className: "full" }),
+      ),
+      h("button", { className: "button button-primary", type: "submit" }, h(Plus, { size: 18 }), "Add Image"),
+    ),
+    editing && h("form", { className: "cms-editor", onSubmit: saveEdit },
+      h("h2", null, "Edit Media"),
+      h("div", { className: "cms-form-grid" },
+        h(TextInput, { label: "Image title", value: editing.title, onChange: (value) => setEditing((current) => ({ ...current, title: value })) }),
+        h(TextInput, { label: "Public ID", value: editing.publicId, onChange: (value) => setEditing((current) => ({ ...current, publicId: value })) }),
+        h(TextInput, { label: "Image URL", value: mediaUrl(editing), onChange: (value) => setEditing((current) => ({ ...current, url: value })), className: "full" }),
+        h(TextInput, { label: "Alt text", value: editing.altText, onChange: (value) => setEditing((current) => ({ ...current, altText: value })), className: "full" }),
+      ),
+      h(FormActions, { onCancel: () => setEditing(null) }),
+    ),
+    h("div", { className: "media-grid" }, cms.items.map((item) => {
+      const url = mediaUrl(item);
+      return h("article", { key: itemId(item) || url, className: "media-card" },
+        h("img", { src: url, alt: item.altText || item.title || "CMS media" }),
+        h("div", { className: "media-card-body" },
+          h("strong", null, item.title || item.publicId || "Image"),
+          h("span", null, item.altText || "No alt text"),
+          item.provider && h("span", null, `Provider: ${item.provider}`),
+          h("div", { className: "cms-row-actions" },
+            h("button", { type: "button", className: "mini-button", onClick: () => setEditing(item) }, h(Edit3, { size: 15 }), "Edit"),
+            h("button", { type: "button", className: "mini-button", onClick: () => copyUrl(url) }, h(Copy, { size: 15 }), "Copy URL"),
+            h("button", { type: "button", className: "mini-button danger", onClick: () => cms.deleteRecord(item, item.title || "media item") }, h(Trash2, { size: 15 }), "Delete"),
+          ),
+        ),
+      );
+    })),
+  );
 }
 
 function SettingsManager() {
@@ -1222,18 +1756,100 @@ function SettingsManager() {
     const saved = await cms.saveRecord(draft, settingsPayload(draft));
     setDraft(normalizeSettingsDraft(saved));
   };
-  return h("section", null, h(CmsHeader, { title: "Site Settings", copy: "Keep brand, contact, social, and default SEO details correct." }), h(renderAlerts, { ...cms }), draft ? h("form", { className: "cms-editor", onSubmit: submit }, h("h2", null, "Global Settings"), h("div", { className: "cms-form-grid" }, h(TextInput, { label: "Site name", value: draft.siteName, onChange: (value) => set("siteName", value) }), h(TextInput, { label: "Navbar logo URL", value: draft.siteLogoUrl, onChange: (value) => set("siteLogoUrl", value) }), h(TextInput, { label: "Footer logo URL", value: draft.footerLogoUrl, onChange: (value) => set("footerLogoUrl", value) }), h(TextInput, { label: "Favicon URL", value: draft.faviconUrl, onChange: (value) => set("faviconUrl", value) }), h(TextInput, { label: "Primary contact address", value: draft.address, onChange: (value) => set("address", value), className: "full" }), h(TextArea, { label: "Phone numbers", value: draft.phonesText, onChange: (value) => set("phonesText", value) }), h(TextInput, { label: "Email, if used", value: draft.email, onChange: (value) => set("email", value) }), h(TextInput, { label: "Facebook link", value: draft.facebook, onChange: (value) => set("facebook", value) }), h(TextInput, { label: "Instagram link", value: draft.instagram, onChange: (value) => set("instagram", value) }), h(TextInput, { label: "Default SEO title", value: draft.defaultSeoTitle, onChange: (value) => set("defaultSeoTitle", value), className: "full" }), h(TextArea, { label: "Default SEO description", value: draft.defaultSeoDescription, onChange: (value) => set("defaultSeoDescription", value), className: "full" }), h(TextInput, { label: "Default OG image", value: draft.defaultOgImage, onChange: (value) => set("defaultOgImage", value), className: "full" })), h("button", { className: "button button-primary", type: "submit" }, h(Save, { size: 18 }), "Save Settings")) : h("div", { className: "notice-card" }, "Loading settings..."));
+  return h("section", null,
+    h(CmsHeader, { title: "Site Settings", copy: "Edit public logo, tagline, brand colors, contact, social, and default SEO details." }),
+    h(renderAlerts, { ...cms }),
+    draft ? h("form", { className: "cms-editor", onSubmit: submit },
+      h("h2", null, "Global Settings"),
+      h("div", { className: "cms-form-grid" },
+        h(TextInput, { label: "Site name", value: draft.siteName, onChange: (value) => set("siteName", value) }),
+        h("div", { className: "cms-section-title full" }, h("h3", null, "Branding"), h("p", null, "Edit navbar and footer logo, alt text, tagline, and footer description.")),
+        h(ImageField, { label: "Navbar Logo URL", value: draft.navbarLogoUrl, onChange: (value) => set("navbarLogoUrl", value), className: "full", folder: "abroadways/branding" }),
+        h(TextInput, { label: "Navbar Logo Alt Text", value: draft.navbarLogoAlt, onChange: (value) => set("navbarLogoAlt", value), className: "full" }),
+        h(TextInput, { label: "Navbar Tagline / small text", value: draft.navbarTagline, onChange: (value) => set("navbarTagline", value), className: "full" }),
+        h(ImageField, { label: "Footer Logo URL", value: draft.footerLogoUrl, onChange: (value) => set("footerLogoUrl", value), className: "full", folder: "abroadways/branding" }),
+        h(TextInput, { label: "Footer Logo Alt Text", value: draft.footerLogoAlt, onChange: (value) => set("footerLogoAlt", value), className: "full" }),
+        h(TextInput, { label: "Footer Tagline", value: draft.footerTagline, onChange: (value) => set("footerTagline", value), className: "full" }),
+        h(TextArea, { label: "Footer Description", value: draft.footerDescription, onChange: (value) => set("footerDescription", value), className: "full" }),
+        h("div", { className: "cms-section-title full" }, h("h3", null, "Site Identity and SEO"), h("p", null, "Optional favicon, colors, contact details, social links, and default SEO metadata.")),
+        h(ImageField, { label: "Favicon Upload", value: draft.faviconUrl, onChange: (value) => set("faviconUrl", value), className: "full", folder: "abroadways/branding" }),
+        h(TextInput, { label: "Primary color", value: draft.primaryColor, onChange: (value) => set("primaryColor", value), placeholder: "#1877f2" }),
+        h(TextInput, { label: "Accent color", value: draft.accentColor, onChange: (value) => set("accentColor", value), placeholder: "#f8c84e" }),
+        h(TextInput, { label: "Primary contact address", value: draft.address, onChange: (value) => set("address", value), className: "full" }),
+        h(TextArea, { label: "Phone numbers", value: draft.phonesText, onChange: (value) => set("phonesText", value) }),
+        h(TextInput, { label: "Email, if used", value: draft.email, onChange: (value) => set("email", value) }),
+        h(TextInput, { label: "Facebook URL", value: draft.facebook, onChange: (value) => set("facebook", value) }),
+        h(TextInput, { label: "Instagram URL", value: draft.instagram, onChange: (value) => set("instagram", value) }),
+        h(TextInput, { label: "LinkedIn URL", value: draft.linkedin, onChange: (value) => set("linkedin", value) }),
+        h(TextInput, { label: "YouTube URL", value: draft.youtube, onChange: (value) => set("youtube", value) }),
+        h(TextInput, { label: "WhatsApp number", value: draft.whatsappNumber, onChange: (value) => set("whatsappNumber", value) }),
+        h(TextInput, { label: "Default SEO title", value: draft.defaultSeoTitle, onChange: (value) => set("defaultSeoTitle", value), className: "full" }),
+        h(TextArea, { label: "Default SEO description", value: draft.defaultSeoDescription, onChange: (value) => set("defaultSeoDescription", value), className: "full" }),
+        h(ImageField, { label: "Default OG image", value: draft.defaultOgImage, onChange: (value) => set("defaultOgImage", value), className: "full", folder: "abroadways/seo" }),
+      ),
+      h("button", { className: "button button-primary", type: "submit" }, h(Save, { size: 18 }), "Save Settings"),
+    ) : h("div", { className: "notice-card" }, "Loading settings..."),
+  );
 }
 
 function normalizeSettingsDraft(item = {}) {
   const contact = item.contactInfo || {};
   const social = item.socialLinks || {};
-  return { ...item, siteName: item.siteName || "Abroadways", address: contact.address || contactInfo.address, phonesText: lines(contact.phones || contactInfo.phones), email: contact.email || item.email || "", facebook: social.facebook || item.facebook || contactInfo.facebook, instagram: social.instagram || item.instagram || contactInfo.instagram, defaultSeoTitle: item.defaultSeoTitle || "Abroadways | Study Abroad with Confidence", defaultSeoDescription: item.defaultSeoDescription || "Study abroad counselling for New Zealand, United Kingdom, Australia, Canada, and Malaysia.", defaultOgImage: item.defaultOgImage || item.ogImage || "/images/abroadways-hero-campus.png" };
+  const defaultTagline = "Your pathway to global education";
+  return {
+    ...item,
+    siteName: item.siteName || "Abroadways",
+    navbarLogoUrl: item.navbarLogoUrl || item.siteLogoUrl || "/images/abroadways-navbar-logo-320x90.png",
+    navbarLogoAlt: item.navbarLogoAlt || "Abroadways logo",
+    navbarTagline: item.navbarTagline || item.logoCaption || item.logoTagline || defaultTagline,
+    logoCaption: item.logoCaption || item.navbarTagline || item.logoTagline || defaultTagline,
+    footerLogoUrl: item.footerLogoUrl || item.navbarLogoUrl || item.siteLogoUrl || "/images/abroadways-navbar-logo-320x90.png",
+    footerLogoAlt: item.footerLogoAlt || "Abroadways logo",
+    footerTagline: item.footerTagline || item.navbarTagline || item.logoCaption || defaultTagline,
+    footerDescription: item.footerDescription || "Premium study abroad counselling for New Zealand, United Kingdom, Australia, Canada, and Malaysia.",
+    faviconUrl: item.faviconUrl || "",
+    primaryColor: item.primaryColor || "#1877f2",
+    accentColor: item.accentColor || "#f8c84e",
+    address: contact.address || contactInfo.address,
+    phonesText: lines(contact.phones || contactInfo.phones),
+    email: contact.email || item.email || "",
+    facebook: social.facebook || item.facebook || contactInfo.facebook,
+    instagram: social.instagram || item.instagram || contactInfo.instagram,
+    linkedin: social.linkedin || item.linkedin || "",
+    youtube: social.youtube || item.youtube || "",
+    whatsappNumber: item.whatsappNumber || contact.whatsappNumber || contactInfo.whatsappNumber,
+    defaultSeoTitle: item.defaultSeoTitle || "Abroadways | Study Abroad with Confidence",
+    defaultSeoDescription: item.defaultSeoDescription || "Study abroad counselling for New Zealand, United Kingdom, Australia, Canada, and Malaysia.",
+    defaultOgImage: item.defaultOgImage || item.ogImage || "/images/abroadways-hero-campus.png",
+  };
 }
 
 function settingsPayload(draft) {
   const phones = lineList(draft.phonesText);
-  return { id: draft.id || "site", siteName: draft.siteName, siteLogoUrl: draft.siteLogoUrl, footerLogoUrl: draft.footerLogoUrl, faviconUrl: draft.faviconUrl, contactInfo: { address: draft.address || contactInfo.address, phones: phones.length ? phones : contactInfo.phones, email: draft.email }, socialLinks: { facebook: draft.facebook || contactInfo.facebook, instagram: draft.instagram || contactInfo.instagram }, defaultSeoTitle: draft.defaultSeoTitle, defaultSeoDescription: draft.defaultSeoDescription, defaultOgImage: draft.defaultOgImage, status: "published" };
+  return {
+    id: draft.id || "site",
+    siteName: draft.siteName,
+    navbarLogoUrl: draft.navbarLogoUrl,
+    navbarLogoAlt: draft.navbarLogoAlt,
+    navbarTagline: draft.navbarTagline,
+    logoCaption: draft.navbarTagline,
+    logoTagline: draft.navbarTagline,
+    siteLogoUrl: draft.navbarLogoUrl,
+    footerLogoUrl: draft.footerLogoUrl,
+    footerLogoAlt: draft.footerLogoAlt,
+    footerTagline: draft.footerTagline,
+    footerDescription: draft.footerDescription,
+    faviconUrl: draft.faviconUrl,
+    primaryColor: draft.primaryColor,
+    accentColor: draft.accentColor,
+    contactInfo: { address: draft.address || contactInfo.address, phones: phones.length ? phones : contactInfo.phones, email: draft.email, whatsappNumber: draft.whatsappNumber },
+    socialLinks: { facebook: draft.facebook || contactInfo.facebook, instagram: draft.instagram || contactInfo.instagram, linkedin: draft.linkedin, youtube: draft.youtube },
+    whatsappNumber: draft.whatsappNumber,
+    defaultSeoTitle: draft.defaultSeoTitle,
+    defaultSeoDescription: draft.defaultSeoDescription,
+    defaultOgImage: draft.defaultOgImage,
+    status: "published",
+  };
 }
 
 function LeadManagerPro() {
@@ -1268,7 +1884,8 @@ function LeadManager() {
 }
 
 function slugify(value) {
-  return String(value || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const slug = String(value || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return slug || `post-${Date.now()}`;
 }
 
 function NotFoundPage() {
@@ -1276,7 +1893,20 @@ function NotFoundPage() {
 }
 
 function FooterPro({ items = destinations, settings = contactInfo }) {
-  return h("footer", { className: "footer footer-pro" }, h("div", { className: "container footer-grid" }, h("div", { className: "footer-intro" }, h("div", { className: "footer-brand" }, h("span", { className: "brand-mark" }, "A"), h("span", null, "Abroadways")), h("p", null, "Premium study abroad counselling for New Zealand, the United Kingdom, Australia, Canada, and Malaysia."), h(ButtonLink, { href: routes.planner, variant: "light" }, "Book Free Consultation")), h("div", null, h("h3", null, "Destinations"), items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}` }, destination.name))), h("div", null, h("h3", null, "Explore"), h(Link, { href: routes.services }, "Services"), h(Link, { href: routes.planner }, "Pathway Planner"), h(Link, { href: routes.blog }, "Blog"), h(Link, { href: routes.about }, "About Us")), h("div", null, h("h3", null, "Contact"), h("p", null, settings.address), settings.phones.map((phone) => h("a", { key: phone, href: `tel:${phone}` }, phone)), h("a", { href: settings.facebook, target: "_blank", rel: "noreferrer" }, "Facebook"), h("a", { href: settings.instagram, target: "_blank", rel: "noreferrer" }, "Instagram"))), h("div", { className: "footer-bottom container" }, `Copyright ${new Date().getFullYear()} Abroadways Limited. All rights reserved.`));
+  return h("footer", { className: "footer footer-pro scholars-footer" },
+    h("div", { className: "container footer-newsletter" }, h(BrandLogo, { settings, footer: true }), h("div", { className: "footer-social-wrap" }, h(SocialDots, { settings }))),
+    h("div", { className: "container footer-grid" },
+      h("div", { className: "footer-intro" },
+        settings.footerTagline && h("strong", { className: "footer-tagline" }, settings.footerTagline),
+        h("p", null, settings.footerDescription || "Premium study abroad counselling for New Zealand, United Kingdom, Australia, Canada, and Malaysia."),
+        h(ButtonLink, { href: routes.planner, variant: "primary" }, "Book Free Consultation"),
+      ),
+      h("div", null, h("h3", null, "Destinations"), items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}` }, destination.name))),
+      h("div", null, h("h3", null, "Explore"), h(Link, { href: routes.services }, "Services"), h(Link, { href: routes.planner }, "Pathway Planner"), h(Link, { href: routes.blog }, "Blog"), h(Link, { href: routes.about }, "About Us")),
+      h("div", null, h("h3", null, "Contact"), h("p", null, settings.address), settings.phones.map((phone) => h("a", { key: phone, href: `tel:${phone}` }, phone)), settings.email && h("a", { href: `mailto:${settings.email}` }, settings.email), h("a", { href: settings.facebook, target: "_blank", rel: "noreferrer" }, "Facebook"), h("a", { href: settings.instagram, target: "_blank", rel: "noreferrer" }, "Instagram")),
+    ),
+    h("div", { className: "footer-bottom container" }, `Copyright ${new Date().getFullYear()} Abroadways Limited. All rights reserved.`),
+  );
 }
 
 function Footer({ items = destinations, settings = contactInfo }) {
@@ -1289,6 +1919,20 @@ function App() {
   const destinationItems = mergeDestinations(cms.countries);
   const blogItems = mergeBlogs(cms.blogs);
   const settings = mergeSettings(cms.settings);
+  React.useEffect(() => {
+    document.documentElement.style.setProperty("--blue", settings.primaryColor || "#1877f2");
+    document.documentElement.style.setProperty("--royal", settings.primaryColor || "#1877f2");
+    document.documentElement.style.setProperty("--gold", settings.accentColor || "#f8c84e");
+    if (settings.faviconUrl) {
+      let icon = document.querySelector('link[rel="icon"]');
+      if (!icon) {
+        icon = document.createElement("link");
+        icon.rel = "icon";
+        document.head.appendChild(icon);
+      }
+      icon.href = settings.faviconUrl;
+    }
+  }, [settings.primaryColor, settings.accentColor, settings.faviconUrl]);
   React.useEffect(() => {
     const syncPath = () => setPath(window.location.pathname);
     window.addEventListener("popstate", syncPath);
@@ -1308,7 +1952,7 @@ function App() {
     if (path === routes.blog) return h(BlogPage, { blogs: blogItems });
     if (path.startsWith(`${routes.blog}/`)) {
       const post = blogItems.find((item) => path === `${routes.blog}/${item.slug}`);
-      return post ? h(BlogDetailPage, { post }) : h(NotFoundPage);
+      return post ? h(BlogDetailPage, { post, blogs: blogItems }) : h(NotFoundPage);
     }
     if (path === routes.about) return h(AboutPage, { cms });
     if (path === routes.contact) return h(ContactPage, { cms, settings });
@@ -1318,7 +1962,7 @@ function App() {
   }, [path, cms, destinationItems, blogItems, settings]);
 
   const isAdminSurface = path.startsWith("/dashboard") || path === routes.login;
-  return h(React.Fragment, null, !isAdminSurface && h(Navbar, { items: destinationItems }), h("main", null, page), !isAdminSurface && h(FooterPro, { items: destinationItems, settings }));
+  return h(React.Fragment, null, !isAdminSurface && h(Navbar, { items: destinationItems, settings }), h("main", null, page), !isAdminSurface && h(FooterPro, { items: destinationItems, settings }));
 }
 
 createRoot(document.getElementById("root")).render(h(App));

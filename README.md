@@ -49,6 +49,16 @@ When `MONGODB_URI` is missing, the backend falls back to the local JSON developm
 
 On first MongoDB startup, the backend creates the CMS collections and seeds the homepage, the five Abroadways country pages, and site settings.
 
+Media uploads use Cloudinary when these environment variables are configured:
+
+```bash
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+```
+
+Do not commit real Cloudinary secrets. Add them to `.env` locally and to Render environment variables for production.
+
 ## Deployment
 
 The frontend build is Vercel-ready through `vercel.json`. The full-stack Node server can be deployed to Render or another Node host with `node server/index.mjs`.

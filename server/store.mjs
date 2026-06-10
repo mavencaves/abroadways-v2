@@ -115,6 +115,16 @@ export async function list(collection) {
   return data[collection] || [];
 }
 
+export async function get(collection, id) {
+  assertCollection(collection);
+  const db = await getMongoDb();
+  if (db) {
+    return normalizeDocument(await db.collection(collection).findOne(mongoIdFilter(id)));
+  }
+  const data = await readLocal();
+  return (data[collection] || []).find((item) => item.id === id || item._id === id) || null;
+}
+
 export async function create(collection, item) {
   assertCollection(collection);
   const db = await getMongoDb();
