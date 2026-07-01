@@ -268,8 +268,9 @@ async function handleMediaUpload(request, response) {
     send(response, 400, { error: validationError });
     return;
   }
+  const folder = payload.folder || "abroadways/media";
   const upload = await cloudinary.uploader.upload(payload.dataUrl, {
-    folder: payload.folder || "abroadways/media",
+    folder,
     resource_type: "image",
     use_filename: true,
     unique_filename: true,
@@ -285,11 +286,13 @@ async function handleMediaUpload(request, response) {
     cloudinaryPublicId: upload.public_id,
     provider: "cloudinary",
     altText: payload.altText || title,
+    folder,
     format: upload.format,
     width: upload.width,
     height: upload.height,
     bytes: upload.bytes,
     uploadedBy: admin.email,
+    uploadedAt: new Date().toISOString(),
     status: "published",
   });
   send(response, 201, { item });
