@@ -95,13 +95,60 @@ async function backfillHomeSections() {
   const currentSections = Array.isArray(home.bodySections) ? home.bodySections : [];
   const currentKeys = new Set(currentSections.map((section) => section?.type || section?.key).filter(Boolean));
   const missing = seedHome.bodySections.filter((section) => !currentKeys.has(section.type) && !currentKeys.has(section.key));
-  if (!missing.length) return;
+  const upgradedHome = upgradeHomeDefaults(home, seedHome);
+  if (!missing.length && !upgradedHome.changed) return;
   const lastOrder = currentSections.reduce((max, section) => Math.max(max, Number(section?.order || 0)), 0);
   const additions = missing.map((section, index) => ({ ...section, order: lastOrder + index + 1 }));
   await mongoDb.collection("pages").updateOne(
     { _id: home._id },
-    { $set: { bodySections: [...currentSections, ...additions], updatedAt: new Date().toISOString() } },
+    { $set: { ...upgradedHome.patch, bodySections: [...upgradedHome.sections, ...additions], updatedAt: new Date().toISOString() } },
   );
+}
+
+function upgradeHomeDefaults(home, seedHome) {
+  const seedSections = new Map();
+  for (const section of seedHome.bodySections) {
+    if (section.key) seedSections.set(section.key, section);
+    if (section.type) seedSections.set(section.type, section);
+  }
+  const patch = {};
+  if (home.heroHeading === "Plan Your Study Abroad Journey with Abroadways") patch.heroHeading = seedHome.heroHeading;
+  const sections = (Array.isArray(home.bodySections) ? home.bodySections : []).map((section) => {
+    const key = section?.key || section?.type;
+    const seedSection = seedSections.get(key);
+    if (!seedSection) return section;
+    const next = { ...section };
+    if (key === "hero" && next.heading === "Plan Your Study Abroad Journey with Abroadways") next.heading = seedSection.heading;
+    if (key === "feature-cards" || key === "featureCards") {
+      next.cards = upgradeFeatureCardDefaults(next.cards, seedSection.cards);
+    }
+    if ((key === "success-stories" || key === "successStories") && (next.heading === "Our Student Journeys" || next.title === "Our Student Journeys")) {
+      if (next.heading === "Our Student Journeys") next.heading = seedSection.heading;
+      if (next.title === "Our Student Journeys") next.title = seedSection.title;
+    }
+    if (key === "resource-tiles" || key === "resourceTiles") {
+      const titles = Array.isArray(next.items) ? next.items.map((item) => item?.title).join("|") : "";
+      if (titles === "Free Guides|University Map|Success Stories|Prospectus|Our Blog") next.items = seedSection.items;
+    }
+    return next;
+  });
+  const changed = Object.keys(patch).length > 0 || JSON.stringify(sections) !== JSON.stringify(home.bodySections || []);
+  return { changed, patch, sections };
+}
+
+function upgradeFeatureCardDefaults(cards = [], seedCards = []) {
+  if (!Array.isArray(cards)) return cards;
+  return cards.map((card, index) => {
+    const seedCard = seedCards[index];
+    if (!seedCard) return card;
+    if (index === 0 && card?.title === "Choose the Right Study Destination" && card?.eyebrow === "Bangladeshi Students") {
+      return { ...card, ...seedCard };
+    }
+    if (index === 1 && card?.title === "How Abroadways Guides You") {
+      return { ...card, ...seedCard };
+    }
+    return card;
+  });
 }
 
 function stampSeed(item) {
