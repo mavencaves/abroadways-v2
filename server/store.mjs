@@ -55,6 +55,7 @@ async function seedMongoIfNeeded() {
       { upsert: true },
     );
   }
+  await backfillHomeSections();
 
   for (const country of seedData.countries) {
     await mongoDb.collection("countries").updateOne(
@@ -84,6 +85,23 @@ async function seedMongoIfNeeded() {
   if (settings && (await mongoDb.collection("settings").countDocuments({ id: settings.id || "site" })) === 0) {
     await mongoDb.collection("settings").insertOne(stampSeed(settings));
   }
+}
+
+async function backfillHomeSections() {
+  const seedHome = seedData.pages.find((page) => page.routeKey === "home");
+  if (!seedHome?.bodySections?.length) return;
+  const home = await mongoDb.collection("pages").findOne({ $or: [{ routeKey: "home" }, { slug: "/" }, { id: "home" }] });
+  if (!home) return;
+  const currentSections = Array.isArray(home.bodySections) ? home.bodySections : [];
+  const currentKeys = new Set(currentSections.map((section) => section?.type || section?.key).filter(Boolean));
+  const missing = seedHome.bodySections.filter((section) => !currentKeys.has(section.type) && !currentKeys.has(section.key));
+  if (!missing.length) return;
+  const lastOrder = currentSections.reduce((max, section) => Math.max(max, Number(section?.order || 0)), 0);
+  const additions = missing.map((section, index) => ({ ...section, order: lastOrder + index + 1 }));
+  await mongoDb.collection("pages").updateOne(
+    { _id: home._id },
+    { $set: { bodySections: [...currentSections, ...additions], updatedAt: new Date().toISOString() } },
+  );
 }
 
 function stampSeed(item) {
