@@ -888,12 +888,12 @@ function BrandLogo({ settings = contactInfo, footer = false }) {
 
 function SocialDots({ settings = contactInfo }) {
   const socials = [
-    ["Facebook", settings.facebook],
-    ["Instagram", settings.instagram],
-    ["LinkedIn", settings.linkedin],
-    ["YouTube", settings.youtube],
-  ].filter(([, href]) => href);
-  return h("div", { className: "social-dots" }, socials.map(([label, href]) => h("a", { key: label, href, target: "_blank", rel: "noreferrer", "aria-label": label }, label.slice(0, 1))));
+    ["Facebook", "fb", settings.facebook],
+    ["Instagram", "ig", settings.instagram],
+    ["LinkedIn", "in", settings.linkedin],
+    ["YouTube", "yt", settings.youtube],
+  ].filter(([, , href]) => href);
+  return h("div", { className: "social-dots" }, socials.map(([label, short, href]) => h("a", { key: label, href, target: "_blank", rel: "noreferrer", "aria-label": label }, short)));
 }
 
 function Navbar({ items = destinations, settings = contactInfo }) {
