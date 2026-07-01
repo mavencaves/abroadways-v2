@@ -63,17 +63,25 @@ const destinations = [
     chip: "New Zealand",
     slug: "new-zealand",
     image: "/images/destination-new-zealand.png",
-    short: "Calm campuses, practical pathways, and careful visa planning.",
-    overview: "A focused destination for students who want high-quality education, practical support, and a calm study environment.",
-    benefits: ["Student-friendly campuses", "Practical study pathways", "Clear documentation planning"],
+    galleryImages: ["/images/destination-new-zealand.png", "/images/abroadways-destination-planning.png"],
+    heroHeading: "Study in New Zealand from Bangladesh",
+    heroSubtitle: "A calm, practical study destination with supportive campuses and clear planning steps.",
+    short: "Supportive campuses, practical pathways, and careful visa planning.",
+    overview: "New Zealand suits students who want quality education, smaller learning environments, and a focused plan for course, budget, and visa documentation.",
+    benefits: ["Supportive campus culture", "Practical study pathways", "Clear intake planning", "Strong student wellbeing focus"],
     studyAreas: ["Business", "Information Technology", "Health Sciences", "Hospitality", "Engineering"],
-    intakes: "Common intakes include February and July, with selected programmes offering additional starts.",
-    costGuide: "Budget planning should include tuition, living costs, insurance, accommodation, and visa documentation funds.",
-    requirements: ["Academic transcripts", "English readiness", "Statement of purpose", "Financial documents", "Passport"],
-    visaNotes: "Abroadways helps students prepare a consistent file, organise evidence, and understand visa documentation steps.",
+    intakes: "February and July are common intakes. Some institutions offer additional starts depending on programme availability.",
+    costGuide: "Plan for tuition, living costs, insurance, accommodation, travel, and visa documentation funds. Abroadways helps families compare budgets before applying.",
+    requirements: ["Academic transcripts and certificates", "English readiness evidence", "Statement of purpose", "Financial documents", "Valid passport"],
+    visaNotes: "Abroadways helps organise a consistent visa-ready file, review document gaps, and prepare students for each required step.",
+    seoTitle: "Study in New Zealand from Bangladesh | Abroadways",
+    seoDescription: "New Zealand study planning for Bangladeshi students with counselling, university application support, visa guidance, and budget planning.",
+    ogTitle: "Study in New Zealand from Bangladesh | Abroadways",
+    ogDescription: "Plan your New Zealand study pathway with Abroadways Limited.",
     faqs: [
-      ["Can I apply after HSC?", "Yes, suitable pathway options depend on your academic profile and chosen programme."],
-      ["Does Abroadways help with documents?", "Yes, we guide application and visa documentation preparation."],
+      ["Is New Zealand suitable after HSC?", "It can be, depending on academic profile, course level, budget, and institution requirements."],
+      ["When should I start planning?", "Start at least six to nine months before your target intake so applications and documents stay on track."],
+      ["Can Abroadways help compare courses?", "Yes, counselling starts with your profile, subject interest, budget, and preferred intake."],
     ],
   },
   {
@@ -82,17 +90,25 @@ const destinations = [
     slug: "united-kingdom",
     legacySlug: "uk",
     image: "/images/destination-uk.png",
-    short: "Focused applications for globally respected UK study options.",
-    overview: "The United Kingdom offers wide course choice, strong academic reputation, and structured application timelines.",
-    benefits: ["Wide course choice", "Recognised universities", "Strong application timelines"],
+    galleryImages: ["/images/destination-uk.png", "/images/consultation-counsellor.png"],
+    heroHeading: "Study in the United Kingdom from Bangladesh",
+    heroSubtitle: "Plan respected UK study options with focused applications and document guidance.",
+    short: "Respected study options with focused application planning.",
+    overview: "The United Kingdom offers broad course choice, recognised qualifications, and structured application timelines for students who plan early.",
+    benefits: ["Wide course selection", "Recognised academic routes", "Multiple intake options", "Clear application milestones"],
     studyAreas: ["Business", "Computer Science", "Law", "Engineering", "Public Health"],
     intakes: "September is the main intake. January and selected spring intakes are also available at many institutions.",
     costGuide: "Plan for tuition, living expenses, health surcharge, visa fees, accommodation, and initial settlement costs.",
-    requirements: ["Academic documents", "English evidence", "Personal statement", "CAS requirements", "Financial evidence"],
-    visaNotes: "We support students with document organisation, university follow-up, and visa-readiness checks.",
+    requirements: ["Academic documents", "English evidence", "Personal statement", "University offer requirements", "Financial evidence"],
+    visaNotes: "Abroadways supports document organisation, application follow-up, and visa-readiness checks before submission.",
+    seoTitle: "Study in the United Kingdom from Bangladesh | Abroadways",
+    seoDescription: "United Kingdom study planning for Bangladeshi students with counselling, applications, visa guidance, and budget planning.",
+    ogTitle: "Study in the United Kingdom from Bangladesh | Abroadways",
+    ogDescription: "Plan your UK study pathway with Abroadways Limited.",
     faqs: [
-      ["Which intake is best?", "September usually offers the widest choice, but January can work well for many students."],
-      ["Can Abroadways help shortlist universities?", "Yes, we shortlist based on profile, course goals, budget, and intake."],
+      ["Which UK intake offers the most options?", "September usually offers the widest choice, while January works well for many students with later preparation timelines."],
+      ["Can Abroadways help with university shortlisting?", "Yes, we shortlist options based on profile, budget, course goals, and intake."],
+      ["Do I need a personal statement?", "Many UK applications require a strong personal statement or study-focused supporting text."],
     ],
   },
   {
@@ -100,17 +116,25 @@ const destinations = [
     chip: "Australia",
     slug: "australia",
     image: "/images/destination-australia.png",
-    short: "Modern campuses with course planning built around your profile.",
-    overview: "Australia is a popular choice for students seeking modern campuses, diverse programmes, and structured planning.",
-    benefits: ["Modern learning environment", "Diverse programmes", "Profile-led course selection"],
-    studyAreas: ["Business", "IT", "Engineering", "Nursing", "Accounting"],
+    galleryImages: ["/images/destination-australia.png", "/images/abroadways-hero-campus.png"],
+    heroHeading: "Study in Australia from Bangladesh",
+    heroSubtitle: "Modern campuses, strong course options, and profile-led application planning.",
+    short: "Modern campuses with profile-led course planning.",
+    overview: "Australia is a strong choice for students seeking modern learning environments, diverse programmes, and clear course planning.",
+    benefits: ["Modern learning environment", "Diverse programme options", "Profile-led course selection", "Clear document planning"],
+    studyAreas: ["Business", "Information Technology", "Engineering", "Nursing", "Accounting"],
     intakes: "February and July are common intakes. Some institutions also offer trimester or rolling options.",
-    costGuide: "Students should plan tuition, living costs, health cover, travel, accommodation, and visa documentation funds.",
-    requirements: ["Academic transcripts", "English readiness", "Genuine study plan", "Financial documents", "Passport"],
+    costGuide: "Plan tuition, living costs, health cover, travel, accommodation, and visa documentation funds before committing.",
+    requirements: ["Academic transcripts", "English readiness", "Genuine study plan", "Financial documents", "Valid passport"],
     visaNotes: "Abroadways helps students prepare documents, review consistency, and plan the visa preparation timeline.",
+    seoTitle: "Study in Australia from Bangladesh | Abroadways",
+    seoDescription: "Australia study planning for Bangladeshi students with counselling, applications, visa guidance, and budget planning.",
+    ogTitle: "Study in Australia from Bangladesh | Abroadways",
+    ogDescription: "Plan your Australia study pathway with Abroadways Limited.",
     faqs: [
-      ["Do I need a clear study plan?", "Yes, your course choice should connect with your academic background and future goals."],
+      ["Do I need a clear study plan for Australia?", "Yes, your course choice should connect with your academic background and future goals."],
       ["Can I compare budgets?", "Yes, budget guidance is part of the counselling process."],
+      ["When should I begin?", "Begin early enough to compare courses, prepare funds, and complete documents before intake deadlines."],
     ],
   },
   {
@@ -118,17 +142,25 @@ const destinations = [
     chip: "Canada",
     slug: "canada",
     image: "/images/destination-canada.png",
+    galleryImages: ["/images/destination-canada.png", "/images/consultation-counsellor.png"],
+    heroHeading: "Study in Canada from Bangladesh",
+    heroSubtitle: "Structured planning for competitive programmes, budgets, and study documentation.",
     short: "Structured planning for competitive study applications.",
     overview: "Canada requires careful planning around programme fit, budget, documentation, and application timing.",
-    benefits: ["Competitive study options", "Profile-based planning", "Clear document strategy"],
+    benefits: ["Competitive study options", "Profile-based planning", "Clear document strategy", "Practical budget review"],
     studyAreas: ["Business", "Computer Science", "Health", "Engineering", "Applied Sciences"],
     intakes: "Fall is the major intake. Winter and selected spring/summer intakes vary by institution and programme.",
-    costGuide: "Plan tuition, living costs, proof of funds, travel, accommodation, and settlement expenses.",
-    requirements: ["Academic records", "English readiness", "Study plan", "Financial evidence", "Passport"],
-    visaNotes: "We help students organise documents and understand how to present a complete study plan.",
+    costGuide: "Plan tuition, living costs, proof of funds, travel, accommodation, and settlement expenses with a realistic family budget.",
+    requirements: ["Academic records", "English readiness", "Study plan", "Financial evidence", "Valid passport"],
+    visaNotes: "We help students organise documents, understand study plan consistency, and prepare for a complete file.",
+    seoTitle: "Study in Canada from Bangladesh | Abroadways",
+    seoDescription: "Canada study planning for Bangladeshi students with counselling, applications, visa guidance, and budget planning.",
+    ogTitle: "Study in Canada from Bangladesh | Abroadways",
+    ogDescription: "Plan your Canada study pathway with Abroadways Limited.",
     faqs: [
       ["Is Canada competitive?", "Yes, strong planning and document consistency matter."],
       ["Does Abroadways support scholarship guidance?", "Yes, we help identify realistic budget and scholarship possibilities."],
+      ["Can I apply without a final shortlist?", "You should shortlist carefully first so your applications match your profile and budget."],
     ],
   },
   {
@@ -136,79 +168,129 @@ const destinations = [
     chip: "Malaysia",
     slug: "malaysia",
     image: "/images/destination-malaysia.png",
+    galleryImages: ["/images/destination-malaysia.png", "/images/abroadways-destination-planning.png"],
+    heroHeading: "Study in Malaysia from Bangladesh",
+    heroSubtitle: "Accessible international study options with practical application and visa guidance.",
     short: "Accessible international education options with clear guidance.",
-    overview: "Malaysia offers accessible study options for students seeking international education close to home.",
-    benefits: ["Accessible destination", "Practical budgets", "Fast planning options"],
-    studyAreas: ["Business", "IT", "Hospitality", "Engineering", "Health Sciences"],
-    intakes: "Multiple intakes are available depending on institution and programme, often with flexible start dates.",
+    overview: "Malaysia offers accessible study options for students seeking international education close to home with flexible planning routes.",
+    benefits: ["Accessible destination", "Practical budgets", "Flexible intake options", "Efficient planning timelines"],
+    studyAreas: ["Business", "Information Technology", "Hospitality", "Engineering", "Health Sciences"],
+    intakes: "Many institutions offer multiple intakes throughout the year, depending on course and seat availability.",
     costGuide: "Plan tuition, living expenses, accommodation, medical insurance, travel, and documentation costs.",
     requirements: ["Academic documents", "Passport", "Application forms", "Financial planning", "Health documentation"],
-    visaNotes: "Abroadways guides students through application and visa documentation preparation.",
+    visaNotes: "Abroadways guides students through application documents and visa preparation steps for Malaysia.",
+    seoTitle: "Study in Malaysia from Bangladesh | Abroadways",
+    seoDescription: "Malaysia study planning for Bangladeshi students with counselling, applications, visa guidance, and budget planning.",
+    ogTitle: "Study in Malaysia from Bangladesh | Abroadways",
+    ogDescription: "Plan your Malaysia study pathway with Abroadways Limited.",
     faqs: [
       ["Is Malaysia budget-friendly?", "It can be accessible compared with many destinations, depending on programme and lifestyle."],
       ["Can I apply quickly?", "Many Malaysian pathways move faster, but documents still need careful preparation."],
+      ["Does Abroadways help with course selection?", "Yes, we compare course, cost, intake, and document requirements before application."],
     ],
   },
 ];
 
 const services = [
-  ["Country & course selection", "Choose a destination and programme that fit your academic profile, goals, and budget.", Compass],
-  ["University application support", "Prepare applications with careful document checks and timeline tracking.", Landmark],
-  ["Scholarship & budget guidance", "Understand tuition, living costs, scholarship possibilities, and realistic financial planning.", Sparkles],
-  ["Visa documentation support", "Get structured guidance on document preparation, presentation, and visa-readiness.", FileCheck2],
-  ["Pre-departure guidance", "Prepare for travel, arrival, accommodation, and the first few weeks abroad.", Plane],
+  ["Country & course selection", "Shortlist destinations and courses that fit your profile, budget, goals, and intake timeline.", Compass],
+  ["University application support", "Prepare applications with careful document checks, deadline tracking, and follow-up guidance.", Landmark],
+  ["Scholarship & budget guidance", "Understand tuition, living costs, scholarship possibilities, and realistic family budgeting.", Sparkles],
+  ["Visa documentation support", "Organise a consistent, complete, and visa-ready file with practical document guidance.", FileCheck2],
+  ["Pre-departure guidance", "Prepare for travel, arrival, accommodation, and the first weeks in your new study destination.", Plane],
 ];
 
 const process = [
-  ["Profile Review", "We review your academic background, English readiness, budget, and preferred destinations."],
-  ["Country Strategy", "You receive a clear country, course, intake, and application plan."],
-  ["Application Support", "We support applications, documents, statements, and university follow-ups."],
-  ["Visa Preparation", "We help organise a complete, consistent, and visa-ready file."],
-  ["Pre-Departure", "You prepare for travel, arrival, accommodation, and the first days abroad."],
+  ["Profile Review", "We review your academics, English readiness, budget, goals, and preferred destinations."],
+  ["Country Strategy", "You receive a focused country, course, intake, and budget plan."],
+  ["Application Support", "We support applications, statements, documents, and university follow-ups."],
+  ["Visa Preparation", "We help organise a consistent, complete, and visa-ready file."],
+  ["Pre-Departure", "You prepare for travel, arrival, accommodation, and early settlement."],
 ];
 
 const blogPosts = [
   {
-    title: "How to Choose the Right Study Abroad Destination",
-    slug: "choose-right-study-abroad-destination",
+    title: "Study in New Zealand from Bangladesh",
+    slug: "study-in-new-zealand-from-bangladesh",
     language: "en",
-    excerpt: "A practical guide for Bangladeshi students comparing country fit, budget, course goals, and documentation.",
-    category: "Planning",
-    tags: ["study abroad", "counselling"],
-    image: "/images/abroadways-destination-planning.png",
-    publishedAt: "2026-06-01",
+    excerpt: "A focused planning guide for Bangladeshi students considering New Zealand for higher study.",
+    category: "New Zealand",
+    tags: ["New Zealand", "study abroad", "Bangladesh"],
+    image: "/images/destination-new-zealand.png",
+    publishedAt: "2026-07-01",
+    seoTitle: "Study in New Zealand from Bangladesh | Abroadways",
+    metaDescription: "Plan study in New Zealand from Bangladesh with guidance on courses, intakes, budget, requirements, and visa documentation.",
     content: [
-      "Choosing a destination should begin with your academic background, preferred subject area, budget range, and long-term goals.",
-      "A strong plan compares country fit, course quality, application timeline, documentation readiness, and family budget.",
-      "Abroadways helps students turn broad interest into a focused shortlist for New Zealand, the United Kingdom, Australia, Canada, and Malaysia.",
+      "New Zealand can be a strong fit for students who want supportive campuses, practical learning, and a calmer study environment.",
+      "Start by reviewing your academic profile, preferred subject, budget, and intake timeline. Common intakes include February and July, but options vary by institution and programme.",
+      "Before applying, prepare academic documents, passport, English readiness evidence, financial documents, and a clear study plan. Abroadways helps students compare courses, organise documents, and understand visa preparation steps.",
     ],
   },
   {
-    title: "What to Prepare Before a University Application",
-    slug: "prepare-before-university-application",
+    title: "Study in UK from Bangladesh",
+    slug: "study-in-uk-from-bangladesh",
     language: "en",
-    excerpt: "Keep documents, timelines, intake choices, and budget evidence organised before you start applying.",
-    category: "Applications",
-    tags: ["applications", "documents"],
-    image: "/images/consultation-counsellor.png",
-    publishedAt: "2026-05-20",
+    excerpt: "What Bangladeshi students should know before shortlisting UK courses and preparing applications.",
+    category: "United Kingdom",
+    tags: ["UK", "study abroad", "Bangladesh"],
+    image: "/images/destination-uk.png",
+    publishedAt: "2026-06-28",
+    seoTitle: "Study in UK from Bangladesh | Abroadways",
+    metaDescription: "Plan study in the UK from Bangladesh with guidance on intakes, applications, budget, documents, and visa preparation.",
     content: [
-      "A complete application file usually starts with academic transcripts, certificates, passport, English readiness, and a clear study goal.",
-      "Students should also understand intake deadlines, budget requirements, and document consistency before submitting applications.",
+      "The United Kingdom offers broad course choice, recognised qualifications, and clear application timelines for students who plan early.",
+      "September is usually the main intake, while January and selected spring intakes may also be available. Students should compare course fit, entry requirements, tuition, living costs, and document readiness before applying.",
+      "A strong UK application often depends on academic documents, English evidence, a focused personal statement, and timely follow-up. Abroadways supports shortlisting, application preparation, and visa-readiness planning.",
     ],
   },
   {
-    title: "Budget Planning for Study Abroad",
-    slug: "budget-planning-for-study-abroad",
+    title: "Study in Australia from Bangladesh",
+    slug: "study-in-australia-from-bangladesh",
     language: "en",
-    excerpt: "Tuition is only one part of the plan. Living costs, travel, visa fees, and settlement costs matter too.",
-    category: "Budget",
-    tags: ["budget", "scholarships"],
+    excerpt: "A practical guide to Australian study options, intakes, budget planning, and document preparation.",
+    category: "Australia",
+    tags: ["Australia", "study abroad", "Bangladesh"],
+    image: "/images/destination-australia.png",
+    publishedAt: "2026-06-24",
+    seoTitle: "Study in Australia from Bangladesh | Abroadways",
+    metaDescription: "Plan study in Australia from Bangladesh with guidance on courses, intakes, costs, requirements, and visa documentation.",
+    content: [
+      "Australia is popular among students who want modern campuses, diverse programmes, and a clear study plan.",
+      "Common intakes are February and July, though some institutions offer trimester or rolling options. Course choice should match academic background, future goals, budget, and document readiness.",
+      "Students should prepare academic transcripts, English readiness evidence, financial documents, passport, and a genuine study plan. Abroadways helps review options and organise each step before application and visa preparation.",
+    ],
+  },
+  {
+    title: "Study in Canada from Bangladesh",
+    slug: "study-in-canada-from-bangladesh",
+    language: "en",
+    excerpt: "Understand programme fit, budget readiness, documents, and planning steps for Canada.",
+    category: "Canada",
+    tags: ["Canada", "study abroad", "Bangladesh"],
     image: "/images/destination-canada.png",
-    publishedAt: "2026-05-08",
+    publishedAt: "2026-06-20",
+    seoTitle: "Study in Canada from Bangladesh | Abroadways",
+    metaDescription: "Plan study in Canada from Bangladesh with guidance on programmes, budget, intakes, requirements, and visa preparation.",
     content: [
-      "Good budget planning includes tuition, living costs, accommodation, insurance, visa costs, travel, and emergency funds.",
-      "Scholarships may help, but students should plan around realistic funding and transparent documentation.",
+      "Canada requires careful planning because programme fit, budget readiness, and document consistency all matter.",
+      "Fall is the major intake, while winter and selected spring or summer options vary by institution. Students should begin with a realistic shortlist and a clear budget plan.",
+      "Prepare academic records, English readiness evidence, financial documents, passport, and a study plan that matches your background and goals. Abroadways helps students organise documents and prepare for a complete study application journey.",
+    ],
+  },
+  {
+    title: "Study in Malaysia from Bangladesh",
+    slug: "study-in-malaysia-from-bangladesh",
+    language: "en",
+    excerpt: "A short guide to Malaysia study options, flexible intakes, budget planning, and visa steps.",
+    category: "Malaysia",
+    tags: ["Malaysia", "study abroad", "Bangladesh"],
+    image: "/images/destination-malaysia.png",
+    publishedAt: "2026-06-16",
+    seoTitle: "Study in Malaysia from Bangladesh | Abroadways",
+    metaDescription: "Plan study in Malaysia from Bangladesh with guidance on courses, intakes, costs, requirements, and visa preparation.",
+    content: [
+      "Malaysia can be an accessible international study destination for Bangladeshi students who want practical budgets and flexible planning.",
+      "Many institutions offer multiple intakes, depending on programme availability. Students should compare course quality, tuition, living costs, accommodation, and documentation requirements.",
+      "Before applying, prepare academic documents, passport, application forms, financial planning, and health documentation where required. Abroadways guides students through application and visa preparation steps.",
     ],
   },
 ];
@@ -277,7 +359,8 @@ const modernHomeSectionKeys = {
 const defaultFeatureCards = [
   {
     title: "Choose the Right Study Destination",
-    text: "Compare country options, match budget and profile, and plan intake and documents.",
+    description: "Compare countries, budgets, intakes, and course fit before committing.",
+    text: "Compare country options, match budget and profile, plan intake and documents.",
     bullets: ["Compare country options", "Match budget and profile", "Plan intake and documents"],
     imageUrl: "/images/abroadways-destination-planning.png",
     ctaText: "Explore destinations",
@@ -285,9 +368,10 @@ const defaultFeatureCards = [
     backgroundColor: "#fff3e8",
   },
   {
-    title: "How Abroadways Guides You Step by Step",
-    text: "Profile review, application checklist, document planning, and visa file preparation.",
-    bullets: ["Profile review", "Application checklist", "Visa file preparation"],
+    title: "Apply with a Clear Checklist",
+    description: "Move through applications, documents, and visa preparation with a structured plan.",
+    text: "Profile review, application checklist, document planning, visa file preparation.",
+    bullets: ["Review profile and goals", "Prepare application documents", "Organise visa file"],
     imageUrl: "/images/consultation-counsellor.png",
     ctaText: "View services",
     ctaLink: routes.services,
@@ -307,7 +391,7 @@ const defaultStories = [
     studentName: "Counselling experience",
     destination: "Australia",
     qualification: "Profile review",
-    text: "A clear checklist made application planning easier for the student and family.",
+    text: "A focused checklist made application planning easier for the student and family.",
     imageUrl: "/images/destination-australia.png",
   },
   {
@@ -359,7 +443,7 @@ function ButtonLink({ href, children, variant = "primary", className = "" }) {
   return h(Link, { href, className: cx("button", `button-${variant}`, className) }, h("span", null, children), h(ArrowRight, { size: 18 }));
 }
 
-function setSeo({ title, description, image = "/images/abroadways-hero-campus.png" }) {
+function setSeo({ title, description, image = "/images/abroadways-hero-campus.png", ogTitle, ogDescription }) {
   React.useEffect(() => {
     document.title = title;
     const ensure = (selector, create) => {
@@ -375,18 +459,18 @@ function setSeo({ title, description, image = "/images/abroadways-hero-campus.pn
       const node = document.createElement("meta");
       node.setAttribute("property", "og:title");
       return node;
-    }).content = title;
+    }).content = ogTitle || title;
     ensure('meta[property="og:description"]', () => {
       const node = document.createElement("meta");
       node.setAttribute("property", "og:description");
       return node;
-    }).content = description;
+    }).content = ogDescription || description;
     ensure('meta[property="og:image"]', () => {
       const node = document.createElement("meta");
       node.setAttribute("property", "og:image");
       return node;
     }).content = image;
-  }, [title, description, image]);
+  }, [title, description, image, ogTitle, ogDescription]);
 }
 
 function apiBaseUrl() {
@@ -619,6 +703,9 @@ function pageCopy(page, fallback) {
     bodySections: page?.bodySections || fallback.bodySections || [],
     seoTitle: page?.seoTitle || fallback.seoTitle || fallback.title,
     seoDescription: page?.seoDescription || page?.metaDescription || fallback.seoDescription || fallback.copy,
+    ogTitle: page?.ogTitle || fallback.ogTitle || page?.seoTitle || fallback.seoTitle || fallback.title,
+    ogDescription: page?.ogDescription || fallback.ogDescription || page?.seoDescription || page?.metaDescription || fallback.seoDescription || fallback.copy,
+    ogImage: page?.ogImage || fallback.ogImage,
   };
 }
 
@@ -726,16 +813,26 @@ function pathwayFallback(destinationItems = destinations) {
 
 function defaultHomeSections() {
   return [
-    { key: "hero", badgeText: "Focused guidance for five study destinations", decorativeImageUrls: ["/images/abroadways-destination-planning.png"] },
-    { key: "study-pathway", title: "Find Your Study Pathway", subtitle: "Explore destinations and support areas with clear next steps.", cards: pathwayFallback() },
-    { key: "feature-cards", title: "Plan with clarity", subtitle: "Two focused ways Abroadways helps students move from ideas to action.", cards: defaultFeatureCards },
-    { key: "success-stories", title: "Student Journey Stories", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"], stories: defaultStories },
-    { key: "service-bubbles", chips: defaultSupportChips },
-    { key: "blog-preview", title: "Study Abroad Guides", subtitle: "Read practical guides in English or Bangla.", numberOfPosts: 3, languageTabs: ["English", "বাংলা"] },
-    { key: "consultation-cta", heading: "Claim your free Abroadways consultation", subtitle: "Start with a short pathway planner and help our counsellors understand your goals.", imageUrl: "/images/consultation-counsellor.png", formHeading: "Ready to begin?", ctaText: "Book Free Consultation", formFieldsEnabled: false },
+    {
+      key: "hero",
+      type: "hero",
+      heading: "Your Study Abroad Journey Starts Here",
+      subtitle: "Counselling, applications, visa guidance, and budget planning for Bangladeshi students choosing New Zealand, the UK, Australia, Canada, or Malaysia.",
+      imageUrl: "/images/consultation-counsellor.png",
+      backgroundImageUrl: "/images/abroadways-hero-campus.png",
+      badgeText: "Focused guidance for five study destinations",
+      countryChips: ["New Zealand", "UK", "Australia", "Canada", "Malaysia"],
+      decorativeImageUrls: ["/images/abroadways-destination-planning.png"],
+    },
+    { key: "study-pathway", type: "pathwayCards", title: "Find Your Study Pathway", subtitle: "Explore destinations and key support areas before you apply.", cards: pathwayFallback() },
+    { key: "feature-cards", type: "featureCards", title: "Plan with clarity", subtitle: "Focused guidance from first shortlist to final departure.", cards: defaultFeatureCards },
+    { key: "success-stories", type: "successStories", title: "Student Journey Stories", subtitle: "Realistic examples of how guided planning can make the process clearer.", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"], stories: defaultStories },
+    { key: "service-bubbles", type: "serviceChips", title: "Support around every step", subtitle: "Small details matter when families are planning a major decision.", chips: defaultSupportChips },
+    { key: "blog-preview", type: "blogPreview", title: "Study Abroad Guides", subtitle: "Read practical destination guides written for Bangladeshi students and families.", numberOfPosts: 3, languageTabsEnabled: true, ctaText: "View all guides", ctaLink: routes.blog },
+    { key: "consultation-cta", type: "consultationCta", heading: "Claim your free Abroadways consultation", subtitle: "Share your country interest, study level, budget, and intake plan so our counsellors can guide the next step.", imageUrl: "/images/consultation-counsellor.png", formHeading: "Ready to begin?", primaryButtonText: "Start Pathway Planner", primaryButtonLink: routes.planner, secondaryButtonText: "Contact Abroadways", secondaryButtonLink: routes.contact, ctaText: "Book Free Consultation", formFieldsEnabled: false },
+    { key: "trust-section", type: "trustSection", heading: "Guidance built on clarity and care", subtitle: "Abroadways keeps the process focused, transparent, and student-first.", trustItems: [{ title: "Abroadways Limited", description: "A focused study abroad agency in Dhaka." }, { title: "Student-first counselling", description: "Plans are shaped around profile, budget, and goals." }, { title: "UKVI Approved LanguageCert Test Centre", description: "A small trust signal, not the main service." }, { title: "Transparent process", description: "Clear steps from counselling to pre-departure." }] },
   ];
 }
-
 function mergeDestinations(cmsCountries = []) {
   const records = published(cmsCountries);
   return destinations.map((fallback) => {
@@ -765,6 +862,8 @@ function mergeDestinations(cmsCountries = []) {
       ctaLink: record.ctaLink || routes.planner,
       seoTitle: record.seoTitle,
       seoDescription: record.seoDescription,
+      ogTitle: record.ogTitle,
+      ogDescription: record.ogDescription,
       ogImage: record.ogImage,
     };
   });
@@ -783,6 +882,9 @@ function mergeBlogs(cmsBlogs = []) {
     image: firstImage(record, "/images/abroadways-destination-planning.png"),
     publishedAt: record.publishedAt || record.createdAt || "",
     content: splitContent(record.content || record.body, [record.excerpt || "This guide will be updated by the Abroadways team."]),
+    seoTitle: record.seoTitle,
+    metaDescription: record.metaDescription,
+    canonicalUrl: record.canonicalUrl,
   }));
 }
 
@@ -953,20 +1055,25 @@ function HomePage({ cms, destinations: destinationItems, blogs }) {
   const page = pageCopy(findPage(cms, "home", "/"), {
     eyebrow: "Abroadways Limited",
     title: "Your Study Abroad Journey Starts Here",
-    copy: "Counselling, applications, and visa guidance for Bangladeshi students planning New Zealand, UK, Australia, Canada, and Malaysia.",
+    copy: "Counselling, applications, visa guidance, and budget planning for Bangladeshi students choosing New Zealand, the UK, Australia, Canada, or Malaysia.",
     image: "/images/consultation-counsellor.png",
     ctaButtonText: "Book Free Consultation",
     ctaButtonLink: routes.planner,
     secondaryButtonText: "Explore Destinations",
     secondaryButtonLink: routes.studyAbroad,
     badgeText: "Focused guidance for five study destinations",
-    seoTitle: "Abroadways | Study Abroad with Confidence",
-    seoDescription: "Premium study abroad counselling, university application, visa guidance, budget planning, and pre-departure support for Bangladeshi students.",
+    seoTitle: "Abroadways | Study Abroad Agency in Bangladesh",
+    seoDescription: "Premium study abroad counselling for Bangladeshi students planning New Zealand, the United Kingdom, Australia, Canada, or Malaysia.",
+    ogTitle: "Abroadways | Study Abroad Agency in Bangladesh",
+    ogDescription: "Plan your study abroad journey with Abroadways Limited.",
+    ogImage: "/images/abroadways-hero-campus.png",
   });
   setSeo({
     title: page.seoTitle,
     description: page.seoDescription,
-    image: page.image,
+    image: page.ogImage || page.image,
+    ogTitle: page.ogTitle,
+    ogDescription: page.ogDescription,
   });
 
   return h(
@@ -1144,7 +1251,7 @@ function ProcessSection() {
 }
 
 function BlogPreview({ blogs = blogPosts, page }) {
-  const section = sectionFor(page, "blog-preview", { title: "Study Abroad Guides", subtitle: "Read practical guides in English or Bangla.", numberOfPosts: 3 });
+  const section = sectionFor(page, "blog-preview", { title: "Study Abroad Guides", subtitle: "Read practical destination guides written for Bangladeshi students and families.", numberOfPosts: 3 });
   const [language, setLanguage] = useState("en");
   const filtered = blogs.filter((post) => (post.language || "en") === language);
   const visible = filtered.slice(0, Number(section.numberOfPosts || 3));
@@ -1156,7 +1263,7 @@ function BlogCard({ post }) {
 }
 
 function LanguageTabs({ language, setLanguage }) {
-  return h("div", { className: "tab-row language-tabs" }, [["en", "English"], ["bn", "বাংলা"]].map(([value, label]) => h("button", { key: value, type: "button", className: cx(language === value && "active"), onClick: () => setLanguage(value) }, label)));
+  return h("div", { className: "tab-row language-tabs" }, [["en", "English"], ["bn", "Bangla"]].map(([value, label]) => h("button", { key: value, type: "button", className: cx(language === value && "active"), onClick: () => setLanguage(value) }, label)));
 }
 
 function TrustSection({ section = {} } = {}) {
@@ -1182,18 +1289,21 @@ function ConsultationSection({ page }) {
 function StudyAbroadPage({ cms, destinations: destinationItems }) {
   const page = pageCopy(findPage(cms, "study-abroad", "/study-abroad"), {
     eyebrow: "Study Abroad",
-    title: "Five destinations. One focused agency.",
-    copy: "Explore premium study pathways with Abroadways Limited.",
+    title: "Explore Your Study Abroad Destination",
+    copy: "Compare five focused study destinations with practical counselling, application, and visa guidance.",
     image: "/images/abroadways-hero-campus.png",
-    seoTitle: "Study Abroad Destinations | Abroadways",
-    seoDescription: "Explore study abroad pathways for New Zealand, the United Kingdom, Australia, Canada, and Malaysia.",
+    seoTitle: "Study Abroad Destinations from Bangladesh | Abroadways",
+    seoDescription: "Explore study pathways for New Zealand, the United Kingdom, Australia, Canada, and Malaysia with Abroadways.",
+    ogTitle: "Study Abroad Destinations | Abroadways",
+    ogDescription: "Five focused destinations for Bangladeshi students.",
+    ogImage: "/images/abroadways-hero-campus.png",
   });
-  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.image });
+  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
   return h(React.Fragment, null, h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }), h(DestinationShowcase, { compact: true, destinations: destinationItems }), h(PlannerPreview), h(FinalCta));
 }
 
 function CountryPage({ destination }) {
-  setSeo({ title: destination.seoTitle || `Study in ${destination.name} | Abroadways`, description: destination.seoDescription || destination.overview, image: destination.ogImage || destination.image });
+  setSeo({ title: destination.seoTitle || `Study in ${destination.name} | Abroadways`, description: destination.seoDescription || destination.overview, image: destination.ogImage || destination.image, ogTitle: destination.ogTitle, ogDescription: destination.ogDescription });
   return h(React.Fragment, null,
     h(PageHero, { eyebrow: "Study Abroad", title: destination.heroHeading || `Study in ${destination.name}`, copy: destination.heroSubtitle || destination.short, image: destination.image }),
     h(CountryAtGlance, { destination }),
@@ -1237,39 +1347,56 @@ function FaqSection({ items }) {
 function ServicesPage({ cms }) {
   const page = pageCopy(findPage(cms, "services", "/services"), {
     eyebrow: "Services",
-    title: "Counselling that makes the journey clear",
-    copy: "Practical support from country strategy to pre-departure.",
+    title: "Study Abroad Services with Clear Next Steps",
+    copy: "Country selection, applications, scholarship and budget guidance, visa documentation, and pre-departure support.",
     image: "/images/consultation-counsellor.png",
-    seoTitle: "Study Abroad Services | Abroadways",
-    seoDescription: "Country selection, applications, budget guidance, visa documentation, and pre-departure support.",
+    seoTitle: "Study Abroad Services in Bangladesh | Abroadways",
+    seoDescription: "Get counselling, university application support, budget guidance, visa documentation support, and pre-departure guidance.",
+    ogTitle: "Study Abroad Services | Abroadways",
+    ogDescription: "Practical support from profile review to pre-departure.",
+    ogImage: "/images/consultation-counsellor.png",
   });
-  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.image });
+  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
   return h(React.Fragment, null, h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }), h(ServicesSection), h(ProcessSection), h(FinalCta));
 }
 
-function BlogPage({ blogs }) {
+function BlogPage({ blogs, cms }) {
   const [language, setLanguage] = useState("en");
   const visible = blogs.filter((post) => (post.language || "en") === language);
-  setSeo({ title: "Study Abroad Blog | Abroadways", description: "Study abroad guides for Bangladeshi students and families.", image: "/images/abroadways-destination-planning.png" });
-  return h(React.Fragment, null, h(PageHero, { eyebrow: "Blog", title: "Study Abroad Guides", copy: "Clear, practical notes for planning your next step.", image: "/images/abroadways-destination-planning.png" }), h("section", { className: "section blog-index-section scholars-blog-preview" }, h("div", { className: "container" }, h("div", { className: "blog-index-head centered" }, h("span", { className: "eyebrow" }, "Latest insights"), h("h2", null, "Practical guides for focused decisions"), h("span", { className: "scribble-line", "aria-hidden": "true" })), h(LanguageTabs, { language, setLanguage }), visible.length ? h("div", { className: "blog-grid blog-grid-large" }, visible.map((post) => h(BlogCard, { key: post.slug, post }))) : h("div", { className: "empty-card" }, language === "bn" ? "No Bangla guides published yet." : "No English guides published yet."))));
+  const page = pageCopy(findPage(cms, "blog", "/blog"), {
+    eyebrow: "Blog",
+    title: "Study Abroad Guides",
+    copy: "Short, practical guides for Bangladeshi students and families planning the next step.",
+    image: "/images/abroadways-destination-planning.png",
+    seoTitle: "Study Abroad Blog for Bangladeshi Students | Abroadways",
+    seoDescription: "Read destination guides for studying in New Zealand, the United Kingdom, Australia, Canada, and Malaysia.",
+    ogTitle: "Study Abroad Guides | Abroadways",
+    ogDescription: "Practical destination guides from Abroadways.",
+    ogImage: "/images/abroadways-destination-planning.png",
+  });
+  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
+  return h(React.Fragment, null, h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }), h("section", { className: "section blog-index-section scholars-blog-preview" }, h("div", { className: "container" }, h("div", { className: "blog-index-head centered" }, h("span", { className: "eyebrow" }, "Latest insights"), h("h2", null, "Practical guides for focused decisions"), h("span", { className: "scribble-line", "aria-hidden": "true" })), h(LanguageTabs, { language, setLanguage }), visible.length ? h("div", { className: "blog-grid blog-grid-large" }, visible.map((post) => h(BlogCard, { key: post.slug, post }))) : h("div", { className: "empty-card" }, language === "bn" ? "No Bangla guides published yet." : "No English guides published yet."))));
 }
 
 function BlogDetailPage({ post, blogs = [] }) {
   const related = blogs.filter((item) => item.slug !== post.slug && (item.language || "en") === (post.language || "en")).slice(0, 2);
-  setSeo({ title: `${post.title} | Abroadways`, description: post.excerpt, image: post.image });
+  setSeo({ title: post.seoTitle || `${post.title} | Abroadways`, description: post.metaDescription || post.excerpt, image: post.image, ogTitle: post.seoTitle || post.title, ogDescription: post.metaDescription || post.excerpt });
   return h(React.Fragment, null, h(PageHero, { eyebrow: post.category, title: post.title, copy: post.excerpt, image: post.image }), h("article", { className: "section article-section", lang: post.language === "bn" ? "bn" : "en" }, h("div", { className: "container article-layout" }, h("div", { className: "article-body" }, h("span", { className: "article-meta" }, `${formatDate(post.publishedAt)} / ${post.category}`), post.content.map((paragraph) => h("p", { key: paragraph }, paragraph)), h(ButtonLink, { href: routes.planner }, "Plan My Pathway")), h("aside", { className: "article-aside" }, h("span", { className: "eyebrow" }, "Abroadways guide"), h("h3", null, "Need a profile review?"), h("p", null, "Share your country interest, study level, budget, and intake plan with an Abroadways counsellor."), h(ButtonLink, { href: routes.planner, variant: "outline" }, "Start Planner")))), related.length && h("section", { className: "section related-posts" }, h("div", { className: "container" }, h(SectionHeading, { eyebrow: "Related", title: "More study abroad guides" }), h("div", { className: "blog-grid" }, related.map((item) => h(BlogCard, { key: item.slug, post: item }))))));
 }
 
 function AboutPage({ cms }) {
   const page = pageCopy(findPage(cms, "about-us", "/about-us"), {
     eyebrow: "About Us",
-    title: "A focused study abroad agency for Bangladeshi students",
-    copy: "Clear counselling and application guidance for selected destinations only.",
+    title: "A Focused Study Abroad Agency for Bangladeshi Students",
+    copy: "Abroadways Limited guides students through selected destinations with careful counselling and transparent planning.",
     image: "/images/abroadways-hero-campus.png",
-    seoTitle: "About Abroadways Limited",
-    seoDescription: "Abroadways Limited is a focused study abroad agency for Bangladeshi students.",
+    seoTitle: "About Abroadways Limited | Study Abroad Agency",
+    seoDescription: "Learn about Abroadways Limited, a focused study abroad agency for Bangladeshi students.",
+    ogTitle: "About Abroadways Limited",
+    ogDescription: "Student-first study abroad counselling in Dhaka.",
+    ogImage: "/images/abroadways-hero-campus.png",
   });
-  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.image });
+  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
   return h(React.Fragment, null, h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }), h(TrustSection), h(FinalCta));
 }
 
@@ -1305,13 +1432,16 @@ function ContactFields({ form, update }) {
 function ContactPage({ cms, settings }) {
   const page = pageCopy(findPage(cms, "contact", "/contact"), {
     eyebrow: "Contact",
-    title: "Book your free consultation",
+    title: "Book Your Free Study Abroad Consultation",
     copy: "Visit or contact Abroadways for country planning, applications, and visa preparation.",
     image: "/images/consultation-counsellor.png",
-    seoTitle: "Contact Abroadways",
-    seoDescription: "Contact Abroadways Limited in Dhaka for study abroad counselling.",
+    seoTitle: "Contact Abroadways | Study Abroad Counselling Dhaka",
+    seoDescription: "Contact Abroadways Limited at 260 Sareng Tower, Malibag, Dhaka for study abroad counselling.",
+    ogTitle: "Contact Abroadways",
+    ogDescription: "Book a free study abroad consultation in Dhaka.",
+    ogImage: "/images/consultation-counsellor.png",
   });
-  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.image });
+  setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
   const [form, setForm] = useState({ source: "contact", status: "new" });
   const [sent, setSent] = useState(false);
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -1771,7 +1901,7 @@ function createHomeSection(type, order) {
   if (type === "featureCards") return normalizeHomeSection({ ...base, heading: "Plan with clarity", cards: defaultFeatureCards }, order - 1);
   if (type === "successStories") return normalizeHomeSection({ ...base, heading: "Student Journey Stories", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"], stories: defaultStories }, order - 1);
   if (type === "serviceChips") return normalizeHomeSection({ ...base, heading: "Support at every step", chips: defaultSupportChips.map((label) => ({ label, icon: "sparkles", color: "" })) }, order - 1);
-  if (type === "blogPreview") return normalizeHomeSection({ ...base, heading: "Study Abroad Guides", subtitle: "Read practical guides in English or Bangla.", languageTabsEnabled: true, numberOfPosts: 3, ctaText: "View Blog", ctaLink: routes.blog }, order - 1);
+  if (type === "blogPreview") return normalizeHomeSection({ ...base, heading: "Study Abroad Guides", subtitle: "Read practical destination guides written for Bangladeshi students and families.", languageTabsEnabled: true, numberOfPosts: 3, ctaText: "View Blog", ctaLink: routes.blog }, order - 1);
   if (type === "consultationCta") return normalizeHomeSection({ ...base, heading: "Claim your free Abroadways consultation", subtitle: "Start with a short pathway planner.", imageUrl: "/images/consultation-counsellor.png", primaryButtonText: "Book Free Consultation", primaryButtonLink: routes.planner, secondaryButtonText: "Contact Abroadways", secondaryButtonLink: routes.contact }, order - 1);
   if (type === "trustSection") return normalizeHomeSection({ ...base, heading: "Built around clarity, care, and responsible guidance", subtitle: "Trust signals kept focused and transparent.", trustItems: ["Abroadways Limited", "Student-first counselling", "UKVI Approved LanguageCert Test Centre", "Transparent process"].map((title) => ({ title, description: "", icon: "badge", imageUrl: "" })) }, order - 1);
   return normalizeHomeSection(base, order - 1);
@@ -2395,7 +2525,7 @@ function App() {
     if (path === routes.studyAbroad) return h(StudyAbroadPage, { cms, destinations: destinationItems });
     if (path === routes.services) return h(ServicesPage, { cms });
     if (path === routes.planner) return h(PathwayPlannerPage);
-    if (path === routes.blog) return h(BlogPage, { blogs: blogItems });
+    if (path === routes.blog) return h(BlogPage, { blogs: blogItems, cms });
     if (path.startsWith(`${routes.blog}/`)) {
       const post = blogItems.find((item) => path === `${routes.blog}/${item.slug}`);
       return post ? h(BlogDetailPage, { post, blogs: blogItems }) : h(NotFoundPage);

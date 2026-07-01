@@ -48,15 +48,34 @@ async function ensureMongoCollections() {
 }
 
 async function seedMongoIfNeeded() {
-  const home = seedData.pages.find((page) => page.routeKey === "home");
-  if (home && (await mongoDb.collection("pages").countDocuments({ routeKey: "home" })) === 0) {
-    await mongoDb.collection("pages").insertOne(stampSeed(home));
+  for (const page of seedData.pages) {
+    await mongoDb.collection("pages").updateOne(
+      { $or: [{ id: page.id }, { routeKey: page.routeKey }, { slug: page.slug }].filter((filter) => Object.values(filter)[0]) },
+      { $setOnInsert: stampSeed(page) },
+      { upsert: true },
+    );
   }
 
   for (const country of seedData.countries) {
     await mongoDb.collection("countries").updateOne(
       { slug: country.slug },
       { $setOnInsert: stampSeed(country) },
+      { upsert: true },
+    );
+  }
+
+  for (const blog of seedData.blogs) {
+    await mongoDb.collection("blogs").updateOne(
+      { $or: [{ id: blog.id }, { slug: blog.slug }].filter((filter) => Object.values(filter)[0]) },
+      { $setOnInsert: stampSeed(blog) },
+      { upsert: true },
+    );
+  }
+
+  for (const media of seedData.media) {
+    await mongoDb.collection("media").updateOne(
+      { $or: [{ id: media.id }, { url: media.url }].filter((filter) => Object.values(filter)[0]) },
+      { $setOnInsert: stampSeed(media) },
       { upsert: true },
     );
   }
