@@ -342,11 +342,11 @@ const defaultInsightCountries = [
 ];
 
 const defaultResourceTiles = [
-  { title: "University Map", description: "Explore focused destination options.", ctaText: "Explore", link: "/study-abroad", backgroundColor: "#dff2ff", icon: "map" },
   { title: "Free Guides", description: "Read country planning notes.", ctaText: "Read", link: "/blog", backgroundColor: "#fff3e8", icon: "book" },
-  { title: "Prospectus", description: "Ask for course and budget guidance.", ctaText: "Request", link: "/contact", backgroundColor: "#efe2ff", icon: "file" },
+  { title: "University Map", description: "Explore focused destination options.", ctaText: "Explore", link: "/study-abroad", backgroundColor: "#dff2ff", icon: "map" },
   { title: "Success Stories", description: "See student journey examples.", ctaText: "View", link: "/about-us", backgroundColor: "#dafbdd", icon: "trophy" },
-  { title: "Blog", description: "Latest study abroad articles.", ctaText: "Open", link: "/blog", backgroundColor: "#fff9bf", icon: "news" },
+  { title: "Prospectus", description: "Ask for course and budget guidance.", ctaText: "Request", link: "/contact", backgroundColor: "#efe2ff", icon: "file" },
+  { title: "Our Blog", description: "Latest study abroad articles.", ctaText: "Open", link: "/blog", backgroundColor: "#fff9bf", icon: "news" },
 ];
 
 const homeSectionTypeOptions = ["hero", "pathwayCards", "featureCards", "successStories", "serviceChips", "insightsSection", "consultationForm", "blogPreview", "resourceTiles", "consultationCta", "trustSection"];
@@ -1067,7 +1067,6 @@ function Navbar({ items = destinations, settings = contactInfo }) {
           h("button", { className: "nav-link dropdown-toggle", type: "button", onClick: () => setDropdownOpen((value) => !value), "aria-expanded": dropdownOpen }, "Study Abroad", h(ChevronDown, { size: 15 })),
           h("div", { className: cx("dropdown-menu", dropdownOpen && "dropdown-menu-open") }, items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}`, className: "dropdown-item", onClick: closeAll }, destination.name))),
         ),
-        h(Link, { href: routes.services, className: "nav-link" }, "Services"),
         h(Link, { href: routes.about, className: "nav-link" }, "About Us"),
         h(Link, { href: routes.contact, className: "nav-link" }, "Contact Us"),
         h(
@@ -1075,8 +1074,8 @@ function Navbar({ items = destinations, settings = contactInfo }) {
           { className: "dropdown", onMouseEnter: () => setBlogOpen(true), onMouseLeave: () => setBlogOpen(false) },
           h("button", { className: "nav-link dropdown-toggle", type: "button", onClick: () => setBlogOpen((value) => !value), "aria-expanded": blogOpen }, "Blog", h(ChevronDown, { size: 15 })),
           h("div", { className: cx("dropdown-menu", blogOpen && "dropdown-menu-open") },
+            h(Link, { href: `${routes.blog}?language=bn`, className: "dropdown-item", onClick: closeAll }, "Bangla Blog"),
             h(Link, { href: `${routes.blog}?language=en`, className: "dropdown-item", onClick: closeAll }, "English Blog"),
-            h(Link, { href: `${routes.blog}?language=bn`, className: "dropdown-item", onClick: closeAll }, "বাংলা Blog"),
           ),
         ),
       ),
@@ -1089,11 +1088,10 @@ function Navbar({ items = destinations, settings = contactInfo }) {
       h(Link, { href: routes.home, onClick: closeAll }, "Home"),
       h(Link, { href: routes.studyAbroad, onClick: closeAll }, "Study Abroad"),
       items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}`, className: "mobile-sub-link", onClick: closeAll }, destination.name)),
-      h(Link, { href: routes.services, onClick: closeAll }, "Services"),
       h(Link, { href: routes.about, onClick: closeAll }, "About Us"),
       h(Link, { href: routes.contact, onClick: closeAll }, "Contact Us"),
+      h(Link, { href: `${routes.blog}?language=bn`, onClick: closeAll }, "Bangla Blog"),
       h(Link, { href: `${routes.blog}?language=en`, onClick: closeAll }, "English Blog"),
-      h(Link, { href: `${routes.blog}?language=bn`, onClick: closeAll }, "বাংলা Blog"),
       h(SocialDots, { settings }),
       h(ButtonLink, { href: routes.planner, className: "mobile-cta" }, "Book Free Consultation"),
     ),
@@ -1345,7 +1343,7 @@ function HomeConsultationFormSection({ page }) {
     setSent(true);
   };
   const stepContent = [
-    h("div", { className: "consult-step", key: "interest" }, h("h3", null, "Visa / Study Interest"), h("div", { className: "consult-choice-grid" }, ["Higher Study", "Foundation", "Diploma", "Bachelor", "Masters", "Family Study Support"].map((item) => h("button", { key: item, type: "button", className: cx(form.educationLevel === item && "selected"), onClick: () => update("educationLevel", item) }, item)))),
+    h("div", { className: "consult-step", key: "interest" }, h("h3", null, "Study Interest"), h("div", { className: "consult-choice-grid" }, ["Higher Study", "Foundation", "Diploma", "Bachelor", "Masters"].map((item) => h("button", { key: item, type: "button", className: cx(form.educationLevel === item && "selected"), onClick: () => update("educationLevel", item) }, item)))),
     h("div", { className: "consult-step", key: "country" }, h("h3", null, "Country of Interest"), h("div", { className: "consult-choice-grid" }, ["New Zealand", "UK", "Australia", "Canada", "Malaysia"].map((item) => h("button", { key: item, type: "button", className: cx(form.interestedCountry === item && "selected"), onClick: () => update("interestedCountry", item) }, item)))),
     h("div", { className: "consult-step", key: "education" }, h("h3", null, "Planning Details"), h("input", { placeholder: "Current education", value: form.currentEducation || "", onChange: (event) => update("currentEducation", event.target.value) }), h("input", { placeholder: "Preferred intake", value: form.intake || "", onChange: (event) => update("intake", event.target.value) })),
     h("div", { className: "consult-step", key: "contact" }, h("h3", null, "Contact Details"), h("input", { placeholder: "Name", value: form.name || "", onChange: (event) => update("name", event.target.value), required: true }), h("input", { placeholder: "Phone", value: form.phone || "", onChange: (event) => update("phone", event.target.value), required: true }), h("input", { placeholder: "Email", value: form.email || "", onChange: (event) => update("email", event.target.value) }), h("textarea", { placeholder: "Message", value: form.message || "", onChange: (event) => update("message", event.target.value) })),
@@ -1405,7 +1403,7 @@ function BlogCard({ post }) {
 }
 
 function LanguageTabs({ language, setLanguage }) {
-  return h("div", { className: "tab-row language-tabs" }, [["en", "English"], ["bn", "Bangla"]].map(([value, label]) => h("button", { key: value, type: "button", className: cx(language === value && "active"), onClick: () => setLanguage(value) }, label)));
+  return h("div", { className: "tab-row language-tabs" }, [["en", "English"], ["bn", "বাংলা"]].map(([value, label]) => h("button", { key: value, type: "button", className: cx(language === value && "active"), onClick: () => setLanguage(value) }, label)));
 }
 
 function TrustSection({ section = {} } = {}) {
@@ -2045,7 +2043,7 @@ function createHomeSection(type, order) {
   if (type === "hero") return normalizeHomeSection({ ...base, eyebrow: "Abroadways Limited", heading: "Plan Your Study Abroad Journey with Abroadways", subtitle: "Focused counselling, applications, and visa guidance for Bangladeshi students planning New Zealand, UK, Australia, Canada, and Malaysia.", secondaryText: "Start with the right country, course, documents, and timeline.", primaryButtonText: "Book Free Consultation", primaryButtonLink: routes.planner, secondaryButtonText: "Explore Destinations", secondaryButtonLink: routes.studyAbroad, imageUrl: "/images/consultation-counsellor.png", countryChips: destinations.map((item) => item.chip) }, order - 1);
   if (type === "pathwayCards") return normalizeHomeSection({ ...base, heading: "Find Your Study Pathway", cards: pathwayFallback() }, order - 1);
   if (type === "featureCards") return normalizeHomeSection({ ...base, heading: "Plan with clarity", cards: defaultFeatureCards }, order - 1);
-  if (type === "successStories") return normalizeHomeSection({ ...base, heading: "Student Journey Stories", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"], stories: defaultStories }, order - 1);
+  if (type === "successStories") return normalizeHomeSection({ ...base, heading: "Our Student Journeys", tabs: ["All", "Canada", "Australia", "UK", "New Zealand", "Malaysia"], stories: defaultStories }, order - 1);
   if (type === "serviceChips") return normalizeHomeSection({ ...base, heading: "Support at every step", chips: defaultSupportChips.map((label) => ({ label, icon: "sparkles", color: "" })) }, order - 1);
   if (type === "insightsSection") return normalizeHomeSection({ ...base, heading: "Abroadways Study Abroad Insights", subtitle: "Guides, counselling notes, country updates, visa preparation tips, and budget planning for students and families.", imageUrl: "/images/abroadways-destination-planning.png", ctaText: "Read Guides", ctaLink: routes.blog, items: defaultInsightCountries }, order - 1);
   if (type === "consultationForm") return normalizeHomeSection({ ...base, heading: "Claim Your Free Consultation", subtitle: "Share your study interest and destination plan. Abroadways will review the details and contact you.", imageUrl: "/images/consultation-counsellor.png", formHeading: "Submit Consultation Request" }, order - 1);

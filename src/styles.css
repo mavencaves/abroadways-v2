@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap");
+
 :root {
   --navy: #071936;
   --navy-2: #0b2757;
@@ -5266,5 +5268,219 @@ body {
 
   .bubble-orbit .bubble-chip {
     position: static;
+  }
+}
+
+
+/* Phase 2E design parity refinements */
+body {
+  font-family: "Poppins", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #101828;
+}
+
+.site-header {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.brand-lockup {
+  min-width: 148px;
+}
+
+.brand-tagline {
+  letter-spacing: 0;
+}
+
+.desktop-nav {
+  gap: clamp(12px, 2vw, 26px);
+}
+
+.nav-link,
+.dropdown-toggle {
+  padding-inline: 4px;
+  font-size: 1rem;
+}
+
+.nav-link::after,
+.dropdown-toggle::after {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: #252525;
+}
+
+.dropdown-menu {
+  top: calc(100% + 14px);
+}
+
+.navbar-actions .button {
+  min-height: 42px;
+  padding-inline: 18px;
+}
+
+.scholars-hero {
+  padding-top: clamp(72px, 8vw, 118px);
+  background-color: #fbfcff;
+}
+
+.scholars-hero .hero-copy {
+  padding-top: clamp(24px, 4vw, 72px);
+}
+
+.hero-title {
+  letter-spacing: 0;
+}
+
+.hero-actions .button {
+  min-width: min(100%, 320px);
+  min-height: 58px;
+  justify-content: center;
+}
+
+.hero-chips {
+  margin-top: 12px;
+}
+
+.hero-chips span {
+  border-radius: 999px;
+}
+
+.section {
+  padding-block: clamp(78px, 8vw, 128px);
+}
+
+.study-pathway-section {
+  padding-top: clamp(86px, 9vw, 150px);
+}
+
+.section-heading.centered h2,
+.blog-index-head h2 {
+  font-size: clamp(2.45rem, 4.8vw, 4.1rem);
+  font-weight: 900;
+}
+
+.pathway-grid {
+  width: min(1380px, 100%);
+  margin-inline: auto;
+}
+
+.pathway-card {
+  padding: 24px 26px;
+  font-size: 1.18rem;
+}
+
+.feature-card-section .container {
+  width: min(1420px, calc(100% - 32px));
+}
+
+.big-feature-card {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.72fr);
+  align-items: center;
+}
+
+.big-feature-card .button {
+  width: min(100%, 340px);
+  justify-content: center;
+}
+
+.success-section {
+  padding-top: clamp(92px, 9vw, 150px);
+}
+
+.tab-row {
+  gap: 10px;
+}
+
+.tab-row button {
+  min-width: 150px;
+  min-height: 40px;
+  border-radius: 999px;
+}
+
+.story-grid {
+  gap: 26px;
+}
+
+.story-card {
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+}
+
+.bubble-orbit-section {
+  padding-block: clamp(90px, 9vw, 150px);
+}
+
+.bubble-chip {
+  min-height: 48px;
+  padding: 12px 20px;
+  font-size: 1rem;
+}
+
+.insights-section {
+  padding-block: clamp(96px, 9vw, 152px);
+}
+
+.insights-copy p {
+  max-width: 620px;
+  color: #29384c;
+  line-height: 1.9;
+}
+
+.country-slide-card,
+.resource-tile {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.home-consult-section {
+  padding-top: clamp(86px, 8vw, 138px);
+}
+
+.home-consult-card {
+  width: min(1420px, 100%);
+  margin-inline: auto;
+}
+
+.home-consult-form h3 {
+  margin-top: 0;
+  color: #151923;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+}
+
+.scholars-blog-preview {
+  padding-top: clamp(88px, 9vw, 150px);
+}
+
+.blog-card {
+  border-radius: 8px;
+}
+
+.resource-tile-row {
+  padding-top: 34px;
+}
+
+.scholars-footer {
+  padding-top: clamp(56px, 6vw, 90px);
+}
+
+@media (min-width: 1200px) {
+  .navbar.container {
+    width: min(1660px, calc(100% - 80px));
+  }
+
+  .scholars-hero .container {
+    width: min(1660px, calc(100% - 80px));
+  }
+}
+
+@media (max-width: 760px) {
+  .mobile-nav-open {
+    display: grid;
+  }
+
+  .hero-actions .button {
+    min-width: 0;
+  }
+
+  .tab-row button {
+    min-width: 0;
   }
 }

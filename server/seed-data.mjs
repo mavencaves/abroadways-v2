@@ -292,11 +292,11 @@ const homepageSections = [
     heading: "Helpful resources for your next step",
     subtitle: "Quick links for destinations, guides, consultation, and planning.",
     items: [
-      { title: "University Map", description: "Explore focused destination options.", ctaText: "Explore", link: "/study-abroad", backgroundColor: "#dff2ff", icon: "map" },
       { title: "Free Guides", description: "Read country planning notes.", ctaText: "Read", link: "/blog", backgroundColor: "#fff3e8", icon: "book" },
-      { title: "Prospectus", description: "Ask for course and budget guidance.", ctaText: "Request", link: "/contact", backgroundColor: "#efe2ff", icon: "file" },
+      { title: "University Map", description: "Explore focused destination options.", ctaText: "Explore", link: "/study-abroad", backgroundColor: "#dff2ff", icon: "map" },
       { title: "Success Stories", description: "See student journey examples.", ctaText: "View", link: "/about-us", backgroundColor: "#dafbdd", icon: "trophy" },
-      { title: "Blog", description: "Latest study abroad articles.", ctaText: "Open", link: "/blog", backgroundColor: "#fff9bf", icon: "news" },
+      { title: "Prospectus", description: "Ask for course and budget guidance.", ctaText: "Request", link: "/contact", backgroundColor: "#efe2ff", icon: "file" },
+      { title: "Our Blog", description: "Latest study abroad articles.", ctaText: "Open", link: "/blog", backgroundColor: "#fff9bf", icon: "news" },
     ],
   },
   {
