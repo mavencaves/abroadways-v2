@@ -90,6 +90,8 @@ function spaStatus(pathname) {
     "/study-abroad/canada",
     "/study-abroad/malaysia",
     "/services",
+    "/academy",
+    "/who-are-we",
     "/pathway-planner",
     "/blog",
     "/about-us",

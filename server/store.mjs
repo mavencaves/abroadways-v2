@@ -85,6 +85,7 @@ async function seedMongoIfNeeded() {
   if (settings && (await mongoDb.collection("settings").countDocuments({ id: settings.id || "site" })) === 0) {
     await mongoDb.collection("settings").insertOne(stampSeed(settings));
   }
+  await backfillSettingsDefaults();
 }
 
 async function backfillHomeSections() {
@@ -98,11 +99,36 @@ async function backfillHomeSections() {
   const upgradedHome = upgradeHomeDefaults(home, seedHome);
   if (!missing.length && !upgradedHome.changed) return;
   const lastOrder = currentSections.reduce((max, section) => Math.max(max, Number(section?.order || 0)), 0);
-  const additions = missing.map((section, index) => ({ ...section, order: lastOrder + index + 1 }));
+  const additions = missing.map((section, index) => ({ ...section, order: section.type === "academyTeaser" || section.key === "academy-teaser" ? 3.5 : lastOrder + index + 1 }));
   await mongoDb.collection("pages").updateOne(
     { _id: home._id },
     { $set: { ...upgradedHome.patch, bodySections: [...upgradedHome.sections, ...additions], updatedAt: new Date().toISOString() } },
   );
+}
+
+async function backfillSettingsDefaults() {
+  const seedSettings = seedData.settings[0];
+  if (!seedSettings) return;
+  const settings = await mongoDb.collection("settings").findOne({ $or: [{ id: seedSettings.id || "site" }, { siteName: "Abroadways" }] });
+  if (!settings) return;
+  const patch = settingsDefaultsPatch(settings, seedSettings);
+  if (!Object.keys(patch).length) return;
+  await mongoDb.collection("settings").updateOne(
+    { _id: settings._id },
+    { $set: { ...patch, updatedAt: new Date().toISOString() } },
+  );
+}
+
+function settingsDefaultsPatch(settings = {}, seedSettings = {}) {
+  const patch = {};
+  const oldTagline = "Your pathway to global education";
+  for (const key of ["navbarTaglineText", "navbarTagline", "logoCaption", "logoTagline", "footerTaglineText", "footerTagline"]) {
+    if (!settings[key] || settings[key] === oldTagline) patch[key] = seedSettings[key];
+  }
+  if (!settings.navbarTaglineColor || settings.navbarTaglineColor === "#0057D9") patch.navbarTaglineColor = seedSettings.navbarTaglineColor;
+  if (!settings.footerTaglineColor || settings.footerTaglineColor === "#0057D9") patch.footerTaglineColor = seedSettings.footerTaglineColor;
+  if (!Array.isArray(settings.partners) || !settings.partners.length) patch.partners = seedSettings.partners;
+  return patch;
 }
 
 function upgradeHomeDefaults(home, seedHome) {
@@ -166,12 +192,61 @@ async function readLocal() {
     await writeFile(localPath, JSON.stringify(seedData, null, 2));
   }
   const raw = await readFile(localPath, "utf8");
-  return JSON.parse(raw);
+  const data = JSON.parse(raw);
+  const backfilled = backfillLocalDefaults(data);
+  if (backfilled.changed) {
+    await writeLocal(backfilled.data);
+    return backfilled.data;
+  }
+  return data;
 }
 
 async function writeLocal(data) {
   await mkdir(dirname(localPath), { recursive: true });
   await writeFile(localPath, JSON.stringify(data, null, 2));
+}
+
+function backfillLocalDefaults(data) {
+  let changed = false;
+  const next = { ...data };
+  next.pages = Array.isArray(next.pages) ? [...next.pages] : [];
+  for (const seedPage of seedData.pages) {
+    const exists = next.pages.some((page) => page.id === seedPage.id || page.routeKey === seedPage.routeKey || page.slug === seedPage.slug);
+    if (!exists) {
+      next.pages.push(stampSeed(seedPage));
+      changed = true;
+    }
+  }
+  const seedHome = seedData.pages.find((page) => page.routeKey === "home");
+  const homeIndex = next.pages.findIndex((page) => page.routeKey === "home" || page.slug === "/" || page.id === "home");
+  if (seedHome && homeIndex >= 0) {
+    const home = next.pages[homeIndex];
+    const currentSections = Array.isArray(home.bodySections) ? home.bodySections : [];
+    const currentKeys = new Set(currentSections.map((section) => section?.type || section?.key).filter(Boolean));
+    const missing = seedHome.bodySections.filter((section) => !currentKeys.has(section.type) && !currentKeys.has(section.key));
+    const upgradedHome = upgradeHomeDefaults(home, seedHome);
+    if (missing.length || upgradedHome.changed) {
+      const lastOrder = currentSections.reduce((max, section) => Math.max(max, Number(section?.order || 0)), 0);
+      const additions = missing.map((section, index) => ({ ...section, order: section.type === "academyTeaser" || section.key === "academy-teaser" ? 3.5 : lastOrder + index + 1 }));
+      next.pages[homeIndex] = { ...home, ...upgradedHome.patch, bodySections: [...upgradedHome.sections, ...additions], updatedAt: new Date().toISOString() };
+      changed = true;
+    }
+  }
+  next.settings = Array.isArray(next.settings) ? [...next.settings] : [];
+  const seedSettings = seedData.settings[0];
+  if (seedSettings) {
+    if (!next.settings.length) {
+      next.settings.push(stampSeed(seedSettings));
+      changed = true;
+    } else {
+      const patch = settingsDefaultsPatch(next.settings[0], seedSettings);
+      if (Object.keys(patch).length) {
+        next.settings[0] = { ...next.settings[0], ...patch, updatedAt: new Date().toISOString() };
+        changed = true;
+      }
+    }
+  }
+  return { changed, data: next };
 }
 
 function normalizeDocument(document) {
