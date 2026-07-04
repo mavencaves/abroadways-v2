@@ -372,20 +372,21 @@ const defaultSuccessMetrics = [
 ];
 
 const academyTracks = [
-  { title: "IELTS", description: "Future English test preparation track.", backgroundColor: "#eef7ff", icon: "IE" },
-  { title: "TOEFL", description: "Future academic English preparation support.", backgroundColor: "#fff3e8", icon: "TF" },
-  { title: "GRE", description: "Future graduate exam readiness pathway.", backgroundColor: "#eefaf4", icon: "GR" },
-  { title: "GMAT", description: "Future business-school exam preparation.", backgroundColor: "#f3efff", icon: "GM" },
-  { title: "LanguageCert", description: "Future LanguageCert readiness and registration guidance.", backgroundColor: "#fff9db", icon: "LC" },
-  { title: "PTE", description: "Future English test preparation track.", backgroundColor: "#eaf9ff", icon: "PT" },
-  { title: "ELLT", description: "Future English language readiness support.", backgroundColor: "#fff0f6", icon: "EL" },
-  { title: "Other Programs", description: "Additional academic preparation programs will be announced later.", backgroundColor: "#f2fce9", icon: "OP" },
+  { examName: "IELTS", title: "IELTS", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future English test preparation track.", backgroundColor: "#eef7ff", icon: "IE", displayOrder: 1 },
+  { examName: "TOEFL", title: "TOEFL", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future academic English preparation support.", backgroundColor: "#fff3e8", icon: "TF", displayOrder: 2 },
+  { examName: "GRE", title: "GRE", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future graduate exam readiness pathway.", backgroundColor: "#eefaf4", icon: "GR", displayOrder: 3 },
+  { examName: "GMAT", title: "GMAT", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future business-school exam preparation.", backgroundColor: "#f3efff", icon: "GM", displayOrder: 4 },
+  { examName: "LanguageCert", title: "LanguageCert", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future LanguageCert readiness and registration guidance.", backgroundColor: "#fff9db", icon: "LC", displayOrder: 5 },
+  { examName: "PTE", title: "PTE", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future English test preparation track.", backgroundColor: "#eaf9ff", icon: "PT", displayOrder: 6 },
+  { examName: "ELLT", title: "ELLT", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future English language readiness support.", backgroundColor: "#fff0f6", icon: "EL", displayOrder: 7 },
+  { examName: "Other Programs", title: "Other Programs", examLogoUrl: "", statusBadge: "Coming Soon", description: "Additional academic preparation programs will be announced later.", backgroundColor: "#f2fce9", icon: "OP", displayOrder: 8 },
 ];
 
 const defaultPartners = [
   {
     partnerName: "LanguageCert",
     partnerLogoUrl: "",
+    partnerLogoAlt: "LanguageCert logo",
     partnerType: "Testing Partner",
     statusText: "We are its Authorized Testing Center",
     authorizationText: "We are its Authorized Testing Center",
@@ -397,6 +398,7 @@ const defaultPartners = [
   {
     partnerName: "Pearson VUE",
     partnerLogoUrl: "",
+    partnerLogoAlt: "Pearson VUE logo",
     partnerType: "Testing Partner",
     statusText: "We are its Authorized Test Centers",
     authorizationText: "We are its Authorized Test Centers",
@@ -408,6 +410,7 @@ const defaultPartners = [
   {
     partnerName: "Other Partners",
     partnerLogoUrl: "",
+    partnerLogoAlt: "Other partner logo",
     partnerType: "Editable CMS Partner",
     statusText: "Coming Soon",
     authorizationText: "Coming Soon",
@@ -774,6 +777,7 @@ function normalizePartners(value = defaultPartners) {
     .map((partner, index) => ({
       partnerName: partner.partnerName || partner.name || "Partner",
       partnerLogoUrl: partner.partnerLogoUrl || partner.logoUrl || "",
+      partnerLogoAlt: partner.partnerLogoAlt || partner.logoAlt || `${partner.partnerName || partner.name || "Partner"} logo`,
       partnerType: partner.partnerType || partner.type || "Partner",
       statusText: partner.statusText || partner.authorizationText || partner.authorization || "",
       authorizationText: partner.statusText || partner.authorizationText || partner.authorization || "",
@@ -783,6 +787,32 @@ function normalizePartners(value = defaultPartners) {
       displayOrder: Number(partner.displayOrder || index + 1),
     }))
     .filter((partner) => partner.status !== "inactive")
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+function initialsFor(value, fallback = "AW") {
+  const words = String(value || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return fallback;
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return words.map((word) => word[0]).join("").slice(0, 3).toUpperCase();
+}
+
+function normalizeAcademyTracks(value = academyTracks) {
+  const source = Array.isArray(value) && value.length ? value : academyTracks;
+  return source
+    .map((track, index) => {
+      const examName = track.examName || track.title || track.name || "Exam";
+      return {
+        ...track,
+        examName,
+        title: track.title || examName,
+        examLogoUrl: track.examLogoUrl || track.logoUrl || track.imageUrl || "",
+        examLogoAlt: track.examLogoAlt || track.logoAlt || `${examName} logo`,
+        statusBadge: track.statusBadge || track.badgeText || "Coming Soon",
+        icon: track.icon || initialsFor(examName),
+        displayOrder: Number(track.displayOrder || index + 1),
+      };
+    })
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
@@ -1156,12 +1186,27 @@ function BrandLogo({ settings = contactInfo, footer = false }) {
 
 function SocialDots({ settings = contactInfo }) {
   const socials = [
-    ["Facebook", "fb", settings.facebook],
-    ["Instagram", "ig", settings.instagram],
-    ["LinkedIn", "in", settings.linkedin],
-    ["YouTube", "yt", settings.youtube],
+    ["Facebook", "facebook", settings.facebook],
+    ["Instagram", "instagram", settings.instagram],
+    ["LinkedIn", "linkedin", settings.linkedin],
+    ["YouTube", "youtube", settings.youtube],
   ].filter(([, , href]) => href);
-  return h("div", { className: "social-dots" }, socials.map(([label, short, href]) => h("a", { key: label, href, target: "_blank", rel: "noreferrer", "aria-label": label }, short)));
+  return h("div", { className: "social-dots" }, socials.map(([label, icon, href]) => h("a", { key: label, href, target: "_blank", rel: "noreferrer", "aria-label": label }, h(SocialIcon, { name: icon }))));
+}
+
+function SocialIcon({ name }) {
+  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true", focusable: "false" };
+  const paths = {
+    facebook: h("path", { d: "M14.4 8.3V6.8c0-.7.5-.9.9-.9h2.1V2.4l-2.9-.1c-3.2 0-4.8 1.9-4.8 5.1v.9H6.6V12h3.1v9.7h4.1V12h3.1l.5-3.7h-3z" }),
+    instagram: h(React.Fragment, null,
+      h("path", { d: "M7.2 2.5h9.6c2.6 0 4.7 2.1 4.7 4.7v9.6c0 2.6-2.1 4.7-4.7 4.7H7.2c-2.6 0-4.7-2.1-4.7-4.7V7.2c0-2.6 2.1-4.7 4.7-4.7zm0 3A1.7 1.7 0 0 0 5.5 7.2v9.6c0 .9.8 1.7 1.7 1.7h9.6c.9 0 1.7-.8 1.7-1.7V7.2c0-.9-.8-1.7-1.7-1.7H7.2z" }),
+      h("path", { d: "M12 7.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8zm0 2.9a2 2 0 1 0 0 4.1 2 2 0 0 0 0-4.1z" }),
+      h("circle", { cx: 17.1, cy: 6.9, r: 1.1 }),
+    ),
+    linkedin: h("path", { d: "M5.1 8.7h3.8v12.1H5.1V8.7zm1.9-5.6a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4zm4.3 5.6H15v1.7h.1c.5-1 1.8-2 3.6-2 3.9 0 4.6 2.6 4.6 5.9v6.5h-3.8V15c0-1.4 0-3.3-2-3.3s-2.4 1.6-2.4 3.2v5.9h-3.8V8.7z" }),
+    youtube: h("path", { d: "M21.6 7.1a3 3 0 0 0-2.1-2.1C17.6 4.5 12 4.5 12 4.5s-5.6 0-7.5.5a3 3 0 0 0-2.1 2.1C2 9 2 12 2 12s0 3 .4 4.9a3 3 0 0 0 2.1 2.1c1.9.5 7.5.5 7.5.5s5.6 0 7.5-.5a3 3 0 0 0 2.1-2.1C22 15 22 12 22 12s0-3-.4-4.9zM10 15.5v-7l6 3.5-6 3.5z" }),
+  };
+  return h("svg", common, paths[name] || h("circle", { cx: 12, cy: 12, r: 8 }));
 }
 
 function Navbar({ items = destinations, settings = contactInfo }) {
@@ -1419,7 +1464,14 @@ function StudyPathwaySection({ page, destinations: destinationItems }) {
       "div",
       { className: "container" },
       h("div", { className: "section-heading centered" }, h("h2", null, section.title), h("span", { className: "scribble-line", "aria-hidden": "true" }), section.subtitle && h("p", null, section.subtitle)),
-      h("div", { className: "pathway-grid" }, cards.map((card, index) => h(Link, { key: `${card.title}-${index}`, href: card.link || routes.studyAbroad, className: "pathway-card", style: { background: card.backgroundColor || softColors[index % softColors.length] } }, card.imageUrl ? h("img", { src: card.imageUrl, alt: "" }) : h("span", { className: "pathway-icon" }, card.icon || String(card.title || "?").slice(0, 2)), h("strong", null, card.title), h(ArrowRight, { size: 18 })))),
+      h("div", { className: "pathway-grid" }, cards.map((card, index) => {
+        const title = card.title || card.name || "Pathway";
+        return h(Link, { key: `${title}-${index}`, href: card.link || routes.studyAbroad, className: "pathway-card", style: { background: card.backgroundColor || softColors[index % softColors.length] } },
+          h("span", { className: "pathway-icon" }, card.icon || initialsFor(title)),
+          h("strong", null, title),
+          h(ArrowRight, { size: 18 }),
+        );
+      })),
     ),
   );
 }
@@ -1461,14 +1513,18 @@ function AcademyTeaserSection({ page }) {
     ctaLink: routes.academy,
     cards: academyTracks,
   });
-  const cards = sectionCards(section, academyTracks);
+  const cards = normalizeAcademyTracks(sectionCards(section, academyTracks));
   return h("section", { className: "section academy-teaser-section" },
     h("div", { className: "container academy-teaser-card" },
       h("div", { className: "academy-teaser-copy" },
         h("span", { className: "eyebrow" }, section.eyebrow || "Coming soon"),
         h("h2", null, section.heading || section.title),
         section.subtitle && h("p", null, section.subtitle),
-        h("div", { className: "academy-track-pills" }, cards.map((card, index) => h("span", { key: `${card.title}-${index}`, style: { background: card.backgroundColor || softColors[index % softColors.length] } }, h("strong", null, card.icon || String(card.title || "?").slice(0, 2)), h("em", null, card.title), h("small", null, card.badgeText || "Coming Soon")))),
+        h("div", { className: "academy-track-pills" }, cards.map((card, index) => h("span", { key: `${card.examName}-${index}`, style: { background: card.backgroundColor || softColors[index % softColors.length] } },
+          h("strong", { className: "academy-logo-mark" }, card.examLogoUrl ? h("img", { src: card.examLogoUrl, alt: card.examLogoAlt }) : card.icon || initialsFor(card.examName)),
+          h("em", null, card.examName),
+          h("small", null, card.statusBadge || "Coming Soon"),
+        ))),
         h(ButtonLink, { href: section.ctaLink || routes.academy }, section.ctaText || "Explore Academy"),
       ),
       h("div", { className: "academy-teaser-visual" },
@@ -1753,7 +1809,7 @@ function AcademyPage({ cms }) {
   });
   const tracksSection = sectionFor(page, "academy-tracks", { title: "Future exam preparation tracks", items: academyTracks });
   const whySection = sectionFor(page, "academy-why", { title: "Why Academy", items: [] });
-  const tracks = sectionItems(tracksSection, "items", academyTracks);
+  const tracks = normalizeAcademyTracks(sectionItems(tracksSection, "items", academyTracks));
   const whyItems = sectionItems(whySection, "items", []);
   setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
   return h(React.Fragment, null,
@@ -1767,7 +1823,12 @@ function AcademyPage({ cms }) {
           h(ButtonLink, { href: page.ctaButtonLink || routes.contact }, page.ctaButtonText || "Join Interest List"),
         ),
         h(SectionHeading, { eyebrow: "Academy", title: tracksSection.title || tracksSection.heading, copy: "The full platform is not live yet. These tracks are planned for a later academic launch." }),
-        h("div", { className: "academy-track-grid" }, tracks.map((track, index) => h("article", { key: `${track.title}-${index}`, style: { background: track.backgroundColor || softColors[index % softColors.length] } }, h("span", null, track.icon || String(track.title || "?").slice(0, 2)), h("small", null, track.badgeText || "Coming Soon"), h("h3", null, track.title), h("p", null, track.description)))),
+        h("div", { className: "academy-track-grid" }, tracks.map((track, index) => h("article", { key: `${track.examName}-${index}`, style: { background: track.backgroundColor || softColors[index % softColors.length] } },
+          h("span", { className: "academy-logo-mark" }, track.examLogoUrl ? h("img", { src: track.examLogoUrl, alt: track.examLogoAlt }) : track.icon || initialsFor(track.examName)),
+          h("small", null, track.statusBadge || "Coming Soon"),
+          h("h3", null, track.examName),
+          h("p", null, track.description),
+        ))),
         h("div", { className: "academy-why-grid" }, whyItems.map((item, index) => h("article", { key: `${item.title}-${index}` }, h(CheckCircle2, { size: 22 }), h("h3", null, item.title), h("p", null, item.description)))),
       ),
     ),
@@ -1802,7 +1863,7 @@ function PartnersPage({ cms, settings }) {
           h("p", null, "Partner names, logos, descriptions, status text, and display order are editable from Dashboard Settings."),
         ),
         h("div", { className: "partners-page-grid" }, partners.map((partner) => h("article", { key: partner.partnerName, className: "partner-card partners-page-card" },
-          h("div", { className: "partner-logo-box" }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerName }) : h("span", { className: "partner-logo-fallback" }, String(partner.partnerName || "?").split(/\s+/).map((part) => part[0]).join("").slice(0, 2))),
+          h("div", { className: "partner-logo-box" }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerLogoAlt || partner.partnerName }) : h("span", { className: "partner-logo-fallback" }, initialsFor(partner.partnerName))),
           h("small", null, partner.partnerType),
           h("h3", null, partner.partnerName),
           h("strong", null, partner.statusText || partner.authorizationText),
@@ -1854,7 +1915,7 @@ function WhoAreWePage({ cms, destinations: destinationItems, settings }) {
     h("section", { className: "section partners-section" },
       h("div", { className: "container" },
         h(SectionHeading, { eyebrow: "Partners & Authorizations", title: "Verified partner signals", copy: "Partner cards are managed from CMS settings and can be changed by an admin." }),
-        h("div", { className: "partner-grid" }, partners.map((partner) => h("article", { key: partner.partnerName, className: "partner-card" }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerName }) : h("span", { className: "partner-logo-fallback" }, String(partner.partnerName || "?").slice(0, 2)), h("div", null, h("small", null, partner.partnerType), h("h3", null, partner.partnerName), h("strong", null, partner.authorizationText), h("p", null, partner.description), partner.websiteUrl && h("a", { href: partner.websiteUrl, target: "_blank", rel: "noreferrer" }, "Visit website"))))),
+        h("div", { className: "partner-grid" }, partners.map((partner) => h("article", { key: partner.partnerName, className: "partner-card" }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerLogoAlt || partner.partnerName }) : h("span", { className: "partner-logo-fallback" }, initialsFor(partner.partnerName)), h("div", null, h("small", null, partner.partnerType), h("h3", null, partner.partnerName), h("strong", null, partner.authorizationText), h("p", null, partner.description), partner.websiteUrl && h("a", { href: partner.websiteUrl, target: "_blank", rel: "noreferrer" }, "Visit website"))))),
       ),
     ),
     h("section", { className: "section who-process-section" }, h("div", { className: "container" }, h(SectionHeading, { eyebrow: "Process", title: processSection.title || processSection.heading || "Our Process", copy: "A clear pathway from profile review to pre-departure guidance." }), h("div", { className: "process-grid" }, processItems.map((item, index) => h("article", { key: item.title, className: "process-card" }, h("span", { className: "process-number" }, `0${index + 1}`), h("h3", null, item.title), h("p", null, item.description)))))),
@@ -2435,8 +2496,8 @@ function defaultSectionItem(type) {
   if (type === "successMetrics") return { value: "1:1", label: "New metric", description: "Short metric context." };
   if (type === "pathwayCards") return { title: "New card", icon: "NC", description: "", link: routes.studyAbroad, backgroundColor: "#eef7ff", imageUrl: "" };
   if (type === "servicesPreview") return { title: "New service", icon: "NS", description: "Short service description.", link: routes.services, backgroundColor: "#eef7ff", imageUrl: "" };
-  if (type === "academyTeaser") return { title: "New academy track", icon: "NA", description: "Future preparation track.", backgroundColor: "#eef7ff", imageUrl: "" };
-  if (type === "partnersSection") return { partnerName: "New partner", partnerLogoUrl: "", partnerType: "Partner", authorizationText: "To be updated", description: "Short partner description.", websiteUrl: "", status: "active", displayOrder: 99 };
+  if (type === "academyTeaser") return { examName: "New academy track", title: "New academy track", icon: "NA", examLogoUrl: "", statusBadge: "Coming Soon", description: "Future preparation track.", backgroundColor: "#eef7ff", displayOrder: 99 };
+  if (type === "partnersSection") return { partnerName: "New partner", partnerLogoUrl: "", partnerLogoAlt: "New partner logo", partnerType: "Partner", authorizationText: "To be updated", description: "Short partner description.", websiteUrl: "", status: "active", displayOrder: 99 };
   if (type === "featureCards") return { title: "New feature", description: "", bullets: ["First point"], imageUrl: "", ctaText: "Learn more", ctaLink: routes.services, backgroundColor: "#eef7ff" };
   if (type === "successStories") return { studentName: "Student journey", country: "Canada", qualification: "Application support", storyText: "Counselling experience summary.", imageUrl: "", status: "published" };
   if (type === "serviceChips") return { label: "New support item", icon: "sparkles", color: "" };
@@ -2521,6 +2582,9 @@ function HomeSectionImageTools({ draft, setDraft }) {
   sections.forEach((section, sectionIndex) => {
     if (["study-pathway", "feature-cards", "services-preview", "academy-teaser"].includes(section.key) && Array.isArray(section.cards)) {
       section.cards.forEach((card, cardIndex) => targets.push({ label: `${section.title || section.key}: ${card.title || `Card ${cardIndex + 1}`}`, path: [sectionIndex, "cards", cardIndex, "imageUrl"], value: card.imageUrl || "" }));
+    }
+    if (section.key === "academy-teaser" && Array.isArray(section.cards)) {
+      section.cards.forEach((card, cardIndex) => targets.push({ label: `Academy logo: ${card.examName || card.title || `Track ${cardIndex + 1}`}`, path: [sectionIndex, "cards", cardIndex, "examLogoUrl"], value: card.examLogoUrl || card.logoUrl || "" }));
     }
     if (section.key === "partners-section" && Array.isArray(section.partners)) {
       section.partners.forEach((partner, partnerIndex) => targets.push({ label: `Partner logo: ${partner.partnerName || `Partner ${partnerIndex + 1}`}`, path: [sectionIndex, "partners", partnerIndex, "partnerLogoUrl"], value: partner.partnerLogoUrl || "" }));
@@ -2813,9 +2877,10 @@ function SettingsManager() {
         h(SelectInput, { label: "Footer tagline style", value: draft.footerTaglineStyle, onChange: (value) => set("footerTaglineStyle", value), options: ["normal", "italic"] }),
         h(SelectInput, { label: "Footer brand align", value: draft.footerBrandAlign, onChange: (value) => set("footerBrandAlign", value), options: ["left", "center"] }),
         h(BrandingPreview, { draft }),
-        h("div", { className: "cms-section-title full" }, h("h3", null, "Partners & Authorizations"), h("p", null, "Edit partner cards shown on the Who Are We page. Set status to inactive to hide a partner.")),
+        h("div", { className: "cms-section-title full" }, h("h3", null, "Partners & Authorizations"), h("p", null, "Edit partner cards shown on the Partners page. Set status to inactive to hide a partner.")),
         h(TextArea, { label: "Partner cards JSON", value: draft.partnersText, onChange: (value) => set("partnersText", value), className: "full" }),
-        h("div", { className: "partner-preview-list full" }, normalizePartners(parseJsonText(draft.partnersText, defaultPartners)).map((partner) => h("article", { key: partner.partnerName }, h("strong", null, partner.partnerName), h("span", null, partner.authorizationText), h("small", null, partner.partnerType)))),
+        h(PartnerLogoTools, { value: draft.partnersText, onChange: (value) => set("partnersText", value) }),
+        h("div", { className: "partner-preview-list full" }, normalizePartners(parseJsonText(draft.partnersText, defaultPartners)).map((partner) => h("article", { key: partner.partnerName }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerLogoAlt || partner.partnerName }) : h("span", { className: "partner-logo-fallback" }, initialsFor(partner.partnerName)), h("strong", null, partner.partnerName), h("span", null, partner.authorizationText), h("small", null, partner.partnerType)))),
         h("div", { className: "cms-section-title full" }, h("h3", null, "Site Identity and SEO"), h("p", null, "Optional favicon, colors, contact details, social links, and default SEO metadata.")),
         h(ImageField, { label: "Favicon Upload", value: draft.faviconUrl, onChange: (value) => set("faviconUrl", value), className: "full", folder: "abroadways/branding" }),
         h(TextInput, { label: "Primary color", value: draft.primaryColor, onChange: (value) => set("primaryColor", value), placeholder: "#1877f2" }),
@@ -2906,6 +2971,22 @@ function normalizeSettingsDraft(item = {}) {
     defaultOgImage: item.defaultOgImage || item.ogImage || "/images/abroadways-hero-campus.png",
     partnersText: jsonText(item.partners || item.partnerAuthorizations || defaultPartners),
   };
+}
+
+function PartnerLogoTools({ value, onChange }) {
+  const partners = parseJsonText(value, defaultPartners);
+  if (!Array.isArray(partners)) return h("div", { className: "notice-card full" }, "Partner JSON must be a list before logo tools can load.");
+  const updatePartner = (index, patch) => {
+    const next = partners.map((partner, partnerIndex) => partnerIndex === index ? { ...partner, ...patch } : partner);
+    onChange(jsonText(next));
+  };
+  return h("div", { className: "partner-logo-tools full" },
+    h("div", { className: "cms-section-title" }, h("h3", null, "Partner Logo Picker"), h("p", null, "Select logos from the media library or paste URLs. The partner JSON updates automatically.")),
+    h("div", { className: "partner-logo-tool-grid" }, partners.map((partner, index) => h("article", { key: `${partner.partnerName || "partner"}-${index}` },
+      h(ImageField, { label: `${partner.partnerName || `Partner ${index + 1}`} logo`, value: partner.partnerLogoUrl || "", onChange: (url) => updatePartner(index, { partnerLogoUrl: url }), folder: "abroadways/partners" }),
+      h(TextInput, { label: "Logo alt text", value: partner.partnerLogoAlt || "", onChange: (alt) => updatePartner(index, { partnerLogoAlt: alt }) }),
+    ))),
+  );
 }
 
 function settingsPayload(draft) {

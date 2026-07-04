@@ -163,6 +163,7 @@ function partnerDefaultsPatch(partner = {}, seedPartners = []) {
     next.authorizationText = seed.authorizationText;
     next.description = seed.description;
   }
+  if (!next.partnerLogoAlt) next.partnerLogoAlt = seed.partnerLogoAlt;
   return next;
 }
 
@@ -222,7 +223,8 @@ function upgradeHomeDefaults(home, seedHome) {
       if (next.title === "Abroadways Academy is coming soon") next.title = seedSection.title;
       if (next.subtitle === "A dedicated exam preparation and academic readiness platform for students planning international education.") next.subtitle = seedSection.subtitle;
       const cardTitles = Array.isArray(next.cards) ? next.cards.map((item) => item?.title).join("|") : "";
-      if (["IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT", "IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT|More Programs"].includes(cardTitles)) next.cards = seedSection.cards;
+      const missingLogoFields = Array.isArray(next.cards) && next.cards.some((item) => !("examLogoUrl" in item) || !("statusBadge" in item));
+      if (["IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT", "IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT|More Programs", "IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT|Other Programs"].includes(cardTitles) || missingLogoFields) next.cards = seedSection.cards;
     }
     if (key === "insights-section" || key === "insightsSection") {
       if (next.heading === "Abroadways Study Abroad Insights") next.heading = seedSection.heading;
