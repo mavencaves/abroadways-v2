@@ -99,7 +99,7 @@ async function backfillHomeSections() {
   const upgradedHome = upgradeHomeDefaults(home, seedHome);
   if (!missing.length && !upgradedHome.changed) return;
   const lastOrder = currentSections.reduce((max, section) => Math.max(max, Number(section?.order || 0)), 0);
-  const additions = missing.map((section, index) => ({ ...section, order: section.type === "academyTeaser" || section.key === "academy-teaser" ? 3.5 : lastOrder + index + 1 }));
+  const additions = missing.map((section, index) => ({ ...section, order: homeSectionBackfillOrder(section, lastOrder + index + 1) }));
   await mongoDb.collection("pages").updateOne(
     { _id: home._id },
     { $set: { ...upgradedHome.patch, bodySections: [...upgradedHome.sections, ...additions], updatedAt: new Date().toISOString() } },
@@ -121,14 +121,74 @@ async function backfillSettingsDefaults() {
 
 function settingsDefaultsPatch(settings = {}, seedSettings = {}) {
   const patch = {};
-  const oldTagline = "Your pathway to global education";
+  const shouldPatchTagline = (value) => {
+    const normalized = String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+    return !normalized || normalized === "your pathway to global education" || normalized.includes("languagecert") || normalized.includes("test centre") || normalized.includes("test center");
+  };
   for (const key of ["navbarTaglineText", "navbarTagline", "logoCaption", "logoTagline", "footerTaglineText", "footerTagline"]) {
-    if (!settings[key] || settings[key] === oldTagline) patch[key] = seedSettings[key];
+    if (shouldPatchTagline(settings[key])) patch[key] = seedSettings[key];
   }
   if (!settings.navbarTaglineColor || settings.navbarTaglineColor === "#0057D9") patch.navbarTaglineColor = seedSettings.navbarTaglineColor;
   if (!settings.footerTaglineColor || settings.footerTaglineColor === "#0057D9") patch.footerTaglineColor = seedSettings.footerTaglineColor;
-  if (!Array.isArray(settings.partners) || !settings.partners.length) patch.partners = seedSettings.partners;
+  if (!Array.isArray(settings.partners) || !settings.partners.length) {
+    patch.partners = seedSettings.partners;
+  } else {
+    const nextPartners = settings.partners.map((partner) => partnerDefaultsPatch(partner, seedSettings.partners));
+    if (JSON.stringify(nextPartners) !== JSON.stringify(settings.partners)) patch.partners = nextPartners;
+  }
   return patch;
+}
+
+function partnerDefaultsPatch(partner = {}, seedPartners = []) {
+  const name = String(partner.partnerName || partner.name || "").toLowerCase();
+  const seedName = name === "more verified partners" ? "other partners" : name;
+  const seed = seedPartners.find((item) => String(item.partnerName || "").toLowerCase() === seedName);
+  if (!seed) return partner;
+  const next = { ...partner };
+  const claim = String(next.statusText || next.authorizationText || "").trim();
+  const oldLanguageCertClaims = ["UKVI Approved LanguageCert Test Centre", "Authorized LanguageCert Test Centre", "Authorized Testing Center"];
+  if (name === "languagecert" && (!claim || oldLanguageCertClaims.includes(claim) || claim.toLowerCase().includes("languagecert"))) {
+    next.statusText = seed.statusText || seed.authorizationText;
+    next.authorizationText = seed.authorizationText;
+    next.description = seed.description;
+  }
+  if (name === "pearson vue" && (!claim || ["Authorized Pearson VUE Test Center", "Authorized Test Centers"].includes(claim))) {
+    next.statusText = seed.statusText || seed.authorizationText;
+    next.authorizationText = seed.authorizationText;
+    next.description = seed.description;
+  }
+  if ((name === "more verified partners" || name === "other partners") && (!claim || ["Add partner details from CMS", "Coming Soon / To be updated"].includes(claim))) {
+    next.partnerName = seed.partnerName;
+    next.statusText = seed.statusText || seed.authorizationText;
+    next.authorizationText = seed.authorizationText;
+    next.description = seed.description;
+  }
+  return next;
+}
+
+function homeSectionBackfillOrder(section = {}, fallbackOrder) {
+  const key = section.type || section.key;
+  const priority = {
+    successMetrics: 1.5,
+    "success-metrics": 1.5,
+    servicesPreview: 5,
+    "services-preview": 5,
+    academyTeaser: 6,
+    "academy-teaser": 6,
+    successStories: 7,
+    "success-stories": 7,
+    serviceChips: 8,
+    "service-bubbles": 8,
+    insightsSection: 9,
+    "insights-section": 9,
+    consultationForm: 10,
+    "consultation-form": 10,
+    blogPreview: 11,
+    "blog-preview": 11,
+    resourceTiles: 12,
+    "resource-tiles": 12,
+  };
+  return priority[key] || fallbackOrder;
 }
 
 function upgradeHomeDefaults(home, seedHome) {
@@ -138,13 +198,14 @@ function upgradeHomeDefaults(home, seedHome) {
     if (section.type) seedSections.set(section.type, section);
   }
   const patch = {};
-  if (home.heroHeading === "Plan Your Study Abroad Journey with Abroadways") patch.heroHeading = seedHome.heroHeading;
+  if (["Plan Your Study Abroad Journey with Abroadways", "Plan Your Study Abroad Journey with AbroadWays", "Your Study Abroad Journey Starts Here"].includes(home.heroHeading)) patch.heroHeading = seedHome.heroHeading;
   const sections = (Array.isArray(home.bodySections) ? home.bodySections : []).map((section) => {
     const key = section?.key || section?.type;
     const seedSection = seedSections.get(key);
     if (!seedSection) return section;
     const next = { ...section };
-    if (key === "hero" && next.heading === "Plan Your Study Abroad Journey with Abroadways") next.heading = seedSection.heading;
+    if (key === "hero" && ["Plan Your Study Abroad Journey with Abroadways", "Plan Your Study Abroad Journey with AbroadWays", "Your Study Abroad Journey Starts Here"].includes(next.heading)) next.heading = seedSection.heading;
+    if (key === "hero" && next.secondaryButtonText === "Explore Destinations") next.secondaryButtonText = seedSection.secondaryButtonText;
     if (key === "feature-cards" || key === "featureCards") {
       next.cards = upgradeFeatureCardDefaults(next.cards, seedSection.cards);
     }
@@ -155,6 +216,20 @@ function upgradeHomeDefaults(home, seedHome) {
     if (key === "resource-tiles" || key === "resourceTiles") {
       const titles = Array.isArray(next.items) ? next.items.map((item) => item?.title).join("|") : "";
       if (titles === "Free Guides|University Map|Success Stories|Prospectus|Our Blog") next.items = seedSection.items;
+    }
+    if (key === "academy-teaser" || key === "academyTeaser") {
+      if (next.heading === "Abroadways Academy is coming soon") next.heading = seedSection.heading;
+      if (next.title === "Abroadways Academy is coming soon") next.title = seedSection.title;
+      if (next.subtitle === "A dedicated exam preparation and academic readiness platform for students planning international education.") next.subtitle = seedSection.subtitle;
+      const cardTitles = Array.isArray(next.cards) ? next.cards.map((item) => item?.title).join("|") : "";
+      if (["IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT", "IELTS|TOEFL|GRE|GMAT|LanguageCert|PTE|ELLT|More Programs"].includes(cardTitles)) next.cards = seedSection.cards;
+    }
+    if (key === "insights-section" || key === "insightsSection") {
+      if (next.heading === "Abroadways Study Abroad Insights") next.heading = seedSection.heading;
+    }
+    if (key === "trust-section" || key === "trustSection") {
+      const hasLegacyTrust = Array.isArray(next.trustItems) && next.trustItems.some((item) => item?.title === "UKVI Approved LanguageCert Test Centre");
+      if (hasLegacyTrust) next.trustItems = seedSection.trustItems;
     }
     return next;
   });
@@ -170,7 +245,7 @@ function upgradeFeatureCardDefaults(cards = [], seedCards = []) {
     if (index === 0 && card?.title === "Choose the Right Study Destination" && card?.eyebrow === "Bangladeshi Students") {
       return { ...card, ...seedCard };
     }
-    if (index === 1 && card?.title === "How Abroadways Guides You") {
+    if (index === 1 && ["How Abroadways Guides You", "How Abroadways Guides You Step by Step"].includes(card?.title)) {
       return { ...card, ...seedCard };
     }
     return card;
@@ -227,7 +302,7 @@ function backfillLocalDefaults(data) {
     const upgradedHome = upgradeHomeDefaults(home, seedHome);
     if (missing.length || upgradedHome.changed) {
       const lastOrder = currentSections.reduce((max, section) => Math.max(max, Number(section?.order || 0)), 0);
-      const additions = missing.map((section, index) => ({ ...section, order: section.type === "academyTeaser" || section.key === "academy-teaser" ? 3.5 : lastOrder + index + 1 }));
+      const additions = missing.map((section, index) => ({ ...section, order: homeSectionBackfillOrder(section, lastOrder + index + 1) }));
       next.pages[homeIndex] = { ...home, ...upgradedHome.patch, bodySections: [...upgradedHome.sections, ...additions], updatedAt: new Date().toISOString() };
       changed = true;
     }

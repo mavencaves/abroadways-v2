@@ -91,6 +91,7 @@ function spaStatus(pathname) {
     "/study-abroad/malaysia",
     "/services",
     "/academy",
+    "/partners",
     "/who-are-we",
     "/pathway-planner",
     "/blog",
