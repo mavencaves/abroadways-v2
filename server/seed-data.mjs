@@ -128,6 +128,123 @@ const countrySeeds = countrySeedsRaw.map((country) => ({
   status: "published",
 }));
 
+const countryShortCodes = {
+  "New Zealand": "nz",
+  "United Kingdom": "uk",
+  Australia: "au",
+  Canada: "ca",
+  Malaysia: "my",
+};
+
+const universitySeeds = countrySeedsRaw.flatMap((country, countryIndex) => {
+  const code = countryShortCodes[country.countryName];
+  return [1, 2].map((number) => ({
+    id: `${code}-sample-university-${number}`,
+    name: `${country.countryName} Study Partner ${number}`,
+    slug: `${code}-study-partner-${number}`,
+    country: country.countryName,
+    city: number === 1 ? "Main campus city" : "Regional campus city",
+    logoUrl: "",
+    heroImageUrl: country.heroImage,
+    galleryImages: country.galleryImages,
+    shortDescription: `Editable ${country.countryName} university listing for AbroadWays counselling and application planning.`,
+    overview: `This is a safe starter university profile for ${country.countryName}. Admins can replace it with verified university information, logos, tuition details, and application notes from the CMS.`,
+    universityType: number === 1 ? "public" : "private",
+    ranking: "",
+    qsRanking: "",
+    worldRanking: "",
+    acceptanceRate: "",
+    websiteUrl: "",
+    applicationUrl: "",
+    tuitionMin: "",
+    tuitionMax: "",
+    currency: country.countryName === "United Kingdom" ? "GBP" : country.countryName === "Malaysia" ? "MYR" : country.countryName === "Canada" ? "CAD" : country.countryName === "Australia" ? "AUD" : "NZD",
+    livingCostMin: "",
+    livingCostMax: "",
+    scholarshipAvailable: number === 1,
+    intakes: ["Main intake", "Secondary intake"],
+    popularPrograms: country.studyAreas.slice(0, 4),
+    requirements: {
+      academic: "Academic requirements vary by program and institution.",
+      english: "English requirements vary by level and provider.",
+      documents: "Academic certificates, transcripts, passport, statement of purpose, and financial documents may be required.",
+    },
+    visaNotes: country.visaNotes,
+    benefits: country.benefits,
+    faqs: [
+      { question: `Can I apply to this ${country.countryName} institution from Bangladesh?`, answer: "Yes, eligibility depends on profile, program level, intake, and document readiness." },
+      { question: "Are tuition details final?", answer: "No. Tuition varies by program and should be verified before application." },
+    ],
+    seoTitle: `${country.countryName} university options | AbroadWays`,
+    seoDescription: `Browse editable ${country.countryName} university listings for Bangladeshi students with AbroadWays counselling support.`,
+    ogImage: country.heroImage,
+    status: "published",
+    featured: number === 1,
+    displayOrder: countryIndex * 10 + number,
+  }));
+});
+
+const courseSeeds = countrySeedsRaw.flatMap((country, countryIndex) => {
+  const code = countryShortCodes[country.countryName];
+  return [
+    { title: `${country.studyAreas[0]} pathway in ${country.countryName}`, level: "bachelor", discipline: country.studyAreas[0], duration: "Duration varies by institution" },
+    { title: `${country.studyAreas[1]} program in ${country.countryName}`, level: "masters", discipline: country.studyAreas[1], duration: "Duration varies by institution" },
+  ].map((course, index) => ({
+    id: `${code}-sample-course-${index + 1}`,
+    title: course.title,
+    slug: `${code}-${String(course.discipline).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${course.level}`,
+    country: country.countryName,
+    universityId: `${code}-sample-university-1`,
+    universityName: `${country.countryName} Study Partner 1`,
+    level: course.level,
+    discipline: course.discipline,
+    duration: course.duration,
+    tuitionFee: "Tuition varies by program",
+    currency: country.countryName === "United Kingdom" ? "GBP" : country.countryName === "Malaysia" ? "MYR" : country.countryName === "Canada" ? "CAD" : country.countryName === "Australia" ? "AUD" : "NZD",
+    intake: "Intake availability varies by provider",
+    studyMode: "on-campus",
+    englishRequirement: "English requirement varies by program and institution.",
+    academicRequirement: "Academic requirement depends on previous qualification and selected level.",
+    description: `A safe starter course listing for ${country.countryName}. Replace this with verified program details from the CMS before launch promotion.`,
+    careerOutcomes: ["Career outcomes vary by program", "Students should verify professional requirements"],
+    scholarshipAvailable: index === 0,
+    applicationDeadline: "",
+    status: "published",
+    featured: index === 0,
+    seoTitle: `${course.title} | AbroadWays`,
+    seoDescription: `Explore ${course.discipline} study options in ${country.countryName} with AbroadWays counselling and application guidance.`,
+    ogImage: country.heroImage,
+    displayOrder: countryIndex * 10 + index + 1,
+  }));
+});
+
+const scholarshipSeeds = countrySeedsRaw.map((country, index) => {
+  const code = countryShortCodes[country.countryName];
+  return {
+    id: `${code}-sample-scholarship`,
+    name: `${country.countryName} scholarship planning support`,
+    slug: `${code}-scholarship-planning-support`,
+    country: country.countryName,
+    universityId: `${code}-sample-university-1`,
+    universityName: `${country.countryName} Study Partner 1`,
+    amount: "Varies by university and intake",
+    currency: country.countryName === "United Kingdom" ? "GBP" : country.countryName === "Malaysia" ? "MYR" : country.countryName === "Canada" ? "CAD" : country.countryName === "Australia" ? "AUD" : "NZD",
+    coverageType: "partial",
+    eligibility: "Scholarship eligibility depends on academic profile, program, intake, and university policy.",
+    deadline: "",
+    applicationLink: "",
+    description: `Starter scholarship record for ${country.countryName}. Admins should replace this with verified scholarship information when available.`,
+    applicableLevels: ["bachelor", "masters"],
+    applicablePrograms: country.studyAreas.slice(0, 3),
+    status: "published",
+    featured: true,
+    seoTitle: `${country.countryName} scholarships for Bangladeshi students | AbroadWays`,
+    seoDescription: `Plan scholarship and budget options for ${country.countryName} study applications with AbroadWays guidance.`,
+    ogImage: country.heroImage,
+    displayOrder: index + 1,
+  };
+});
+
 const homepageSections = [
   {
     id: "home-hero",
@@ -668,6 +785,9 @@ const blogs = [
 export const seedData = {
   pages,
   countries: countrySeeds,
+  universities: universitySeeds,
+  courses: courseSeeds,
+  scholarships: scholarshipSeeds,
   blogs,
   leads: [],
   media: [

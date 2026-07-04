@@ -140,4 +140,4 @@ export const modelSchemas = {
   },
 };
 
-export const collections = ["pages", "countries", "blogs", "leads", "media", "settings"];
+export const collections = ["pages", "countries", "blogs", "leads", "media", "settings", "universities", "courses", "scholarships"];

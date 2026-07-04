@@ -92,6 +92,9 @@ function spaStatus(pathname) {
     "/services",
     "/academy",
     "/partners",
+    "/universities",
+    "/courses",
+    "/scholarships",
     "/who-are-we",
     "/pathway-planner",
     "/blog",
@@ -101,6 +104,9 @@ function spaStatus(pathname) {
   if (publicRoutes.has(pathname)) return 200;
   if (pathname.startsWith("/dashboard")) return 200;
   if (pathname.startsWith("/blog/") && pathname.split("/").filter(Boolean).length === 2) return 200;
+  if (pathname.startsWith("/universities/") && pathname.split("/").filter(Boolean).length === 2) return 200;
+  if (pathname.startsWith("/courses/") && pathname.split("/").filter(Boolean).length === 2) return 200;
+  if (pathname.startsWith("/scholarships/") && pathname.split("/").filter(Boolean).length === 2) return 200;
   return 404;
 }
 
@@ -230,6 +236,49 @@ async function handleAuth(request, response, pathname) {
 
 function publishedOnly(items) {
   return items.filter((item) => !item.status || item.status === "published");
+}
+
+const platformCollections = new Set(["universities", "courses", "scholarships"]);
+
+function normalizeFilterValue(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
+function filterPlatformItems(items, searchParams, admin = false) {
+  let next = [...items];
+  const q = normalizeFilterValue(searchParams.get("q") || searchParams.get("search"));
+  const country = normalizeFilterValue(searchParams.get("country"));
+  const level = normalizeFilterValue(searchParams.get("level"));
+  const discipline = normalizeFilterValue(searchParams.get("discipline"));
+  const university = normalizeFilterValue(searchParams.get("university") || searchParams.get("universityName"));
+  const coverageType = normalizeFilterValue(searchParams.get("coverageType"));
+  const status = normalizeFilterValue(searchParams.get("status"));
+  const featured = normalizeFilterValue(searchParams.get("featured"));
+  const scholarshipAvailable = normalizeFilterValue(searchParams.get("scholarshipAvailable"));
+  if (!admin) next = publishedOnly(next);
+  if (q) {
+    next = next.filter((item) => [
+      item.name,
+      item.title,
+      item.shortDescription,
+      item.overview,
+      item.description,
+      item.country,
+      item.city,
+      item.universityName,
+      item.discipline,
+      ...(Array.isArray(item.tags) ? item.tags : []),
+    ].join(" ").toLowerCase().includes(q));
+  }
+  if (country) next = next.filter((item) => normalizeFilterValue(item.country) === country);
+  if (level) next = next.filter((item) => normalizeFilterValue(item.level) === level || (Array.isArray(item.applicableLevels) && item.applicableLevels.map(normalizeFilterValue).includes(level)));
+  if (discipline) next = next.filter((item) => normalizeFilterValue(item.discipline).includes(discipline) || (Array.isArray(item.applicablePrograms) && item.applicablePrograms.join(" ").toLowerCase().includes(discipline)));
+  if (university) next = next.filter((item) => normalizeFilterValue(item.universityName).includes(university) || normalizeFilterValue(item.universityId) === university);
+  if (coverageType) next = next.filter((item) => normalizeFilterValue(item.coverageType) === coverageType);
+  if (status && admin) next = next.filter((item) => normalizeFilterValue(item.status || "published") === status);
+  if (featured) next = next.filter((item) => Boolean(item.featured) === (featured === "true"));
+  if (scholarshipAvailable) next = next.filter((item) => Boolean(item.scholarshipAvailable) === (scholarshipAvailable === "true"));
+  return next.sort((a, b) => Number(a.displayOrder || 99) - Number(b.displayOrder || 99) || String(a.name || a.title || "").localeCompare(String(b.name || b.title || "")));
 }
 
 function assertUploadPayload(payload) {
@@ -388,21 +437,35 @@ async function handleMediaReplace(request, response, id) {
   send(response, 200, { item });
 }
 
-async function handleApi(request, response, pathname) {
-  const [, , collection, id] = pathname.split("/");
+async function handleApi(request, response, pathname, searchParams = new URLSearchParams()) {
+  const [, , collection, id, subroute] = pathname.split("/");
   if (!collections.includes(collection)) {
     send(response, 404, { error: "Unknown API collection" });
+    return;
+  }
+  if (platformCollections.has(collection) && id === "admin") {
+    if (!requireAdmin(request, response)) return;
+    send(response, 200, { items: filterPlatformItems(await store.list(collection), searchParams, true) });
     return;
   }
   if (request.method === "GET") {
     const admin = adminFromRequest(request);
     const items = await store.list(collection);
-    if (admin) {
-      send(response, 200, { items });
+    if (id) {
+      const item = items.find((entry) => entry.id === id || entry._id === id || entry.slug === id);
+      if (!item || (!admin && platformCollections.has(collection) && item.status && item.status !== "published")) {
+        send(response, 404, { error: "Item not found" });
+        return;
+      }
+      send(response, 200, { item });
       return;
     }
-    if (["pages", "countries", "blogs", "settings"].includes(collection)) {
-      send(response, 200, { items: publishedOnly(items) });
+    if (admin) {
+      send(response, 200, { items: platformCollections.has(collection) ? filterPlatformItems(items, searchParams, true) : items });
+      return;
+    }
+    if (["pages", "countries", "blogs", "settings"].includes(collection) || platformCollections.has(collection)) {
+      send(response, 200, { items: platformCollections.has(collection) ? filterPlatformItems(items, searchParams, false) : publishedOnly(items) });
       return;
     }
     send(response, 401, { error: "Admin login required" });
@@ -415,7 +478,7 @@ async function handleApi(request, response, pathname) {
     send(response, 201, { item: await store.create(collection, collection === "media" ? normalizeMediaPayload(body, {}, admin) : body) });
     return;
   }
-  if (request.method === "PUT" && id) {
+  if (request.method === "PUT" && id && !subroute) {
     const admin = requireAdmin(request, response);
     if (!admin) return;
     const body = await readBody(request);
@@ -423,7 +486,7 @@ async function handleApi(request, response, pathname) {
     send(response, 200, { item: await store.update(collection, id, collection === "media" ? normalizeMediaPayload(body, existing || {}, admin) : body) });
     return;
   }
-  if (request.method === "DELETE" && id) {
+  if (request.method === "DELETE" && id && !subroute) {
     if (!requireAdmin(request, response)) return;
     if (collection === "media") await deleteCloudinaryAsset(await store.get(collection, id));
     send(response, 200, await store.remove(collection, id));
@@ -456,7 +519,7 @@ createServer(async (request, response) => {
       return;
     }
     if (pathname.startsWith("/api/")) {
-      await handleApi(request, response, pathname);
+      await handleApi(request, response, pathname, url.searchParams);
       return;
     }
 

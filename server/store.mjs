@@ -40,7 +40,7 @@ async function ensureMongoCollections() {
   for (const collection of collections) {
     if (!existing.has(collection)) await mongoDb.createCollection(collection);
     await mongoDb.collection(collection).createIndex({ id: 1 }, { unique: true, sparse: true });
-    if (["pages", "countries", "blogs"].includes(collection)) {
+    if (["pages", "countries", "blogs", "universities", "courses", "scholarships"].includes(collection)) {
       await mongoDb.collection(collection).createIndex({ slug: 1 }, { sparse: true });
       await mongoDb.collection(collection).createIndex({ status: 1 }, { sparse: true });
     }
@@ -71,6 +71,16 @@ async function seedMongoIfNeeded() {
       { $setOnInsert: stampSeed(blog) },
       { upsert: true },
     );
+  }
+
+  for (const collection of ["universities", "courses", "scholarships"]) {
+    for (const item of seedData[collection] || []) {
+      await mongoDb.collection(collection).updateOne(
+        { $or: [{ id: item.id }, { slug: item.slug }].filter((filter) => Object.values(filter)[0]) },
+        { $setOnInsert: stampSeed(item) },
+        { upsert: true },
+      );
+    }
   }
 
   for (const media of seedData.media) {
@@ -319,6 +329,16 @@ function backfillLocalDefaults(data) {
       const patch = settingsDefaultsPatch(next.settings[0], seedSettings);
       if (Object.keys(patch).length) {
         next.settings[0] = { ...next.settings[0], ...patch, updatedAt: new Date().toISOString() };
+        changed = true;
+      }
+    }
+  }
+  for (const collection of ["universities", "courses", "scholarships"]) {
+    next[collection] = Array.isArray(next[collection]) ? [...next[collection]] : [];
+    for (const seedItem of seedData[collection] || []) {
+      const exists = next[collection].some((item) => item.id === seedItem.id || item.slug === seedItem.slug);
+      if (!exists) {
+        next[collection].push(stampSeed(seedItem));
         changed = true;
       }
     }

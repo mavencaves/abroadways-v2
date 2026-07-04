@@ -50,6 +50,9 @@ const routes = {
   services: "/services",
   academy: "/academy",
   partners: "/partners",
+  universities: "/universities",
+  courses: "/courses",
+  scholarships: "/scholarships",
   whoAreWe: "/who-are-we",
   planner: "/pathway-planner",
   blog: "/blog",
@@ -546,6 +549,9 @@ const adminRoutes = [
   ["/dashboard/homepage", "Homepage", Edit3],
   ["/dashboard/pages", "Pages", BookOpenCheck],
   ["/dashboard/countries", "Countries", Compass],
+  ["/dashboard/universities", "Universities", Landmark],
+  ["/dashboard/courses", "Courses", GraduationCap],
+  ["/dashboard/scholarships", "Scholarships", BadgeCheck],
   ["/dashboard/blogs", "Blogs", Newspaper],
   ["/dashboard/leads", "Leads", UsersRound],
   ["/dashboard/media", "Media", ImageIcon],
@@ -701,20 +707,26 @@ async function publicApi(path) {
 }
 
 function useCmsData(path) {
-  const [cms, setCms] = useState({ pages: [], countries: [], blogs: [], settings: [], loaded: false });
+  const [cms, setCms] = useState({ pages: [], countries: [], blogs: [], universities: [], courses: [], scholarships: [], settings: [], loaded: false });
   React.useEffect(() => {
     let active = true;
     Promise.all([
       publicApi("/pages").catch(() => ({ items: [] })),
       publicApi("/countries").catch(() => ({ items: [] })),
       publicApi("/blogs").catch(() => ({ items: [] })),
+      publicApi("/universities").catch(() => ({ items: [] })),
+      publicApi("/courses").catch(() => ({ items: [] })),
+      publicApi("/scholarships").catch(() => ({ items: [] })),
       publicApi("/settings").catch(() => ({ items: [] })),
-    ]).then(([pages, countries, blogs, settings]) => {
+    ]).then(([pages, countries, blogs, universities, courses, scholarships, settings]) => {
       if (!active) return;
       setCms({
         pages: pages.items || [],
         countries: countries.items || [],
         blogs: blogs.items || [],
+        universities: universities.items || [],
+        courses: courses.items || [],
+        scholarships: scholarships.items || [],
         settings: settings.items || [],
         loaded: true,
       });
@@ -1195,6 +1207,70 @@ function mergeBlogs(cmsBlogs = []) {
   }));
 }
 
+function normalizeUniversities(cmsUniversities = []) {
+  return published(cmsUniversities).map((record) => ({
+    ...record,
+    name: record.name || record.title || "University listing",
+    slug: record.slug || slugify(record.name || record.title || "university"),
+    country: record.country || "",
+    city: record.city || "",
+    logoUrl: record.logoUrl || "",
+    heroImageUrl: record.heroImageUrl || firstImage(record, "/images/abroadways-hero-campus.png"),
+    galleryImages: splitList(record.galleryImages, []),
+    shortDescription: record.shortDescription || record.overview || "University details will be updated by AbroadWays.",
+    overview: record.overview || record.shortDescription || "University details will be updated by AbroadWays.",
+    benefits: splitList(record.benefits, []),
+    intakes: splitList(record.intakes, []),
+    popularPrograms: splitList(record.popularPrograms, []),
+    requirements: record.requirements || {},
+    faqs: normalizeFaqObjects(record.faqs),
+    scholarshipAvailable: Boolean(record.scholarshipAvailable),
+    featured: Boolean(record.featured),
+    seoTitle: record.seoTitle || `${record.name || record.title} | AbroadWays`,
+    seoDescription: record.seoDescription || record.shortDescription || record.overview || "Study abroad university listing by AbroadWays.",
+    ogImage: record.ogImage || record.heroImageUrl || record.logoUrl || "/images/abroadways-hero-campus.png",
+  }));
+}
+
+function normalizeCourses(cmsCourses = []) {
+  return published(cmsCourses).map((record) => ({
+    ...record,
+    title: record.title || record.name || "Course listing",
+    slug: record.slug || slugify(record.title || record.name || "course"),
+    country: record.country || "",
+    level: record.level || "",
+    discipline: record.discipline || "",
+    universityName: record.universityName || "",
+    careerOutcomes: splitList(record.careerOutcomes, []),
+    scholarshipAvailable: Boolean(record.scholarshipAvailable),
+    featured: Boolean(record.featured),
+    seoTitle: record.seoTitle || `${record.title || record.name} | AbroadWays`,
+    seoDescription: record.seoDescription || record.description || "Study abroad course listing by AbroadWays.",
+    ogImage: record.ogImage || "/images/abroadways-destination-planning.png",
+  }));
+}
+
+function normalizeScholarships(cmsScholarships = []) {
+  return published(cmsScholarships).map((record) => ({
+    ...record,
+    name: record.name || record.title || "Scholarship listing",
+    slug: record.slug || slugify(record.name || record.title || "scholarship"),
+    country: record.country || "",
+    universityName: record.universityName || "",
+    applicableLevels: splitList(record.applicableLevels, []),
+    applicablePrograms: splitList(record.applicablePrograms, []),
+    featured: Boolean(record.featured),
+    seoTitle: record.seoTitle || `${record.name || record.title} | AbroadWays`,
+    seoDescription: record.seoDescription || record.description || "Scholarship and budget guidance listing by AbroadWays.",
+    ogImage: record.ogImage || "/images/abroadways-hero-campus.png",
+  }));
+}
+
+function normalizeFaqObjects(items = []) {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => Array.isArray(item) ? { question: item[0], answer: item[1] } : item).filter((item) => item?.question || item?.answer);
+}
+
 function mergeSettings(cmsSettings = []) {
   const settings = published(cmsSettings)[0] || cmsSettings[0] || {};
   const contact = settings.contactInfo || {};
@@ -1417,7 +1493,10 @@ function HomePage({ cms, destinations: destinationItems, blogs, settings }) {
   return h(
     React.Fragment,
     null,
-    normalizeHomeSections(page.bodySections).filter((section) => section.enabled !== false).map((section) => h(HomeSectionRenderer, { key: section.id || `${section.type}-${section.order}`, section, page, destinations: destinationItems, blogs, settings })),
+    normalizeHomeSections(page.bodySections).filter((section) => section.enabled !== false).flatMap((section, index) => [
+      h(HomeSectionRenderer, { key: section.id || `${section.type}-${section.order}`, section, page, destinations: destinationItems, blogs, settings }),
+      index === 0 ? h(StudyOptionSearchWidget, { key: "home-study-option-search" }) : null,
+    ]),
   );
 }
 
@@ -1602,7 +1681,7 @@ function FeatureCardsSection({ page }) {
     subtitle: "Two focused ways Abroadways helps students move from ideas to action.",
   });
   const cards = sectionCards(section, defaultFeatureCards);
-  return h("section", { className: "section feature-card-section" }, h("div", { className: "container" }, h("div", { className: "feature-grid" }, cards.slice(0, 2).map((card, index) => h("article", { key: card.title, className: "big-feature-card", style: { background: card.backgroundColor || softColors[index] } }, h("div", null, h("span", { className: "eyebrow" }, card.eyebrow || "BANGLADESHI STUDENTS"), h("h2", null, card.title), h("ul", null, (card.bullets || splitList(card.text, [])).slice(0, 3).map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), item))), h(ButtonLink, { href: card.ctaLink || routes.services }, card.ctaText || "Learn more")), h("img", { src: card.imageUrl || "/images/abroadways-destination-planning.png", alt: "" }), h("span", { className: "feature-doodle", "aria-hidden": "true" }))))));
+  return h("section", { className: "section feature-card-section" }, h("div", { className: "container" }, h("div", { className: "feature-grid" }, cards.slice(0, 2).map((card, index) => h("article", { key: card.title, className: "big-feature-card", style: { background: card.backgroundColor || softColors[index] } }, h("div", null, h("span", { className: "eyebrow" }, card.eyebrow || "BANGLADESHI STUDENTS"), h("h2", null, card.title), h("ul", null, (card.bullets || splitList(card.text, [])).slice(0, 3).map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), h("span", null, item)))), h(ButtonLink, { href: card.ctaLink || routes.services }, card.ctaText || "Learn more")), h("div", { className: "feature-card-visual" }, h("img", { src: card.imageUrl || "/images/abroadways-destination-planning.png", alt: "" })), h("span", { className: "feature-doodle", "aria-hidden": "true" }))))));
 }
 
 function ServicesPreviewSection({ page }) {
@@ -1891,6 +1970,31 @@ function ConsultationSection({ page }) {
   return h("section", { className: "section consultation-claim" }, h("div", { className: "container" }, h("div", { className: "section-heading centered" }, h("h2", null, section.heading), h("span", { className: "scribble-line", "aria-hidden": "true" }), section.subtitle && h("p", null, section.subtitle)), h("div", { className: "claim-card" }, h("div", { className: "claim-copy" }, h("span", { className: "eyebrow" }, section.formHeading || "Free counselling"), h("h3", null, "Tell us your country interest and study goal"), h("ol", null, ["Choose your preferred destination", "Share budget, intake, and document status", "An Abroadways counsellor reviews your pathway"].map((item) => h("li", { key: item }, item))), h(ButtonLink, { href: section.primaryButtonLink || section.ctaLink || routes.planner }, section.primaryButtonText || section.ctaText || "Book Free Consultation"), section.secondaryButtonText && h(ButtonLink, { href: section.secondaryButtonLink || routes.contact, variant: "outline" }, section.secondaryButtonText)), h("img", { src: section.imageUrl || "/images/consultation-counsellor.png", alt: "Abroadways consultation" }))));
 }
 
+function StudyOptionSearchWidget({ compact = false }) {
+  const [form, setForm] = useState({ country: "", level: "", discipline: "", budget: "" });
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const submit = (event) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    Object.entries(form).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    navigateTo(`${routes.courses}${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+  return h("section", { className: cx("study-option-widget-section", compact && "compact") },
+    h("div", { className: "container study-option-widget" },
+      h("div", null, h("span", { className: "eyebrow" }, "Find Your Study Option"), h("h2", null, "Search by country, level, and subject area"), h("p", null, "Start with a simple filter. AbroadWays counsellors can help you verify the details before applying.")),
+      h("form", { onSubmit: submit, className: "study-option-form" },
+        h(SelectInput, { label: "Country", value: form.country, onChange: (value) => set("country", value), options: ["", ...allowedCountryNames] }),
+        h(SelectInput, { label: "Study level", value: form.level, onChange: (value) => set("level", value), options: ["", "foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
+        h(TextInput, { label: "Discipline / area", value: form.discipline, onChange: (value) => set("discipline", value), placeholder: "Business, IT, Health..." }),
+        h(TextInput, { label: "Budget range", value: form.budget, onChange: (value) => set("budget", value), placeholder: "Optional" }),
+        h("button", { className: "button button-primary", type: "submit" }, "Find Options", h(ArrowRight, { size: 18 })),
+      ),
+    ),
+  );
+}
+
 function StudyAbroadPage({ cms, destinations: destinationItems }) {
   const page = pageCopy(findPage(cms, "study-abroad", "/study-abroad"), {
     eyebrow: "Study Abroad",
@@ -1904,10 +2008,144 @@ function StudyAbroadPage({ cms, destinations: destinationItems }) {
     ogImage: "/images/abroadways-hero-campus.png",
   });
   setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
-  return h(React.Fragment, null, h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }), h(DestinationShowcase, { compact: true, destinations: destinationItems }), h(PlannerPreview), h(FinalCta));
+  return h(React.Fragment, null, h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }), h(StudyOptionSearchWidget, { compact: true }), h(DestinationShowcase, { compact: true, destinations: destinationItems }), h(PlannerPreview), h(FinalCta));
 }
 
-function CountryPage({ destination }) {
+function filterPublicPlatformItems(items, filters) {
+  return items.filter((item) => {
+    const haystack = [item.name, item.title, item.country, item.city, item.universityName, item.discipline, item.level, item.description, item.overview].join(" ").toLowerCase();
+    return (!filters.search || haystack.includes(filters.search.toLowerCase()))
+      && (!filters.country || item.country === filters.country)
+      && (!filters.level || item.level === filters.level || (Array.isArray(item.applicableLevels) && item.applicableLevels.includes(filters.level)))
+      && (!filters.discipline || String(item.discipline || "").toLowerCase().includes(filters.discipline.toLowerCase()) || (Array.isArray(item.applicablePrograms) && item.applicablePrograms.join(" ").toLowerCase().includes(filters.discipline.toLowerCase())))
+      && (!filters.coverageType || item.coverageType === filters.coverageType);
+  });
+}
+
+function PlatformFilters({ filters, setFilters, type }) {
+  const set = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
+  return h("div", { className: "public-platform-filters" },
+    h(TextInput, { label: "Search", value: filters.search, onChange: (value) => set("search", value), placeholder: "Search by name, city, subject..." }),
+    h(SelectInput, { label: "Country", value: filters.country, onChange: (value) => set("country", value), options: ["", ...allowedCountryNames] }),
+    type === "courses" && h(SelectInput, { label: "Level", value: filters.level, onChange: (value) => set("level", value), options: ["", "foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
+    type === "courses" && h(TextInput, { label: "Discipline", value: filters.discipline, onChange: (value) => set("discipline", value), placeholder: "Business, IT..." }),
+    type === "scholarships" && h(SelectInput, { label: "Coverage", value: filters.coverageType, onChange: (value) => set("coverageType", value), options: ["", "partial", "full", "tuition-discount", "stipend"] }),
+  );
+}
+
+function UniversitiesPage({ universities }) {
+  setSeo({ title: "Universities | AbroadWays", description: "Browse editable university listings for New Zealand, United Kingdom, Australia, Canada, and Malaysia.", image: "/images/abroadways-hero-campus.png" });
+  const params = new URLSearchParams(window.location.search);
+  const [filters, setFilters] = useState({ search: params.get("q") || "", country: params.get("country") || "" });
+  const visible = filterPublicPlatformItems(universities, filters);
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Universities", title: "Browse Study Abroad Universities", copy: "Explore editable university listings managed by AbroadWays counsellors.", image: "/images/abroadways-hero-campus.png" }),
+    h(StudyOptionSearchWidget, { compact: true }),
+    h("section", { className: "section public-platform-section" }, h("div", { className: "container" }, h(PlatformFilters, { filters, setFilters, type: "universities" }), visible.length ? h("div", { className: "public-platform-grid" }, visible.map((item) => h(UniversityCard, { key: item.slug, item }))) : h("div", { className: "empty-card" }, "University listings will be updated soon."))),
+    h(FinalCta),
+  );
+}
+
+function UniversityCard({ item }) {
+  return h(Link, { href: `${routes.universities}/${item.slug}`, className: "public-platform-card university-public-card" },
+    h("div", { className: "platform-logo-box" }, item.logoUrl ? h("img", { src: item.logoUrl, alt: `${item.name} logo`, loading: "lazy" }) : h("span", null, initialsFor(item.name))),
+    h("div", null, h("span", { className: "eyebrow" }, `${item.country}${item.city ? ` / ${item.city}` : ""}`), h("h3", null, item.name), h("p", null, item.shortDescription), h("div", { className: "platform-chip-row" }, item.ranking && h("em", null, item.ranking), item.scholarshipAvailable && h("em", null, "Scholarship available"), h("em", null, item.tuitionMin || "Tuition varies"))),
+  );
+}
+
+function UniversityDetailPage({ item, courses, scholarships }) {
+  setSeo({ title: item.seoTitle, description: item.seoDescription, image: item.ogImage || item.heroImageUrl });
+  const relatedCourses = courses.filter((course) => course.universityId === item.id || course.universityName === item.name || course.country === item.country).slice(0, 3);
+  const relatedScholarships = scholarships.filter((scholarship) => scholarship.universityId === item.id || scholarship.universityName === item.name || scholarship.country === item.country).slice(0, 3);
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: item.country, title: item.name, copy: item.shortDescription, image: item.heroImageUrl || item.ogImage || "/images/abroadways-hero-campus.png" }),
+    h("section", { className: "section platform-detail-section" }, h("div", { className: "container platform-detail-grid" },
+      h("article", { className: "platform-detail-main" }, h("h2", null, "Overview"), h("p", null, item.overview), item.benefits.length ? h("ul", { className: "aligned-list" }, item.benefits.map((benefit) => h("li", { key: benefit }, h(CheckCircle2, { size: 18 }), h("span", null, benefit)))) : null),
+      h("aside", { className: "platform-facts-card" }, h("h3", null, "Key facts"), h("p", null, `Country: ${item.country}`), h("p", null, `City: ${item.city || "Not set"}`), h("p", null, `Type: ${item.universityType || "Not set"}`), h("p", null, `Tuition: ${item.tuitionMin || "Varies"} ${item.tuitionMax ? `- ${item.tuitionMax}` : ""} ${item.currency || ""}`), item.scholarshipAvailable && h("strong", null, "Scholarship options may be available")),
+    )),
+    h(PlatformRelatedSection, { title: "Popular programs", items: item.popularPrograms.map((title) => ({ title, description: "Program availability should be verified before application.", link: routes.courses })) }),
+    h(PlatformRelatedSection, { title: "Related courses", items: relatedCourses.map((course) => ({ title: course.title, description: `${course.level} / ${course.discipline}`, link: `${routes.courses}/${course.slug}` })) }),
+    h(PlatformRelatedSection, { title: "Scholarships", items: relatedScholarships.map((scholarship) => ({ title: scholarship.name, description: scholarship.amount || scholarship.coverageType, link: `${routes.scholarships}/${scholarship.slug}` })) }),
+    item.faqs.length ? h("section", { className: "section faq-section" }, h("div", { className: "container" }, h(SectionHeading, { eyebrow: "FAQ", title: "University questions" }), h("div", { className: "faq-grid" }, item.faqs.map((faq) => h("article", { key: faq.question, className: "faq-card" }, h("h3", null, faq.question), h("p", null, faq.answer)))))) : null,
+    h(FinalCta),
+  );
+}
+
+function CoursesPage({ courses }) {
+  setSeo({ title: "Courses | AbroadWays", description: "Browse study abroad course and program listings across five AbroadWays focus countries.", image: "/images/abroadways-destination-planning.png" });
+  const params = new URLSearchParams(window.location.search);
+  const [filters, setFilters] = useState({ search: params.get("q") || "", country: params.get("country") || "", level: params.get("level") || "", discipline: params.get("discipline") || "" });
+  const visible = filterPublicPlatformItems(courses, filters);
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Courses", title: "Find Study Abroad Programs", copy: "Compare course options, levels, tuition notes, intakes, and requirements.", image: "/images/abroadways-destination-planning.png" }),
+    h(StudyOptionSearchWidget, { compact: true }),
+    h("section", { className: "section public-platform-section" }, h("div", { className: "container" }, h(PlatformFilters, { filters, setFilters, type: "courses" }), visible.length ? h("div", { className: "public-platform-grid" }, visible.map((item) => h(CourseCard, { key: item.slug, item }))) : h("div", { className: "empty-card" }, "Course listings will be updated soon."))),
+    h(FinalCta),
+  );
+}
+
+function CourseCard({ item }) {
+  return h(Link, { href: `${routes.courses}/${item.slug}`, className: "public-platform-card" }, h("span", { className: "eyebrow" }, `${item.country} / ${item.level}`), h("h3", null, item.title), h("p", null, item.description), h("div", { className: "platform-chip-row" }, h("em", null, item.discipline || "Discipline"), h("em", null, item.tuitionFee || "Tuition varies"), item.scholarshipAvailable && h("em", null, "Scholarship")));
+}
+
+function CourseDetailPage({ item }) {
+  setSeo({ title: item.seoTitle, description: item.seoDescription, image: item.ogImage });
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: item.country, title: item.title, copy: item.description, image: item.ogImage || "/images/abroadways-destination-planning.png" }),
+    h("section", { className: "section platform-detail-section" }, h("div", { className: "container platform-detail-grid" },
+      h("article", { className: "platform-detail-main" }, h("h2", null, "Course overview"), h("p", null, item.description), h("h3", null, "Requirements"), h("p", null, item.academicRequirement), h("p", null, item.englishRequirement), item.careerOutcomes.length ? h("ul", { className: "aligned-list" }, item.careerOutcomes.map((outcome) => h("li", { key: outcome }, h(CheckCircle2, { size: 18 }), h("span", null, outcome)))) : null),
+      h("aside", { className: "platform-facts-card" }, h("h3", null, "Program facts"), h("p", null, `University: ${item.universityName || "Not linked"}`), h("p", null, `Level: ${item.level}`), h("p", null, `Discipline: ${item.discipline}`), h("p", null, `Duration: ${item.duration || "Varies"}`), h("p", null, `Tuition: ${item.tuitionFee || "Varies"} ${item.currency || ""}`), h("p", null, `Intake: ${item.intake || "Varies"}`)),
+    )),
+    h(FinalCta),
+  );
+}
+
+function ScholarshipsPage({ scholarships }) {
+  setSeo({ title: "Scholarships | AbroadWays", description: "Browse scholarship and budget guidance listings for AbroadWays focus countries.", image: "/images/abroadways-hero-campus.png" });
+  const [filters, setFilters] = useState({ search: "", country: "", coverageType: "" });
+  const visible = filterPublicPlatformItems(scholarships, filters);
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Scholarships", title: "Scholarship & Budget Guidance", copy: "Explore editable scholarship records and plan realistic funding conversations.", image: "/images/abroadways-hero-campus.png" }),
+    h("section", { className: "section public-platform-section" }, h("div", { className: "container" }, h(PlatformFilters, { filters, setFilters, type: "scholarships" }), visible.length ? h("div", { className: "public-platform-grid" }, visible.map((item) => h(ScholarshipCard, { key: item.slug, item }))) : h("div", { className: "empty-card" }, "Scholarship listings will be updated soon."))),
+    h(FinalCta),
+  );
+}
+
+function ScholarshipCard({ item }) {
+  return h(Link, { href: `${routes.scholarships}/${item.slug}`, className: "public-platform-card" }, h("span", { className: "eyebrow" }, `${item.country} / ${item.coverageType || "Coverage"}`), h("h3", null, item.name), h("p", null, item.description), h("div", { className: "platform-chip-row" }, h("em", null, item.amount || "Amount varies"), h("em", null, item.deadline || "Deadline varies"), h("em", null, item.universityName || "University varies")));
+}
+
+function ScholarshipDetailPage({ item }) {
+  setSeo({ title: item.seoTitle, description: item.seoDescription, image: item.ogImage });
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: item.country, title: item.name, copy: item.description, image: item.ogImage || "/images/abroadways-hero-campus.png" }),
+    h("section", { className: "section platform-detail-section" }, h("div", { className: "container platform-detail-grid" },
+      h("article", { className: "platform-detail-main" }, h("h2", null, "Scholarship overview"), h("p", null, item.description), h("h3", null, "Eligibility"), h("p", null, item.eligibility), item.applicablePrograms.length ? h("ul", { className: "aligned-list" }, item.applicablePrograms.map((program) => h("li", { key: program }, h(CheckCircle2, { size: 18 }), h("span", null, program)))) : null),
+      h("aside", { className: "platform-facts-card" }, h("h3", null, "Scholarship facts"), h("p", null, `Amount: ${item.amount || "Varies"} ${item.currency || ""}`), h("p", null, `Coverage: ${item.coverageType || "Not set"}`), h("p", null, `Deadline: ${item.deadline || "Varies"}`), h("p", null, `University: ${item.universityName || "Varies"}`), item.applicationLink && h("a", { href: item.applicationLink, target: "_blank", rel: "noreferrer", className: "button button-outline" }, "Application Link")),
+    )),
+    h(FinalCta),
+  );
+}
+
+function PlatformRelatedSection({ title, items }) {
+  return h("section", { className: "section platform-related-section" }, h("div", { className: "container" }, h(SectionHeading, { eyebrow: "Related", title }), items.length ? h("div", { className: "public-platform-grid compact" }, items.map((item) => h(Link, { key: `${item.title}-${item.link}`, href: item.link, className: "public-platform-card" }, h("h3", null, item.title), h("p", null, item.description)))) : h("div", { className: "empty-card" }, "Listings for this section will be updated soon.")));
+}
+
+function CountryPlatformSections({ destination, universities, courses, scholarships }) {
+  const countryUniversities = universities.filter((item) => item.country === destination.name).slice(0, 3);
+  const countryCourses = courses.filter((item) => item.country === destination.name).slice(0, 3);
+  const countryScholarships = scholarships.filter((item) => item.country === destination.name).slice(0, 3);
+  return h("section", { className: "section country-platform-section" }, h("div", { className: "container" },
+    h(SectionHeading, { eyebrow: "Listings", title: `${destination.name} study options`, copy: "Universities, programs, and scholarships are editable from the AbroadWays CMS." }),
+    h("div", { className: "country-platform-grid" },
+      h("article", null, h("h3", null, "Featured universities"), countryUniversities.length ? countryUniversities.map((item) => h(Link, { key: item.slug, href: `${routes.universities}/${item.slug}` }, item.name)) : h("p", null, "University listings for this country will be updated soon.")),
+      h("article", null, h("h3", null, "Featured courses"), countryCourses.length ? countryCourses.map((item) => h(Link, { key: item.slug, href: `${routes.courses}/${item.slug}` }, item.title)) : h("p", null, "Course listings for this country will be updated soon.")),
+      h("article", null, h("h3", null, "Scholarships"), countryScholarships.length ? countryScholarships.map((item) => h(Link, { key: item.slug, href: `${routes.scholarships}/${item.slug}` }, item.name)) : h("p", null, "Scholarship listings for this country will be updated soon.")),
+    ),
+  ));
+}
+
+function CountryPage({ destination, universities = [], courses = [], scholarships = [] }) {
   setSeo({ title: destination.seoTitle || `Study in ${destination.name} | Abroadways`, description: destination.seoDescription || destination.overview, image: destination.ogImage || destination.image, ogTitle: destination.ogTitle, ogDescription: destination.ogDescription });
   return h(React.Fragment, null,
     h(PageHero, { eyebrow: "Study Abroad", title: destination.heroHeading || `Study in ${destination.name}`, copy: destination.heroSubtitle || destination.short, image: destination.image }),
@@ -1918,6 +2156,7 @@ function CountryPage({ destination }) {
     )),
     destination.galleryImages?.length ? h(CountryGallery, { images: destination.galleryImages, title: destination.name }) : null,
     h(CountryInfoSections, { destination }),
+    h(CountryPlatformSections, { destination, universities, courses, scholarships }),
     h(ProcessSection),
     h(FaqSection, { items: destination.faqs }),
     h(FinalCta),
@@ -2297,7 +2536,7 @@ function AuthGate({ section }) {
 
 function DashboardPage({ section = "overview" }) {
   setSeo({ title: "Abroadways CMS Dashboard", description: "Admin CMS dashboard for Abroadways V2 Pro." });
-  return h("div", { className: "dashboard" }, h(DashboardSidebar), h("main", { className: "dashboard-main" }, section === "overview" && h(DashboardOverview), section === "homepage" && h(HomepageBuilder), section === "pages" && h(PageManager), section === "countries" && h(CountryManager), section === "blogs" && h(BlogManager), section === "leads" && h(LeadManagerPro), section === "media" && h(MediaManager), section === "settings" && h(SettingsManager)));
+  return h("div", { className: "dashboard" }, h(DashboardSidebar), h("main", { className: "dashboard-main" }, section === "overview" && h(DashboardOverview), section === "homepage" && h(HomepageBuilder), section === "pages" && h(PageManager), section === "countries" && h(CountryManager), section === "universities" && h(UniversityManager), section === "courses" && h(CourseManager), section === "scholarships" && h(ScholarshipManager), section === "blogs" && h(BlogManager), section === "leads" && h(LeadManagerPro), section === "media" && h(MediaManager), section === "settings" && h(SettingsManager)));
 }
 
 function DashboardSidebar() {
@@ -3361,6 +3600,255 @@ function BlogEditor({ draft, setDraft, onSave, onCancel }) {
   );
 }
 
+function UniversityManager() {
+  return h(PlatformManager, { collection: "universities", title: "Universities", copy: "Create and manage university listings for the five AbroadWays focus countries.", createDraft: defaultUniversityDraft, normalizeDraft: normalizeUniversityDraft, payload: universityPayload, editor: UniversityEditor, card: UniversityAdminCard, filters: ["country", "status", "featured"] });
+}
+
+function CourseManager() {
+  return h(PlatformManager, { collection: "courses", title: "Courses", copy: "Manage course and program listings connected to countries and universities.", createDraft: defaultCourseDraft, normalizeDraft: normalizeCourseDraft, payload: coursePayload, editor: CourseEditor, card: CourseAdminCard, filters: ["country", "level", "discipline", "status", "featured"] });
+}
+
+function ScholarshipManager() {
+  return h(PlatformManager, { collection: "scholarships", title: "Scholarships", copy: "Manage scholarship and budget guidance listings for supported countries.", createDraft: defaultScholarshipDraft, normalizeDraft: normalizeScholarshipDraft, payload: scholarshipPayload, editor: ScholarshipEditor, card: ScholarshipAdminCard, filters: ["country", "coverageType", "status", "featured"] });
+}
+
+function PlatformManager({ collection, title, copy, createDraft, normalizeDraft, payload, editor: Editor, card: Card, filters = [] }) {
+  const cms = useAdminCollection(collection);
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState({ country: "", level: "", discipline: "", coverageType: "", status: "", featured: "" });
+  const filtered = cms.items.filter((item) => {
+    const haystack = [item.name, item.title, item.country, item.city, item.universityName, item.discipline, item.level, item.coverageType, item.status].join(" ").toLowerCase();
+    return (!search || haystack.includes(search.toLowerCase()))
+      && (!filter.country || item.country === filter.country)
+      && (!filter.level || item.level === filter.level)
+      && (!filter.discipline || item.discipline === filter.discipline)
+      && (!filter.coverageType || item.coverageType === filter.coverageType)
+      && (!filter.status || (item.status || "published") === filter.status)
+      && (!filter.featured || String(Boolean(item.featured)) === filter.featured);
+  });
+  const save = async (draft) => {
+    const saved = await cms.saveRecord(draft, payload(draft));
+    setEditing(normalizeDraft(saved));
+  };
+  const startNew = () => setEditing(createDraft());
+  const setFilterValue = (key, value) => setFilter((current) => ({ ...current, [key]: value }));
+  const singular = { Universities: "University", Courses: "Course", Scholarships: "Scholarship" }[title] || "Item";
+  return h("section", null,
+    h(CmsHeader, { title, copy, action: h("button", { className: "button button-primary", type: "button", onClick: startNew }, h(Plus, { size: 18 }), `New ${singular}`) }),
+    h(renderAlerts, { ...cms }),
+    editing && h(Editor, { draft: editing, setDraft: setEditing, onSave: save, onCancel: () => setEditing(null) }),
+    h("div", { className: "platform-filter-bar" },
+      h(TextInput, { label: "Search", value: search, onChange: setSearch, placeholder: `Search ${title.toLowerCase()}` }),
+      filters.includes("country") && h(SelectInput, { label: "Country", value: filter.country, onChange: (value) => setFilterValue("country", value), options: ["", ...allowedCountryNames] }),
+      filters.includes("level") && h(SelectInput, { label: "Level", value: filter.level, onChange: (value) => setFilterValue("level", value), options: ["", "foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
+      filters.includes("discipline") && h(TextInput, { label: "Discipline", value: filter.discipline, onChange: (value) => setFilterValue("discipline", value), placeholder: "Business, IT..." }),
+      filters.includes("coverageType") && h(SelectInput, { label: "Coverage", value: filter.coverageType, onChange: (value) => setFilterValue("coverageType", value), options: ["", "partial", "full", "tuition-discount", "stipend"] }),
+      filters.includes("status") && h(SelectInput, { label: "Status", value: filter.status, onChange: (value) => setFilterValue("status", value), options: ["", ...statusOptions] }),
+      filters.includes("featured") && h(SelectInput, { label: "Featured", value: filter.featured, onChange: (value) => setFilterValue("featured", value), options: ["", "true", "false"] }),
+    ),
+    h("div", { className: "platform-admin-grid" }, filtered.length ? filtered.map((item) => h(Card, { key: itemId(item) || item.slug, item, onEdit: () => setEditing(normalizeDraft(item)), onDelete: () => cms.deleteRecord(item, item.name || item.title || "item"), onToggleStatus: () => cms.patchRecord(item, { status: item.status === "published" ? "archived" : "published" }) })) : h("article", { className: "empty-card" }, "No records match these filters.")),
+  );
+}
+
+function defaultUniversityDraft() {
+  return normalizeUniversityDraft({ status: "draft", country: "Canada", universityType: "public", currency: "CAD", scholarshipAvailable: false, featured: false });
+}
+
+function normalizeUniversityDraft(item = {}) {
+  return {
+    ...item,
+    name: item.name || "",
+    slug: item.slug || slugify(item.name || "university"),
+    country: item.country || "Canada",
+    city: item.city || "",
+    logoUrl: item.logoUrl || "",
+    heroImageUrl: item.heroImageUrl || "",
+    galleryImagesText: lines(item.galleryImages),
+    shortDescription: item.shortDescription || "",
+    overview: item.overview || "",
+    universityType: item.universityType || "public",
+    intakesText: lines(item.intakes),
+    popularProgramsText: lines(item.popularPrograms),
+    benefitsText: lines(item.benefits),
+    requirementsAcademic: item.requirements?.academic || "",
+    requirementsEnglish: item.requirements?.english || "",
+    requirementsDocuments: item.requirements?.documents || "",
+    faqsText: jsonText(normalizeFaqObjects(item.faqs)),
+    status: item.status || "draft",
+    featured: Boolean(item.featured),
+  };
+}
+
+function universityPayload(draft) {
+  return {
+    ...draft,
+    slug: draft.slug || slugify(draft.name),
+    galleryImages: lineList(draft.galleryImagesText),
+    intakes: lineList(draft.intakesText),
+    popularPrograms: lineList(draft.popularProgramsText),
+    benefits: lineList(draft.benefitsText),
+    requirements: { academic: draft.requirementsAcademic, english: draft.requirementsEnglish, documents: draft.requirementsDocuments },
+    faqs: parseJsonText(draft.faqsText, []),
+    scholarshipAvailable: boolValue(draft.scholarshipAvailable, false),
+    featured: boolValue(draft.featured, false),
+  };
+}
+
+function defaultCourseDraft() {
+  return normalizeCourseDraft({ status: "draft", country: "Canada", level: "bachelor", studyMode: "on-campus", currency: "CAD", scholarshipAvailable: false, featured: false });
+}
+
+function normalizeCourseDraft(item = {}) {
+  return { ...item, title: item.title || "", slug: item.slug || slugify(item.title || "course"), country: item.country || "Canada", level: item.level || "bachelor", discipline: item.discipline || "", careerOutcomesText: lines(item.careerOutcomes), status: item.status || "draft", featured: Boolean(item.featured), scholarshipAvailable: Boolean(item.scholarshipAvailable) };
+}
+
+function coursePayload(draft) {
+  return { ...draft, slug: draft.slug || slugify(draft.title), careerOutcomes: lineList(draft.careerOutcomesText), scholarshipAvailable: boolValue(draft.scholarshipAvailable, false), featured: boolValue(draft.featured, false) };
+}
+
+function defaultScholarshipDraft() {
+  return normalizeScholarshipDraft({ status: "draft", country: "Canada", coverageType: "partial", currency: "CAD", featured: false });
+}
+
+function normalizeScholarshipDraft(item = {}) {
+  return { ...item, name: item.name || "", slug: item.slug || slugify(item.name || "scholarship"), country: item.country || "Canada", coverageType: item.coverageType || "partial", applicableLevelsText: lines(item.applicableLevels), applicableProgramsText: lines(item.applicablePrograms), status: item.status || "draft", featured: Boolean(item.featured) };
+}
+
+function scholarshipPayload(draft) {
+  return { ...draft, slug: draft.slug || slugify(draft.name), applicableLevels: lineList(draft.applicableLevelsText), applicablePrograms: lineList(draft.applicableProgramsText), featured: boolValue(draft.featured, false) };
+}
+
+function UniversityEditor({ draft, setDraft, onSave, onCancel }) {
+  const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+  const submit = (event) => { event.preventDefault(); onSave(draft); };
+  return h("form", { className: "cms-editor platform-editor", onSubmit: submit },
+    h("h2", null, draft.id || draft._id ? "Edit University" : "Create University"),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "University name", value: draft.name, onChange: (value) => setDraft((current) => ({ ...current, name: value, slug: current.slug || slugify(value) })) }),
+      h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", slugify(value)) }),
+      h(SelectInput, { label: "Country", value: draft.country, onChange: (value) => set("country", value), options: allowedCountryNames }),
+      h(TextInput, { label: "City", value: draft.city, onChange: (value) => set("city", value) }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(SelectInput, { label: "Featured", value: String(draft.featured), onChange: (value) => set("featured", value === "true"), options: ["false", "true"] }),
+      h(ImageField, { label: "University logo", value: draft.logoUrl, onChange: (value) => set("logoUrl", value), className: "full", folder: "abroadways/universities" }),
+      h(ImageField, { label: "Hero image", value: draft.heroImageUrl, onChange: (value) => set("heroImageUrl", value), className: "full", folder: "abroadways/universities" }),
+      h(GalleryImageEditor, { label: "Gallery images", value: draft.galleryImagesText, onChange: (value) => set("galleryImagesText", value) }),
+      h(TextArea, { label: "Short description", value: draft.shortDescription, onChange: (value) => set("shortDescription", value), className: "full" }),
+      h(TextArea, { label: "Overview", value: draft.overview, onChange: (value) => set("overview", value), className: "full" }),
+      h(SelectInput, { label: "University type", value: draft.universityType, onChange: (value) => set("universityType", value), options: ["public", "private", "pathway", "college"] }),
+      h(TextInput, { label: "Ranking", value: draft.ranking, onChange: (value) => set("ranking", value) }),
+      h(TextInput, { label: "QS ranking", value: draft.qsRanking, onChange: (value) => set("qsRanking", value) }),
+      h(TextInput, { label: "World ranking", value: draft.worldRanking, onChange: (value) => set("worldRanking", value) }),
+      h(TextInput, { label: "Tuition min", value: draft.tuitionMin, onChange: (value) => set("tuitionMin", value) }),
+      h(TextInput, { label: "Tuition max", value: draft.tuitionMax, onChange: (value) => set("tuitionMax", value) }),
+      h(TextInput, { label: "Currency", value: draft.currency, onChange: (value) => set("currency", value) }),
+      h(TextInput, { label: "Website URL", value: draft.websiteUrl, onChange: (value) => set("websiteUrl", value) }),
+      h(TextInput, { label: "Application URL", value: draft.applicationUrl, onChange: (value) => set("applicationUrl", value) }),
+      h(TextArea, { label: "Intakes, one per line", value: draft.intakesText, onChange: (value) => set("intakesText", value) }),
+      h(TextArea, { label: "Popular programs, one per line", value: draft.popularProgramsText, onChange: (value) => set("popularProgramsText", value) }),
+      h(TextArea, { label: "Benefits, one per line", value: draft.benefitsText, onChange: (value) => set("benefitsText", value) }),
+      h(TextArea, { label: "Academic requirements", value: draft.requirementsAcademic, onChange: (value) => set("requirementsAcademic", value) }),
+      h(TextArea, { label: "English requirements", value: draft.requirementsEnglish, onChange: (value) => set("requirementsEnglish", value) }),
+      h(TextArea, { label: "Documents required", value: draft.requirementsDocuments, onChange: (value) => set("requirementsDocuments", value) }),
+      h(TextArea, { label: "Visa notes", value: draft.visaNotes, onChange: (value) => set("visaNotes", value), className: "full" }),
+      h(TextArea, { label: "FAQs JSON", value: draft.faqsText, onChange: (value) => set("faqsText", value), className: "full" }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/seo" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
+}
+
+function CourseEditor({ draft, setDraft, onSave, onCancel }) {
+  const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+  const submit = (event) => { event.preventDefault(); onSave(draft); };
+  return h("form", { className: "cms-editor platform-editor", onSubmit: submit },
+    h("h2", null, draft.id || draft._id ? "Edit Course" : "Create Course"),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "Course title", value: draft.title, onChange: (value) => setDraft((current) => ({ ...current, title: value, slug: current.slug || slugify(value) })) }),
+      h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", slugify(value)) }),
+      h(SelectInput, { label: "Country", value: draft.country, onChange: (value) => set("country", value), options: allowedCountryNames }),
+      h(TextInput, { label: "University ID", value: draft.universityId, onChange: (value) => set("universityId", value) }),
+      h(TextInput, { label: "University name", value: draft.universityName, onChange: (value) => set("universityName", value) }),
+      h(SelectInput, { label: "Level", value: draft.level, onChange: (value) => set("level", value), options: ["foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
+      h(TextInput, { label: "Discipline", value: draft.discipline, onChange: (value) => set("discipline", value) }),
+      h(TextInput, { label: "Duration", value: draft.duration, onChange: (value) => set("duration", value) }),
+      h(TextInput, { label: "Tuition fee", value: draft.tuitionFee, onChange: (value) => set("tuitionFee", value) }),
+      h(TextInput, { label: "Currency", value: draft.currency, onChange: (value) => set("currency", value) }),
+      h(TextInput, { label: "Intake", value: draft.intake, onChange: (value) => set("intake", value) }),
+      h(SelectInput, { label: "Study mode", value: draft.studyMode, onChange: (value) => set("studyMode", value), options: ["on-campus", "online", "hybrid"] }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(SelectInput, { label: "Featured", value: String(draft.featured), onChange: (value) => set("featured", value === "true"), options: ["false", "true"] }),
+      h(TextArea, { label: "Description", value: draft.description, onChange: (value) => set("description", value), className: "full" }),
+      h(TextArea, { label: "English requirement", value: draft.englishRequirement, onChange: (value) => set("englishRequirement", value) }),
+      h(TextArea, { label: "Academic requirement", value: draft.academicRequirement, onChange: (value) => set("academicRequirement", value) }),
+      h(TextArea, { label: "Career outcomes, one per line", value: draft.careerOutcomesText, onChange: (value) => set("careerOutcomesText", value), className: "full" }),
+      h(TextInput, { label: "Application deadline", value: draft.applicationDeadline, onChange: (value) => set("applicationDeadline", value) }),
+      h(SelectInput, { label: "Scholarship available", value: String(draft.scholarshipAvailable), onChange: (value) => set("scholarshipAvailable", value === "true"), options: ["false", "true"] }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/courses" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
+}
+
+function ScholarshipEditor({ draft, setDraft, onSave, onCancel }) {
+  const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+  const submit = (event) => { event.preventDefault(); onSave(draft); };
+  return h("form", { className: "cms-editor platform-editor", onSubmit: submit },
+    h("h2", null, draft.id || draft._id ? "Edit Scholarship" : "Create Scholarship"),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "Scholarship name", value: draft.name, onChange: (value) => setDraft((current) => ({ ...current, name: value, slug: current.slug || slugify(value) })) }),
+      h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", slugify(value)) }),
+      h(SelectInput, { label: "Country", value: draft.country, onChange: (value) => set("country", value), options: allowedCountryNames }),
+      h(TextInput, { label: "University ID", value: draft.universityId, onChange: (value) => set("universityId", value) }),
+      h(TextInput, { label: "University name", value: draft.universityName, onChange: (value) => set("universityName", value) }),
+      h(TextInput, { label: "Amount", value: draft.amount, onChange: (value) => set("amount", value) }),
+      h(TextInput, { label: "Currency", value: draft.currency, onChange: (value) => set("currency", value) }),
+      h(SelectInput, { label: "Coverage type", value: draft.coverageType, onChange: (value) => set("coverageType", value), options: ["partial", "full", "tuition-discount", "stipend"] }),
+      h(TextInput, { label: "Deadline", value: draft.deadline, onChange: (value) => set("deadline", value) }),
+      h(TextInput, { label: "Application link", value: draft.applicationLink, onChange: (value) => set("applicationLink", value) }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(SelectInput, { label: "Featured", value: String(draft.featured), onChange: (value) => set("featured", value === "true"), options: ["false", "true"] }),
+      h(TextArea, { label: "Description", value: draft.description, onChange: (value) => set("description", value), className: "full" }),
+      h(TextArea, { label: "Eligibility", value: draft.eligibility, onChange: (value) => set("eligibility", value), className: "full" }),
+      h(TextArea, { label: "Applicable levels, one per line", value: draft.applicableLevelsText, onChange: (value) => set("applicableLevelsText", value) }),
+      h(TextArea, { label: "Applicable programs, one per line", value: draft.applicableProgramsText, onChange: (value) => set("applicableProgramsText", value) }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/scholarships" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
+}
+
+function UniversityAdminCard({ item, onEdit, onDelete, onToggleStatus }) {
+  return h("article", { className: "platform-admin-card" },
+    h("div", { className: "platform-logo-box" }, item.logoUrl ? h("img", { src: item.logoUrl, alt: `${item.name} logo` }) : h("span", null, initialsFor(item.name))),
+    h("div", null, h("strong", null, item.name), h("span", null, `${item.country || "Country"} / ${item.city || "City not set"}`), h("span", null, `Ranking: ${item.ranking || item.qsRanking || item.worldRanking || "Not set"}`), h(StatusBadge, { status: item.status || "draft" })),
+    h("div", { className: "cms-row-actions" }, h("button", { type: "button", className: "mini-button", onClick: onEdit }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: `${routes.universities}/${item.slug}`, className: "mini-button" }, h(Eye, { size: 15 }), "View"), h("button", { type: "button", className: "mini-button", onClick: onToggleStatus }, item.status === "published" ? "Archive" : "Publish"), h("button", { type: "button", className: "mini-button danger", onClick: onDelete }, h(Trash2, { size: 15 }), "Delete")),
+  );
+}
+
+function CourseAdminCard({ item, onEdit, onDelete, onToggleStatus }) {
+  return h("article", { className: "platform-admin-card" },
+    h("div", { className: "platform-logo-box" }, h(GraduationCap, { size: 26 })),
+    h("div", null, h("strong", null, item.title), h("span", null, `${item.country || "Country"} / ${item.universityName || "University not linked"}`), h("span", null, `${item.level || "Level"} / ${item.discipline || "Discipline"} / ${item.tuitionFee || "Tuition varies"}`), h(StatusBadge, { status: item.status || "draft" })),
+    h("div", { className: "cms-row-actions" }, h("button", { type: "button", className: "mini-button", onClick: onEdit }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: `${routes.courses}/${item.slug}`, className: "mini-button" }, h(Eye, { size: 15 }), "View"), h("button", { type: "button", className: "mini-button", onClick: onToggleStatus }, item.status === "published" ? "Archive" : "Publish"), h("button", { type: "button", className: "mini-button danger", onClick: onDelete }, h(Trash2, { size: 15 }), "Delete")),
+  );
+}
+
+function ScholarshipAdminCard({ item, onEdit, onDelete, onToggleStatus }) {
+  return h("article", { className: "platform-admin-card" },
+    h("div", { className: "platform-logo-box" }, h(BadgeCheck, { size: 26 })),
+    h("div", null, h("strong", null, item.name), h("span", null, `${item.country || "Country"} / ${item.universityName || "University not linked"}`), h("span", null, `${item.amount || "Amount varies"} / ${item.coverageType || "Coverage not set"} / ${item.deadline || "No deadline"}`), h(StatusBadge, { status: item.status || "draft" })),
+    h("div", { className: "cms-row-actions" }, h("button", { type: "button", className: "mini-button", onClick: onEdit }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: `${routes.scholarships}/${item.slug}`, className: "mini-button" }, h(Eye, { size: 15 }), "View"), h("button", { type: "button", className: "mini-button", onClick: onToggleStatus }, item.status === "published" ? "Archive" : "Publish"), h("button", { type: "button", className: "mini-button danger", onClick: onDelete }, h(Trash2, { size: 15 }), "Delete")),
+  );
+}
+
 function MediaManager() {
   const cms = useAdminCollection("media");
   const [draft, setDraft] = useState({ title: "", url: "", altText: "", caption: "", folder: "Miscellaneous", tagsText: "" });
@@ -3829,6 +4317,9 @@ function App() {
   const cms = useCmsData(path);
   const destinationItems = mergeDestinations(cms.countries);
   const blogItems = mergeBlogs(cms.blogs);
+  const universityItems = normalizeUniversities(cms.universities);
+  const courseItems = normalizeCourses(cms.courses);
+  const scholarshipItems = normalizeScholarships(cms.scholarships);
   const settings = mergeSettings(cms.settings);
   React.useEffect(() => {
     document.documentElement.style.setProperty("--blue", settings.primaryColor || "#1877f2");
@@ -3882,6 +4373,21 @@ function App() {
     if (path === routes.services) return h(ServicesPage, { cms });
     if (path === routes.academy) return h(AcademyPage, { cms });
     if (path === routes.partners) return h(PartnersPage, { cms, settings });
+    if (path === routes.universities) return h(UniversitiesPage, { universities: universityItems });
+    if (path.startsWith(`${routes.universities}/`)) {
+      const item = universityItems.find((entry) => path === `${routes.universities}/${entry.slug}`);
+      return item ? h(UniversityDetailPage, { item, courses: courseItems, scholarships: scholarshipItems }) : h(NotFoundPage);
+    }
+    if (path === routes.courses) return h(CoursesPage, { courses: courseItems });
+    if (path.startsWith(`${routes.courses}/`)) {
+      const item = courseItems.find((entry) => path === `${routes.courses}/${entry.slug}`);
+      return item ? h(CourseDetailPage, { item }) : h(NotFoundPage);
+    }
+    if (path === routes.scholarships) return h(ScholarshipsPage, { scholarships: scholarshipItems });
+    if (path.startsWith(`${routes.scholarships}/`)) {
+      const item = scholarshipItems.find((entry) => path === `${routes.scholarships}/${entry.slug}`);
+      return item ? h(ScholarshipDetailPage, { item }) : h(NotFoundPage);
+    }
     if (path === routes.whoAreWe || path === routes.about) return h(WhoAreWePage, { cms, destinations: destinationItems, settings });
     if (path === routes.planner) return h(PathwayPlannerPage);
     if (path === routes.blog) return h(BlogPage, { blogs: blogItems, cms });
@@ -3891,12 +4397,12 @@ function App() {
     }
     if (path === routes.contact) return h(ContactPage, { cms, settings });
     const country = destinationItems.find((destination) => path === `${routes.studyAbroad}/${destination.slug}` || path === `${routes.studyAbroad}/${destination.legacySlug}`);
-    if (country) return h(CountryPage, { destination: country });
+    if (country) return h(CountryPage, { destination: country, universities: universityItems, courses: courseItems, scholarships: scholarshipItems });
     return h(NotFoundPage);
-  }, [path, cms, destinationItems, blogItems, settings]);
+  }, [path, cms, destinationItems, blogItems, universityItems, courseItems, scholarshipItems, settings]);
 
   const isAdminSurface = path.startsWith("/dashboard") || path === routes.login;
-  return h(React.Fragment, null, !isAdminSurface && h(Navbar, { items: destinationItems, settings }), h("main", null, page), !isAdminSurface && h(FloatingTestCta), !isAdminSurface && h(FooterPro, { items: destinationItems, settings }));
+  return h(React.Fragment, null, !isAdminSurface && h(Navbar, { items: destinationItems, settings }), h("main", { className: "app-main" }, page), !isAdminSurface && h(FloatingTestCta), !isAdminSurface && h(FooterPro, { items: destinationItems, settings }));
 }
 
 createRoot(document.getElementById("root")).render(h(App));
