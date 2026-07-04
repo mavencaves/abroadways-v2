@@ -9,26 +9,33 @@ import {
   ChevronDown,
   Compass,
   Copy,
+  CircleHelp,
   Edit3,
   Eye,
   FileCheck2,
+  GripVertical,
   GraduationCap,
   Image as ImageIcon,
   Landmark,
+  Layers,
   LayoutDashboard,
   LogOut,
   Mail,
   MapPin,
   Menu,
+  Monitor,
   Newspaper,
   Phone,
   Plane,
   Plus,
+  RotateCcw,
   Save,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
+  Smartphone,
+  Tablet,
   Trash2,
   UsersRound,
   X,
@@ -421,7 +428,26 @@ const defaultPartners = [
   },
 ];
 
-const homeSectionTypeOptions = ["hero", "successMetrics", "pathwayCards", "featureCards", "servicesPreview", "academyTeaser", "successStories", "serviceChips", "insightsSection", "consultationForm", "blogPreview", "resourceTiles", "consultationCta", "trustSection"];
+const homeSectionTypeOptions = ["hero", "successMetrics", "pathwayCards", "featureCards", "servicesPreview", "academyTeaser", "successStories", "serviceChips", "insightsSection", "consultationForm", "blogPreview", "resourceTiles", "trustSection", "ctaBanner", "faqSection", "imageGallery", "partnerCta", "consultationCta"];
+const sectionLibrary = [
+  ["hero", "Hero", "Large headline, CTAs, image, chips, and animation controls.", Sparkles],
+  ["successMetrics", "Success Metrics", "Conversion stats with editable values, labels, icons, and colors.", BadgeCheck],
+  ["pathwayCards", "Pathway Cards", "Pastel destination and support cards with links.", Compass],
+  ["featureCards", "Feature Cards", "Large two-column visual cards with bullets and CTAs.", LayoutDashboard],
+  ["servicesPreview", "Services", "Service cards for counselling, applications, visas, and support.", FileCheck2],
+  ["academyTeaser", "Academy Teaser", "Coming-soon exam preparation cards and CTA.", GraduationCap],
+  ["successStories", "Success Stories", "Tabbed student journey cards with images and tags.", UsersRound],
+  ["serviceChips", "Service Chips", "Floating support chips and center image.", Sparkles],
+  ["insightsSection", "Insights", "Content feature with guide CTA and country cards.", Newspaper],
+  ["consultationForm", "Consultation Form", "Homepage lead form settings and image.", Mail],
+  ["blogPreview", "Blog Preview", "Latest published posts with language tabs.", BookOpenCheck],
+  ["resourceTiles", "Resource Tiles", "Pastel quick-link tiles.", Layers],
+  ["trustSection", "Trust Section", "Trust cards and credibility signals.", ShieldCheck],
+  ["ctaBanner", "CTA Banner", "Prominent call-to-action with image or background.", ArrowRight],
+  ["faqSection", "FAQ Section", "Frequently asked questions for homepage.", CircleHelp],
+  ["imageGallery", "Image Gallery", "Editable image grid with captions.", ImageIcon],
+  ["partnerCta", "Partner CTA", "Small CTA linking to partner information.", BadgeCheck],
+];
 
 const legacyHomeSectionKeys = {
   "study-pathway": "pathwayCards",
@@ -438,6 +464,10 @@ const legacyHomeSectionKeys = {
   "insights-section": "insightsSection",
   "consultation-form": "consultationForm",
   "resource-tiles": "resourceTiles",
+  "cta-banner": "ctaBanner",
+  "faq-section": "faqSection",
+  "image-gallery": "imageGallery",
+  "partner-cta": "partnerCta",
 };
 
 const modernHomeSectionKeys = {
@@ -456,6 +486,10 @@ const modernHomeSectionKeys = {
   insightsSection: "insights-section",
   consultationForm: "consultation-form",
   resourceTiles: "resource-tiles",
+  ctaBanner: "cta-banner",
+  faqSection: "faq-section",
+  imageGallery: "image-gallery",
+  partnerCta: "partner-cta",
 };
 
 const defaultFeatureCards = [
@@ -878,6 +912,13 @@ function sectionItems(section, key, fallback = []) {
   return Array.isArray(section?.[key]) && section[key].length ? section[key] : fallback;
 }
 
+function colorStyle(section = {}) {
+  const style = {};
+  if (section.backgroundColor) style.background = section.backgroundColor;
+  if (section.textColor) style.color = section.textColor;
+  return style;
+}
+
 function homeSectionType(section = {}) {
   return section.type || legacyHomeSectionKeys[section.key] || section.key || "hero";
 }
@@ -962,6 +1003,25 @@ function normalizeHomeSection(section = {}, index = 0) {
   }
   if (type === "resourceTiles") {
     normalized.heading = section.heading || section.title || "Resources for your next step";
+    normalized.items = Array.isArray(section.items) ? section.items : [];
+  }
+  if (type === "ctaBanner") {
+    normalized.heading = section.heading || section.title || "Ready to plan your study abroad journey?";
+    normalized.ctaText = section.ctaText || section.primaryButtonText || "Book Free Consultation";
+    normalized.ctaLink = section.ctaLink || section.primaryButtonLink || routes.planner;
+  }
+  if (type === "faqSection") {
+    normalized.heading = section.heading || section.title || "Common questions";
+    normalized.faqs = Array.isArray(section.faqs) ? section.faqs : Array.isArray(section.items) ? section.items : [];
+  }
+  if (type === "imageGallery") {
+    normalized.heading = section.heading || section.title || "Gallery";
+    normalized.images = Array.isArray(section.images) ? section.images : Array.isArray(section.items) ? section.items : [];
+  }
+  if (type === "partnerCta") {
+    normalized.heading = section.heading || section.title || "View Our Partners";
+    normalized.ctaText = section.ctaText || section.primaryButtonText || "View Our Partners";
+    normalized.ctaLink = section.ctaLink || section.primaryButtonLink || routes.partners;
     normalized.items = Array.isArray(section.items) ? section.items : [];
   }
   if (type === "consultationCta") {
@@ -1338,6 +1398,14 @@ function HomeSectionRenderer({ section, page, destinations: destinationItems, bl
       return h(BlogPreview, { blogs, page: typedPage });
     case "resourceTiles":
       return h(ResourceTilesSection, { page: typedPage });
+    case "ctaBanner":
+      return h(CtaBannerSection, { page: typedPage });
+    case "faqSection":
+      return h(HomepageFaqSection, { page: typedPage });
+    case "imageGallery":
+      return h(HomepageGallerySection, { page: typedPage });
+    case "partnerCta":
+      return h(PartnersHomeCta, { page: typedPage });
     case "consultationCta":
       return h(ConsultationSection, { page: typedPage });
     case "trustSection":
@@ -1650,6 +1718,67 @@ function ResourceTilesSection({ page }) {
     h("div", { className: "container" },
       h("div", { className: "section-heading centered" }, h("h2", null, section.heading || section.title), section.subtitle && h("p", null, section.subtitle)),
       h("div", { className: "resource-tile-row" }, items.map((item, index) => h(Link, { key: `${item.title}-${index}`, href: item.link || routes.blog, className: "resource-tile", style: { background: item.backgroundColor || softColors[index % softColors.length] } }, h("span", { className: "resource-icon" }, item.icon || String(item.title || "?").slice(0, 2)), h("strong", null, item.title), h("p", null, item.description), h("em", null, item.ctaText || "Open")))),
+    ),
+  );
+}
+
+function CtaBannerSection({ page }) {
+  const section = sectionFor(page, "cta-banner", {
+    eyebrow: "Next step",
+    heading: "Ready to plan your study abroad journey?",
+    subtitle: "Start with a focused consultation and a practical route for your preferred destination.",
+    ctaText: "Book Free Consultation",
+    ctaLink: routes.planner,
+    imageUrl: "/images/consultation-counsellor.png",
+  });
+  return h("section", { className: "section homepage-cta-banner" },
+    h("div", { className: "container homepage-cta-card", style: colorStyle(section) },
+      h("div", null,
+        h("span", { className: "eyebrow" }, section.eyebrow || "Next step"),
+        h("h2", null, section.heading || section.title),
+        section.subtitle && h("p", null, section.subtitle),
+        h(ButtonLink, { href: section.ctaLink || section.primaryButtonLink || routes.planner }, section.ctaText || section.primaryButtonText || "Book Free Consultation"),
+      ),
+      section.imageUrl && h("img", { src: section.imageUrl, alt: section.imageAlt || "Abroadways consultation" }),
+    ),
+  );
+}
+
+function HomepageFaqSection({ page }) {
+  const section = sectionFor(page, "faq-section", {
+    heading: "Common questions",
+    subtitle: "Short answers for students and families starting their study abroad planning.",
+    faqs: [{ question: "When should I start planning?", answer: "Start early enough to compare countries, courses, budget, intake timing, and documents before applying." }],
+  });
+  const faqs = sectionItems(section, "faqs", sectionItems(section, "items", []));
+  return h("section", { className: "section homepage-faq-section" },
+    h("div", { className: "container" },
+      h("div", { className: "section-heading centered" }, h("h2", null, section.heading || section.title), section.subtitle && h("p", null, section.subtitle)),
+      h("div", { className: "homepage-faq-grid" }, faqs.map((item, index) => h("article", { key: `${item.question || item.title}-${index}` },
+        h("h3", null, item.question || item.title || `Question ${index + 1}`),
+        h("p", null, item.answer || item.description || ""),
+      ))),
+    ),
+  );
+}
+
+function HomepageGallerySection({ page }) {
+  const section = sectionFor(page, "image-gallery", {
+    heading: "Study abroad visuals",
+    subtitle: "Editable media slots for campus, counselling, and student journey images.",
+    images: [],
+  });
+  const images = sectionItems(section, "images", sectionItems(section, "items", []));
+  return h("section", { className: "section homepage-gallery-section" },
+    h("div", { className: "container" },
+      h("div", { className: "section-heading centered" }, h("h2", null, section.heading || section.title), section.subtitle && h("p", null, section.subtitle)),
+      images.length ? h("div", { className: "homepage-gallery-grid" }, images.map((item, index) => {
+        const url = item.imageUrl || item.url;
+        return h("figure", { key: `${url || item.caption}-${index}` },
+          url && h("img", { src: url, alt: item.altText || item.caption || "Abroadways gallery image" }),
+          (item.caption || item.title) && h("figcaption", null, item.caption || item.title),
+        );
+      })) : h("div", { className: "empty-card" }, "Add gallery images from the homepage builder."),
     ),
   );
 }
@@ -2394,71 +2523,258 @@ function HomepageBuilder() {
   const cms = useAdminCollection("pages");
   const home = cms.items.find((item) => item.routeKey === "home" || item.slug === "/");
   const [sections, setSections] = useState([]);
+  const [savedSections, setSavedSections] = useState([]);
   const [editingId, setEditingId] = useState("");
+  const [draggingId, setDraggingId] = useState("");
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [previewMode, setPreviewMode] = useState("desktop");
+  const [activeTab, setActiveTab] = useState("sections");
+  const [lastSaved, setLastSaved] = useState("");
+  const [saving, setSaving] = useState(false);
   React.useEffect(() => {
-    if (!cms.loading) setSections(normalizeHomeSections(home?.bodySections || defaultHomeSections()));
+    if (!cms.loading) {
+      const next = normalizeHomeSections(home?.bodySections || defaultHomeSections());
+      setSections(next);
+      setSavedSections(next);
+      setEditingId((current) => current || next[0]?.id || "");
+    }
   }, [cms.loading, home?.updatedAt, home?.id, home?._id]);
-  const editing = sections.find((section) => section.id === editingId);
-  const updateSection = (id, patch) => setSections((current) => current.map((section) => section.id === id ? normalizeHomeSection({ ...section, ...patch }, section.order - 1) : section));
-  const reorder = (id, direction) => {
+  const orderedSections = [...sections].sort((a, b) => a.order - b.order);
+  const editing = orderedSections.find((section) => section.id === editingId);
+  const dirty = jsonText(orderedSections) !== jsonText(savedSections);
+  React.useEffect(() => {
+    const warn = (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const normalizeOrders = (list) => list.map((item, index) => normalizeHomeSection({ ...item, order: index + 1 }, index));
+  const updateSection = (id, patch) => setSections((current) => normalizeOrders(current.map((section) => section.id === id ? { ...section, ...patch } : section).sort((a, b) => a.order - b.order)));
+  const moveSection = (id, direction) => {
     setSections((current) => {
       const list = [...current].sort((a, b) => a.order - b.order);
       const index = list.findIndex((item) => item.id === id);
       const target = index + direction;
       if (target < 0 || target >= list.length) return current;
       [list[index], list[target]] = [list[target], list[index]];
-      return list.map((item, orderIndex) => ({ ...item, order: orderIndex + 1 }));
+      return normalizeOrders(list);
     });
   };
+  const dropSection = (targetId) => {
+    if (!draggingId || draggingId === targetId) return;
+    setSections((current) => {
+      const list = [...current].sort((a, b) => a.order - b.order);
+      const from = list.findIndex((item) => item.id === draggingId);
+      const to = list.findIndex((item) => item.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+      return normalizeOrders(list);
+    });
+    setDraggingId("");
+  };
   const duplicate = (section) => {
-    const copy = normalizeHomeSection({ ...section, id: `${section.type}-${Date.now()}`, title: `${homeSectionTitle(section)} copy`, order: sections.length + 1 }, sections.length);
-    setSections((current) => [...current, copy]);
+    const list = [...orderedSections];
+    const index = list.findIndex((item) => item.id === section.id);
+    const copyTitle = `${homeSectionTitle(section)} Copy`;
+    const copy = normalizeHomeSection({ ...section, id: `${section.type}-${Date.now()}`, heading: copyTitle, title: copyTitle, order: index + 2 }, index + 1);
+    list.splice(index + 1, 0, copy);
+    setSections(normalizeOrders(list));
     setEditingId(copy.id);
+    setActiveTab("edit");
   };
   const remove = (section) => {
     if (!window.confirm(`Delete ${homeSectionTitle(section)}?`)) return;
-    setSections((current) => current.filter((item) => item.id !== section.id).map((item, index) => ({ ...item, order: index + 1 })));
+    setSections((current) => normalizeOrders(current.filter((item) => item.id !== section.id).sort((a, b) => a.order - b.order)));
     if (editingId === section.id) setEditingId("");
   };
   const addSection = (type) => {
-    const section = createHomeSection(type, sections.length + 1);
-    setSections((current) => [...current, section]);
+    const section = createHomeSection(type, orderedSections.length + 1);
+    setSections((current) => normalizeOrders([...current, section].sort((a, b) => a.order - b.order)));
     setEditingId(section.id);
+    setShowLibrary(false);
+    setActiveTab("edit");
+  };
+  const reset = () => {
+    if (!dirty || window.confirm("Reset all unsaved homepage builder changes?")) {
+      setSections(savedSections);
+      setEditingId(savedSections[0]?.id || "");
+    }
+  };
+  const restoreRevision = (revision) => {
+    if (!revision?.bodySections?.length) return;
+    if (!window.confirm("Restore this saved homepage snapshot into the builder? You can review before saving.")) return;
+    const restored = normalizeHomeSections(revision.bodySections);
+    setSections(restored);
+    setEditingId(restored[0]?.id || "");
   };
   const save = async () => {
-    const base = home || { id: "home", routeKey: "home", slug: "/", title: "Homepage", status: "published" };
-    const payload = {
-      ...pagePayload(normalizePageDraft(base)),
-      id: itemId(base) || "home",
-      title: base.title || "Homepage",
-      routeKey: "home",
-      slug: "/",
-      status: base.status || "published",
-      bodySections: sections.map((section, index) => normalizeHomeSection({ ...section, order: index + 1 }, index)),
-    };
-    await cms.saveRecord(home || {}, payload);
+    setSaving(true);
+    try {
+      const base = home || { id: "home", routeKey: "home", slug: "/", title: "Homepage", status: "published" };
+      const nextSections = normalizeOrders(orderedSections);
+      const revisions = [
+        { id: `revision-${Date.now()}`, savedAt: new Date().toISOString(), bodySections: savedSections },
+        ...(Array.isArray(base.homepageRevisions) ? base.homepageRevisions : []),
+      ].filter((revision) => Array.isArray(revision.bodySections) && revision.bodySections.length).slice(0, 5);
+      const payload = {
+        ...pagePayload(normalizePageDraft(base)),
+        id: itemId(base) || "home",
+        title: base.title || "Homepage",
+        routeKey: "home",
+        slug: "/",
+        status: base.status || "published",
+        bodySections: nextSections,
+        homepageRevisions: revisions,
+      };
+      await cms.saveRecord(home || {}, payload);
+      setSections(nextSections);
+      setSavedSections(nextSections);
+      setLastSaved(new Date().toLocaleTimeString());
+    } finally {
+      setSaving(false);
+    }
   };
-  return h("section", null,
-    h(CmsHeader, { title: "Homepage Builder", copy: "Show, hide, reorder, duplicate, and edit homepage sections without touching code.", action: h("div", { className: "cms-actions" }, h(Link, { href: routes.home, className: "button button-outline", target: "_blank" }, h(Eye, { size: 18 }), "Preview Homepage"), h("button", { type: "button", className: "button button-primary", onClick: save }, h(Save, { size: 18 }), "Save Homepage")) }),
+  const previewSelection = (section) => {
+    setEditingId(section.id);
+    setActiveTab("preview");
+  };
+  return h("section", { className: "homepage-visual-builder" },
+    h(CmsHeader, { title: "Homepage Visual Builder", copy: "Build the public homepage with visual sections, media, repeaters, preview modes, and saved CMS data.", action: h("div", { className: "cms-actions" }, h(Link, { href: routes.home, className: "button button-outline", target: "_blank" }, h(Eye, { size: 18 }), "Open live homepage"), h("button", { type: "button", className: "button button-outline", onClick: reset, disabled: !dirty }, h(RotateCcw, { size: 18 }), "Reset"), h("button", { type: "button", className: "button button-primary", onClick: save, disabled: saving }, h(Save, { size: 18 }), saving ? "Saving..." : "Save changes")) }),
     h(renderAlerts, { ...cms }),
-    h("div", { className: "homepage-builder-layout" },
-      h("aside", { className: "homepage-section-list" },
-        h("div", { className: "cms-section-title" }, h("h3", null, "Sections"), h("p", null, "Click a section to edit. Changes save when you press Save Homepage.")),
-        h("div", { className: "section-add-row" }, h(SelectInput, { label: "Add section", value: "", onChange: (value) => value && addSection(value), options: ["", ...homeSectionTypeOptions] })),
-        [...sections].sort((a, b) => a.order - b.order).map((section) => h("article", { key: section.id, className: cx("homepage-section-row", editingId === section.id && "selected") },
-          h("button", { type: "button", onClick: () => setEditingId(section.id) }, h("strong", null, homeSectionTitle(section)), h("span", null, `${section.type} / ${section.enabled === false ? "hidden" : "visible"} / #${section.order}`)),
-          h("div", { className: "cms-row-actions" },
-            h("button", { type: "button", className: "mini-button", onClick: () => updateSection(section.id, { enabled: section.enabled === false }) }, section.enabled === false ? "Show" : "Hide"),
-            h("button", { type: "button", className: "mini-button", onClick: () => reorder(section.id, -1) }, "Up"),
-            h("button", { type: "button", className: "mini-button", onClick: () => reorder(section.id, 1) }, "Down"),
-            h("button", { type: "button", className: "mini-button", onClick: () => duplicate(section) }, "Duplicate"),
-            h("button", { type: "button", className: "mini-button danger", onClick: () => remove(section) }, "Delete"),
-          ),
-        )),
+    dirty && h("div", { className: "builder-unsaved-alert" }, "You have unsaved homepage changes."),
+    lastSaved && h("div", { className: "success-alert" }, `Homepage saved at ${lastSaved}.`),
+    h("div", { className: "builder-mobile-tabs" }, ["sections", "edit", "preview"].map((tab) => h("button", { key: tab, type: "button", className: cx(activeTab === tab && "active"), onClick: () => setActiveTab(tab) }, tab))),
+    h("div", { className: "homepage-builder-shell" },
+      h("aside", { className: cx("builder-panel builder-section-panel", activeTab !== "sections" && "mobile-hidden") },
+        h("div", { className: "builder-panel-head" },
+          h("div", null, h("h3", null, "Sections"), h("p", null, `${orderedSections.length} homepage blocks`)),
+          h("button", { type: "button", className: "button button-primary button-small", onClick: () => setShowLibrary(true) }, h(Plus, { size: 16 }), "Add Section"),
+        ),
+        h("div", { className: "builder-section-list" }, orderedSections.map((section, index) => h(BuilderSectionCard, {
+          key: section.id,
+          section,
+          index,
+          selected: editingId === section.id,
+          dragging: draggingId === section.id,
+          onEdit: () => { setEditingId(section.id); setActiveTab("edit"); },
+          onToggle: () => updateSection(section.id, { enabled: section.enabled === false }),
+          onDuplicate: () => duplicate(section),
+          onDelete: () => remove(section),
+          onMoveUp: () => moveSection(section.id, -1),
+          onMoveDown: () => moveSection(section.id, 1),
+          onPreview: () => previewSelection(section),
+          onDragStart: () => setDraggingId(section.id),
+          onDragOver: (event) => event.preventDefault(),
+          onDrop: () => dropSection(section.id),
+          onDragEnd: () => setDraggingId(""),
+        }))),
+        Array.isArray(home?.homepageRevisions) && home.homepageRevisions.length ? h("div", { className: "builder-revisions" },
+          h("h4", null, "Recent backups"),
+          home.homepageRevisions.slice(0, 5).map((revision) => h("button", { key: revision.id || revision.savedAt, type: "button", className: "mini-button", onClick: () => restoreRevision(revision) }, h(RotateCcw, { size: 14 }), revision.savedAt ? formatDate(revision.savedAt) : "Restore snapshot")),
+        ) : null,
       ),
-      h("div", { className: "homepage-section-editor" }, editing ? h(HomeSectionEditor, { section: editing, update: (patch) => updateSection(editing.id, patch) }) : h("div", { className: "notice-card" }, "Select a homepage section to edit.")),
+      h("main", { className: cx("builder-workspace", activeTab === "sections" && "mobile-hidden") },
+        h("div", { className: "builder-workspace-top" },
+          h("div", null, h("h3", null, editing ? homeSectionTitle(editing) : "Select a section"), h("p", null, editing ? `${homeSectionType(editing)} section editor and live preview` : "Choose a homepage block to edit.")),
+          h("div", { className: "preview-mode-toggle" },
+            [["desktop", Monitor], ["tablet", Tablet], ["mobile", Smartphone]].map(([mode, Icon]) => h("button", { key: mode, type: "button", className: cx(previewMode === mode && "active"), onClick: () => setPreviewMode(mode), title: `${mode} preview` }, h(Icon, { size: 16 }))),
+          ),
+        ),
+        h("div", { className: "builder-workspace-grid" },
+          h("div", { className: cx("builder-editor-panel", activeTab === "preview" && "mobile-hidden") }, editing ? h(HomeSectionEditor, { section: editing, update: (patch) => updateSection(editing.id, patch) }) : h("div", { className: "notice-card" }, "Select a homepage section to edit.")),
+          h("div", { className: cx("builder-preview-panel", activeTab === "edit" && "mobile-hidden") }, h(HomepageLivePreview, { sections: orderedSections, selectedId: editingId, previewMode })),
+        ),
+      ),
+    ),
+    showLibrary && h(SectionLibraryModal, { onClose: () => setShowLibrary(false), onAdd: addSection }),
+  );
+}
+
+function BuilderSectionCard({ section, index, selected, dragging, onEdit, onToggle, onDuplicate, onDelete, onMoveUp, onMoveDown, onPreview, onDragStart, onDragOver, onDrop, onDragEnd }) {
+  const thumb = sectionThumbnail(section);
+  const title = homeSectionTitle(section);
+  return h("article", {
+    className: cx("builder-section-card", selected && "selected", dragging && "dragging", section.enabled === false && "disabled"),
+    draggable: true,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
+  },
+    h("button", { type: "button", className: "builder-card-main", onClick: onEdit },
+      h("span", { className: "builder-drag-handle", title: "Drag to reorder" }, h(GripVertical, { size: 18 })),
+      h("span", { className: "builder-section-thumb" }, thumb ? h("img", { src: thumb, alt: "" }) : h(Layers, { size: 18 })),
+      h("span", { className: "builder-section-copy" },
+        h("strong", null, title),
+        h("small", null, `Type: ${section.type} / Order: ${index + 1}`),
+        h("em", null, sectionPreviewText(section)),
+      ),
+      h("span", { className: cx("builder-status-badge", section.enabled === false ? "hidden" : "visible") }, section.enabled === false ? "Hidden" : "Visible"),
+    ),
+    h("div", { className: "builder-section-actions" },
+      h("button", { type: "button", className: "mini-button", onClick: onEdit }, h(Edit3, { size: 14 }), "Edit"),
+      h("button", { type: "button", className: "mini-button", onClick: onToggle }, section.enabled === false ? "Show" : "Hide"),
+      h("button", { type: "button", className: "mini-button", onClick: onMoveUp, disabled: index === 0 }, "Up"),
+      h("button", { type: "button", className: "mini-button", onClick: onMoveDown }, "Down"),
+      h("button", { type: "button", className: "mini-button", onClick: onPreview }, h(Eye, { size: 14 }), "Preview"),
+      h("button", { type: "button", className: "mini-button", onClick: onDuplicate }, h(Copy, { size: 14 }), "Duplicate"),
+      h("button", { type: "button", className: "mini-button danger", onClick: onDelete }, h(Trash2, { size: 14 }), "Delete"),
     ),
   );
+}
+
+function SectionLibraryModal({ onClose, onAdd }) {
+  return h("div", { className: "section-library-backdrop", role: "dialog", "aria-modal": "true" },
+    h("div", { className: "section-library-modal" },
+      h("div", { className: "section-library-head" },
+        h("div", null, h("span", { className: "eyebrow" }, "Component library"), h("h2", null, "Add Homepage Section"), h("p", null, "Choose a ready-made AbroadWays homepage block. You can edit every field after adding.")),
+        h("button", { type: "button", className: "icon-button", onClick: onClose, "aria-label": "Close section library" }, h(X, { size: 18 })),
+      ),
+      h("div", { className: "section-library-grid" }, sectionLibrary.map(([type, name, description, Icon]) => h("article", { key: type },
+        h("span", { className: "library-icon" }, h(Icon, { size: 22 })),
+        h("h3", null, name),
+        h("p", null, description),
+        h("button", { type: "button", className: "button button-primary button-small", onClick: () => onAdd(type) }, h(Plus, { size: 15 }), "Add section"),
+      ))),
+    ),
+  );
+}
+
+function HomepageLivePreview({ sections, selectedId, previewMode }) {
+  const previewPage = {
+    title: "Homepage preview",
+    bodySections: sections,
+    image: "/images/abroadways-hero-campus.png",
+  };
+  const destinationItems = destinations;
+  const visible = normalizeHomeSections(sections).filter((section) => section.enabled !== false);
+  return h("div", { className: "homepage-preview-wrap" },
+    h("div", { className: cx("homepage-preview-frame", `preview-${previewMode}`) },
+      visible.length ? visible.map((section) => h("div", { key: section.id, className: cx("preview-section-shell", selectedId === section.id && "selected"), id: `preview-${section.id}` },
+        h(HomeSectionRenderer, { section, page: previewPage, destinations: destinationItems, blogs: blogPosts, settings: mergeSettings([]) }),
+      )) : h("div", { className: "empty-card" }, "No visible homepage sections in this preview."),
+    ),
+  );
+}
+
+function sectionThumbnail(section = {}) {
+  const arrays = [section.cards, section.stories, section.items, section.trustItems, section.images, section.partners].filter(Array.isArray);
+  const candidates = [
+    section.imageUrl,
+    section.backgroundImageUrl,
+    section.heroImageUrl,
+    section.ogImage,
+    ...arrays.flat().flatMap((item) => [item.imageUrl, item.examLogoUrl, item.partnerLogoUrl, item.url]),
+  ];
+  return candidates.find(Boolean) || "";
+}
+
+function sectionPreviewText(section = {}) {
+  return String(section.subtitle || section.description || section.secondaryText || section.formHeading || section.ctaText || "Editable section").slice(0, 92);
 }
 
 function createHomeSection(type, order) {
@@ -2476,6 +2792,10 @@ function createHomeSection(type, order) {
   if (type === "consultationForm") return normalizeHomeSection({ ...base, heading: "Claim Your Free Consultation", subtitle: "Share your study interest and destination plan. Abroadways will review the details and contact you.", imageUrl: "/images/consultation-counsellor.png", formHeading: "Submit Consultation Request" }, order - 1);
   if (type === "blogPreview") return normalizeHomeSection({ ...base, heading: "Study Abroad Guides", subtitle: "Read practical destination guides written for Bangladeshi students and families.", languageTabsEnabled: true, numberOfPosts: 3, ctaText: "View Blog", ctaLink: routes.blog }, order - 1);
   if (type === "resourceTiles") return normalizeHomeSection({ ...base, heading: "Helpful resources for your next step", subtitle: "Quick links for destinations, guides, consultation, and planning.", items: defaultResourceTiles }, order - 1);
+  if (type === "ctaBanner") return normalizeHomeSection({ ...base, heading: "Ready to plan your study abroad journey?", subtitle: "Start with a focused consultation and a practical route for your preferred destination.", imageUrl: "/images/consultation-counsellor.png", ctaText: "Book Free Consultation", ctaLink: routes.planner }, order - 1);
+  if (type === "faqSection") return normalizeHomeSection({ ...base, heading: "Common questions", subtitle: "Short answers for early study abroad planning.", faqs: [{ question: "When should I start planning?", answer: "Start early enough to compare countries, courses, budget, intake timing, and documents before applying." }] }, order - 1);
+  if (type === "imageGallery") return normalizeHomeSection({ ...base, heading: "Study abroad visuals", subtitle: "Editable media slots for campus, counselling, and student journey images.", images: [{ imageUrl: "/images/abroadways-hero-campus.png", altText: "Study abroad planning", caption: "Planning support" }] }, order - 1);
+  if (type === "partnerCta") return normalizeHomeSection({ ...base, heading: "View Our Partners", subtitle: "See verified partner and authorization details managed from the CMS.", ctaText: "View Partners", ctaLink: routes.partners, items: [] }, order - 1);
   if (type === "consultationCta") return normalizeHomeSection({ ...base, heading: "Claim your free Abroadways consultation", subtitle: "Start with a short pathway planner.", imageUrl: "/images/consultation-counsellor.png", primaryButtonText: "Book Free Consultation", primaryButtonLink: routes.planner, secondaryButtonText: "Contact Abroadways", secondaryButtonLink: routes.contact }, order - 1);
   if (type === "trustSection") return normalizeHomeSection({ ...base, heading: "Built around clarity, care, and responsible guidance", subtitle: "Trust signals kept focused and transparent.", trustItems: ["Abroadways Limited", "Student-first counselling", "Authorized testing services", "Transparent process"].map((title) => ({ title, description: "", icon: "badge", imageUrl: "" })) }, order - 1);
   return normalizeHomeSection(base, order - 1);
@@ -2488,6 +2808,8 @@ function sectionArrayKey(type) {
   if (type === "successStories") return "stories";
   if (type === "serviceChips") return "chips";
   if (type === "trustSection") return "trustItems";
+  if (type === "faqSection") return "faqs";
+  if (type === "imageGallery") return "images";
   if (type === "insightsSection" || type === "resourceTiles" || type === "consultationForm") return "items";
   return "items";
 }
@@ -2504,47 +2826,225 @@ function defaultSectionItem(type) {
   if (type === "trustSection") return { title: "Trust item", description: "", icon: "badge", imageUrl: "" };
   if (type === "insightsSection") return { title: "Canada", link: "/study-abroad/canada", backgroundColor: "#eef7ff", imageUrl: "" };
   if (type === "resourceTiles") return { title: "New resource", description: "Short resource description.", ctaText: "Open", link: routes.blog, backgroundColor: "#eef7ff", icon: "book" };
+  if (type === "faqSection") return { question: "New question", answer: "Short answer." };
+  if (type === "imageGallery") return { imageUrl: "", altText: "", caption: "" };
+  if (type === "partnerCta") return { title: "Partner logo", imageUrl: "", link: routes.partners };
   return { title: "New item", description: "", imageUrl: "" };
 }
 
 function HomeSectionEditor({ section, update }) {
   const type = homeSectionType(section);
-  const arrayKey = sectionArrayKey(type);
-  const items = Array.isArray(section[arrayKey]) ? section[arrayKey] : [];
-  const setJson = (key, value) => update({ [key]: parseJsonText(value, section[key] || []) });
-  return h("div", { className: "cms-editor homepage-builder-editor" },
-    h("h2", null, `Edit ${homeSectionTitle(section)}`),
+  const set = (key, value) => update({ [key]: value });
+  const changeType = (value) => update({ ...createHomeSection(value, section.order), id: section.id });
+  return h("div", { className: "cms-editor homepage-builder-editor visual-section-editor" },
+    h("div", { className: "builder-editor-head" },
+      h("div", null, h("span", { className: "eyebrow" }, type), h("h2", null, `Edit ${homeSectionTitle(section)}`)),
+      h("span", { className: cx("builder-status-badge", section.enabled === false ? "hidden" : "visible") }, section.enabled === false ? "Hidden" : "Visible"),
+    ),
     h("div", { className: "cms-form-grid" },
-      h(SelectInput, { label: "Section type", value: type, onChange: (value) => update({ ...createHomeSection(value, section.order), id: section.id }), options: homeSectionTypeOptions }),
-      h(SelectInput, { label: "Enabled", value: String(section.enabled !== false), onChange: (value) => update({ enabled: value === "true" }), options: ["true", "false"] }),
-      h(TextInput, { label: "Order", value: section.order, onChange: (value) => update({ order: Number(value) || section.order }), type: "number" }),
-      h(TextInput, { label: "Eyebrow", value: section.eyebrow, onChange: (value) => update({ eyebrow: value }) }),
-      h(TextInput, { label: "Heading / title", value: section.heading || section.title, onChange: (value) => update({ heading: value, title: value }), className: "full" }),
-      h(TextArea, { label: "Subtitle", value: section.subtitle, onChange: (value) => update({ subtitle: value }), className: "full" }),
-      type === "hero" && h(TextInput, { label: "Secondary hero line", value: section.secondaryText, onChange: (value) => update({ secondaryText: value }), className: "full" }),
-      type === "consultationForm" && h(TextInput, { label: "Form heading", value: section.formHeading, onChange: (value) => update({ formHeading: value }), className: "full" }),
-      h(ImageField, { label: "Main image", value: section.imageUrl, onChange: (value) => update({ imageUrl: value }), className: "full", folder: "abroadways/homepage" }),
-      type === "hero" && h(ImageField, { label: "Background image", value: section.backgroundImageUrl, onChange: (value) => update({ backgroundImageUrl: value }), className: "full", folder: "abroadways/homepage" }),
-      h(TextInput, { label: "Background color", value: section.backgroundColor, onChange: (value) => update({ backgroundColor: value }) }),
-      h(TextInput, { label: "Text color", value: section.textColor, onChange: (value) => update({ textColor: value }) }),
-      (type === "hero" || type === "consultationCta" || type === "academyTeaser") && h(TextInput, { label: "Primary button text", value: section.primaryButtonText || section.ctaText, onChange: (value) => update({ primaryButtonText: value, ctaText: value }) }),
-      (type === "hero" || type === "consultationCta" || type === "academyTeaser") && h(TextInput, { label: "Primary button link", value: section.primaryButtonLink || section.ctaLink, onChange: (value) => update({ primaryButtonLink: value, ctaLink: value }) }),
-      (type === "hero" || type === "consultationCta") && h(TextInput, { label: "Secondary button text", value: section.secondaryButtonText, onChange: (value) => update({ secondaryButtonText: value }) }),
-      (type === "hero" || type === "consultationCta") && h(TextInput, { label: "Secondary button link", value: section.secondaryButtonLink, onChange: (value) => update({ secondaryButtonLink: value }) }),
-      type === "hero" && h(TextArea, { label: "Country chips, one per line", value: lines(section.countryChips), onChange: (value) => update({ countryChips: lineList(value) }), className: "full" }),
-      type === "blogPreview" && h(SelectInput, { label: "Language tabs enabled", value: String(section.languageTabsEnabled !== false), onChange: (value) => update({ languageTabsEnabled: value === "true" }), options: ["true", "false"] }),
-      type === "blogPreview" && h(TextInput, { label: "Number of posts", value: section.numberOfPosts, onChange: (value) => update({ numberOfPosts: Number(value) || 3 }), type: "number" }),
-      type === "blogPreview" && h(TextInput, { label: "CTA text", value: section.ctaText, onChange: (value) => update({ ctaText: value }) }),
-      type === "blogPreview" && h(TextInput, { label: "CTA link", value: section.ctaLink, onChange: (value) => update({ ctaLink: value }) }),
-      ["successMetrics", "pathwayCards", "featureCards", "servicesPreview", "academyTeaser", "partnersSection", "successStories", "serviceChips", "trustSection", "insightsSection", "resourceTiles", "consultationForm"].includes(type) && h("div", { className: "home-items-editor full" },
-        h("div", { className: "cms-section-title" }, h("h3", null, `${arrayKey} editor`), h("p", null, "Edit structured JSON, add a starter item, or remove items below.")),
-        h("button", { type: "button", className: "mini-button", onClick: () => update({ [arrayKey]: [...items, defaultSectionItem(type)] }) }, h(Plus, { size: 15 }), "Add item"),
-        h(TextArea, { label: `${arrayKey} JSON`, value: jsonText(items), onChange: (value) => setJson(arrayKey, value), className: "full" }),
-        h("div", { className: "home-item-list" }, items.map((item, index) => h("article", { key: `${item.title || item.label || index}-${index}` }, h("strong", null, item.title || item.label || item.studentName || `Item ${index + 1}`), h("button", { type: "button", className: "mini-button danger", onClick: () => update({ [arrayKey]: items.filter((_, itemIndex) => itemIndex !== index) }) }, h(Trash2, { size: 14 }), "Remove")))),
+      h(SelectInput, { label: "Section type", value: type, onChange: changeType, options: homeSectionTypeOptions }),
+      h(SelectInput, { label: "Enabled", value: String(section.enabled !== false), onChange: (value) => set("enabled", value === "true"), options: ["true", "false"] }),
+      h(TextInput, { label: "Order", value: section.order, onChange: (value) => set("order", Number(value) || section.order), type: "number" }),
+      h(TextInput, { label: "Eyebrow / badge", value: section.eyebrow || section.badgeText, onChange: (value) => update({ eyebrow: value, badgeText: value }) }),
+      h(TextInput, { label: "Section title", value: section.heading || section.title, onChange: (value) => update({ heading: value, title: value }), className: "full" }),
+      h(TextArea, { label: "Subtitle", value: section.subtitle, onChange: (value) => set("subtitle", value), className: "full" }),
+      h(ImageField, { label: "Main image", value: section.imageUrl, onChange: (value) => set("imageUrl", value), className: "full", folder: "abroadways/homepage" }),
+      h(TextInput, { label: "Background color", value: section.backgroundColor, onChange: (value) => set("backgroundColor", value), placeholder: "#eef7ff or gradient" }),
+      h(TextInput, { label: "Text color", value: section.textColor, onChange: (value) => set("textColor", value), placeholder: "#0d1f3c" }),
+      h(TextInput, { label: "Top spacing", value: section.topSpacing, onChange: (value) => set("topSpacing", value), placeholder: "80px" }),
+      h(TextInput, { label: "Bottom spacing", value: section.bottomSpacing, onChange: (value) => set("bottomSpacing", value), placeholder: "80px" }),
+      h(TextInput, { label: "Custom anchor / ID", value: section.anchorId || section.customAnchor, onChange: (value) => update({ anchorId: value, customAnchor: value }) }),
+      h(TextInput, { label: "CSS class (advanced)", value: section.customClass || section.cssClass, onChange: (value) => update({ customClass: value, cssClass: value }) }),
+      h(SectionTypeFields, { section, update }),
+      h("details", { className: "advanced-json full" },
+        h("summary", null, "Advanced JSON"),
+        h("p", null, "Optional fallback for advanced users. The visual fields above cover normal editing."),
+        h(TextArea, { label: "Section JSON", value: jsonText(section), onChange: (value) => update(parseJsonText(value, section)), className: "full" }),
+        h(TextArea, { label: "Settings JSON", value: jsonText(section.settings || {}), onChange: (value) => set("settings", parseJsonText(value, {})), className: "full" }),
       ),
-      h(TextArea, { label: "Advanced settings JSON", value: jsonText(section.settings || {}), onChange: (value) => update({ settings: parseJsonText(value, {}) }), className: "full" }),
     ),
   );
+}
+
+function SectionTypeFields({ section, update }) {
+  const type = homeSectionType(section);
+  const arrayKey = sectionArrayKey(type);
+  const items = Array.isArray(section[arrayKey]) ? section[arrayKey] : [];
+  const set = (key, value) => update({ [key]: value });
+  const sharedCta = ["hero", "academyTeaser", "insightsSection", "consultationCta", "ctaBanner", "partnerCta"].includes(type);
+  return h(React.Fragment, null,
+    type === "hero" && h(React.Fragment, null,
+      h(TextInput, { label: "Support line", value: section.secondaryText, onChange: (value) => set("secondaryText", value), className: "full" }),
+      h(TextInput, { label: "Primary button text", value: section.primaryButtonText || section.ctaText, onChange: (value) => update({ primaryButtonText: value, ctaText: value }) }),
+      h(TextInput, { label: "Primary button link", value: section.primaryButtonLink || section.ctaLink, onChange: (value) => update({ primaryButtonLink: value, ctaLink: value }) }),
+      h(TextInput, { label: "Secondary button text", value: section.secondaryButtonText, onChange: (value) => set("secondaryButtonText", value) }),
+      h(TextInput, { label: "Secondary button link", value: section.secondaryButtonLink, onChange: (value) => set("secondaryButtonLink", value) }),
+      h(ImageField, { label: "Background image", value: section.backgroundImageUrl, onChange: (value) => set("backgroundImageUrl", value), className: "full", folder: "abroadways/homepage" }),
+      h(TextArea, { label: "Country chips, one per line", value: lines(section.countryChips), onChange: (value) => set("countryChips", lineList(value)), className: "full" }),
+      h(SelectInput, { label: "Animation enabled", value: String(section.animationEnabled !== false), onChange: (value) => set("animationEnabled", value === "true"), options: ["true", "false"] }),
+    ),
+    sharedCta && type !== "hero" && h(React.Fragment, null,
+      h(TextInput, { label: "Button text", value: section.ctaText || section.primaryButtonText, onChange: (value) => update({ ctaText: value, primaryButtonText: value }) }),
+      h(TextInput, { label: "Button link", value: section.ctaLink || section.primaryButtonLink, onChange: (value) => update({ ctaLink: value, primaryButtonLink: value }) }),
+    ),
+    type === "consultationCta" && h(React.Fragment, null,
+      h(TextInput, { label: "Secondary button text", value: section.secondaryButtonText, onChange: (value) => set("secondaryButtonText", value) }),
+      h(TextInput, { label: "Secondary button link", value: section.secondaryButtonLink, onChange: (value) => set("secondaryButtonLink", value) }),
+      h(TextInput, { label: "Form heading", value: section.formHeading, onChange: (value) => set("formHeading", value), className: "full" }),
+    ),
+    type === "consultationForm" && h(React.Fragment, null,
+      h(TextInput, { label: "Form title", value: section.formHeading || section.formTitle, onChange: (value) => update({ formHeading: value, formTitle: value }), className: "full" }),
+      h(TextArea, { label: "Form intro", value: section.formIntro, onChange: (value) => set("formIntro", value), className: "full" }),
+      h(TextArea, { label: "Study interests, one per line", value: lines(section.studyInterests), onChange: (value) => set("studyInterests", lineList(value)), className: "full" }),
+      h(TextArea, { label: "Country options, one per line", value: lines(section.countryOptions), onChange: (value) => set("countryOptions", lineList(value)), className: "full" }),
+      h(TextInput, { label: "Submit button text", value: section.buttonText || section.ctaText, onChange: (value) => update({ buttonText: value, ctaText: value }) }),
+    ),
+    type === "blogPreview" && h(React.Fragment, null,
+      h(SelectInput, { label: "Language tabs enabled", value: String(section.languageTabsEnabled !== false), onChange: (value) => set("languageTabsEnabled", value === "true"), options: ["true", "false"] }),
+      h(TextInput, { label: "Number of posts", value: section.numberOfPosts, onChange: (value) => set("numberOfPosts", Number(value) || 3), type: "number" }),
+      h(TextInput, { label: "Button text", value: section.ctaText, onChange: (value) => set("ctaText", value) }),
+      h(TextInput, { label: "Button link", value: section.ctaLink, onChange: (value) => set("ctaLink", value) }),
+    ),
+    type === "successStories" && h(TextArea, { label: "Tabs, one per line", value: lines(section.tabs), onChange: (value) => set("tabs", lineList(value)), className: "full" }),
+    repeaterTypes().includes(type) && h(RepeaterEditor, { type, arrayKey, items, onChange: (next) => set(arrayKey, next) }),
+  );
+}
+
+function repeaterTypes() {
+  return ["successMetrics", "pathwayCards", "featureCards", "servicesPreview", "academyTeaser", "partnersSection", "successStories", "serviceChips", "trustSection", "insightsSection", "resourceTiles", "consultationForm", "faqSection", "imageGallery", "partnerCta"];
+}
+
+function RepeaterEditor({ type, arrayKey, items, onChange }) {
+  const [open, setOpen] = useState({});
+  const list = Array.isArray(items) ? items : [];
+  const updateItem = (index, patch) => onChange(list.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  const moveItem = (index, direction) => {
+    const target = index + direction;
+    if (target < 0 || target >= list.length) return;
+    const next = [...list];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+  return h("div", { className: "visual-repeater full" },
+    h("div", { className: "repeater-title" },
+      h("div", null, h("h3", null, repeaterTitle(type, arrayKey)), h("p", null, "Add, reorder, duplicate, and edit each item without raw JSON.")),
+      h("button", { type: "button", className: "button button-outline button-small", onClick: () => onChange([...list, defaultSectionItem(type)]) }, h(Plus, { size: 15 }), "Add item"),
+    ),
+    list.length ? list.map((item, index) => {
+      const isOpen = open[index] !== false;
+      return h("article", { key: `${item.id || item.title || item.label || index}-${index}`, className: "repeater-item" },
+        h("div", { className: "repeater-header" },
+          h("button", { type: "button", onClick: () => setOpen((current) => ({ ...current, [index]: !isOpen })) }, h("strong", null, arrayItemTitle(type, item, index)), h("span", null, isOpen ? "Collapse" : "Expand")),
+          h("div", { className: "cms-row-actions" },
+            h("button", { type: "button", className: "mini-button", onClick: () => moveItem(index, -1), disabled: index === 0 }, "Up"),
+            h("button", { type: "button", className: "mini-button", onClick: () => moveItem(index, 1), disabled: index === list.length - 1 }, "Down"),
+            h("button", { type: "button", className: "mini-button", onClick: () => onChange([...list.slice(0, index + 1), { ...item }, ...list.slice(index + 1)]) }, h(Copy, { size: 14 }), "Duplicate"),
+            h("button", { type: "button", className: "mini-button danger", onClick: () => onChange(list.filter((_, itemIndex) => itemIndex !== index)) }, h(Trash2, { size: 14 }), "Remove"),
+          ),
+        ),
+        isOpen && h("div", { className: "cms-form-grid repeater-fields" }, renderItemFields(type, item, index, (patch) => updateItem(index, patch))),
+      );
+    }) : h("div", { className: "notice-card" }, `No ${arrayKey} added yet.`),
+  );
+}
+
+function repeaterTitle(type, arrayKey) {
+  const labels = {
+    successMetrics: "Metrics",
+    pathwayCards: "Pathway cards",
+    featureCards: "Feature cards",
+    servicesPreview: "Service cards",
+    academyTeaser: "Academy cards",
+    partnersSection: "Partner cards",
+    successStories: "Success story cards",
+    serviceChips: "Floating service chips",
+    trustSection: "Trust items",
+    insightsSection: "Country insight cards",
+    resourceTiles: "Resource tiles",
+    consultationForm: "Form helper items",
+    faqSection: "FAQs",
+    imageGallery: "Gallery images",
+    partnerCta: "Partner logo items",
+  };
+  return labels[type] || arrayKey;
+}
+
+function arrayItemTitle(type, item = {}, index = 0) {
+  return item.title || item.label || item.studentName || item.partnerName || item.examName || item.question || item.caption || item.value || `${repeaterTitle(type, "Item")} ${index + 1}`;
+}
+
+function renderItemFields(type, item, index, updateItem) {
+  if (type === "successMetrics") return [
+    h(TextInput, { key: "value", label: "Value", value: item.value || item.number, onChange: (value) => updateItem({ value }) }),
+    h(TextInput, { key: "label", label: "Label", value: item.label || item.title, onChange: (value) => updateItem({ label: value, title: value }) }),
+    h(TextInput, { key: "color", label: "Color", value: item.color, onChange: (value) => updateItem({ color: value }) }),
+    h(ImageField, { key: "icon", label: "Icon / logo URL", value: item.iconLogoUrl || item.imageUrl, onChange: (value) => updateItem({ iconLogoUrl: value, imageUrl: value }), className: "full", folder: "abroadways/homepage" }),
+    h(TextArea, { key: "description", label: "Description", value: item.description, onChange: (value) => updateItem({ description: value }), className: "full" }),
+  ];
+  if (type === "pathwayCards" || type === "servicesPreview" || type === "resourceTiles" || type === "trustSection" || type === "insightsSection" || type === "partnerCta") return [
+    h(TextInput, { key: "title", label: "Title", value: item.title || item.label, onChange: (value) => updateItem({ title: value, label: value }) }),
+    h(TextInput, { key: "icon", label: "Icon initials / label", value: item.icon, onChange: (value) => updateItem({ icon: value }) }),
+    h(TextInput, { key: "link", label: "Link", value: item.link || item.ctaLink, onChange: (value) => updateItem({ link: value, ctaLink: value }) }),
+    h(TextInput, { key: "bg", label: "Background color", value: item.backgroundColor, onChange: (value) => updateItem({ backgroundColor: value }) }),
+    h(ImageField, { key: "image", label: "Icon / image URL", value: item.imageUrl || item.url, onChange: (value) => updateItem({ imageUrl: value, url: value }), className: "full", folder: "abroadways/homepage" }),
+    h(TextArea, { key: "description", label: "Description", value: item.description, onChange: (value) => updateItem({ description: value }), className: "full" }),
+    type === "resourceTiles" && h(TextInput, { key: "ctaText", label: "Button text", value: item.ctaText, onChange: (value) => updateItem({ ctaText: value }) }),
+  ].filter(Boolean);
+  if (type === "academyTeaser") return [
+    h(TextInput, { key: "examName", label: "Test / track name", value: item.examName || item.title, onChange: (value) => updateItem({ examName: value, title: value }) }),
+    h(TextInput, { key: "badge", label: "Status badge", value: item.statusBadge, onChange: (value) => updateItem({ statusBadge: value }) }),
+    h(TextInput, { key: "order", label: "Display order", value: item.displayOrder, onChange: (value) => updateItem({ displayOrder: Number(value) || index + 1 }), type: "number" }),
+    h(TextInput, { key: "bg", label: "Background color", value: item.backgroundColor, onChange: (value) => updateItem({ backgroundColor: value }) }),
+    h(ImageField, { key: "logo", label: "Exam logo URL", value: item.examLogoUrl || item.logoUrl, onChange: (value) => updateItem({ examLogoUrl: value, logoUrl: value }), className: "full", folder: "abroadways/academy" }),
+    h(TextArea, { key: "description", label: "Description", value: item.description, onChange: (value) => updateItem({ description: value }), className: "full" }),
+  ];
+  if (type === "featureCards") return [
+    h(TextInput, { key: "eyebrow", label: "Eyebrow", value: item.eyebrow, onChange: (value) => updateItem({ eyebrow: value }) }),
+    h(TextInput, { key: "title", label: "Title", value: item.title, onChange: (value) => updateItem({ title: value }) }),
+    h(TextInput, { key: "ctaText", label: "Button text", value: item.ctaText, onChange: (value) => updateItem({ ctaText: value }) }),
+    h(TextInput, { key: "ctaLink", label: "Button link", value: item.ctaLink, onChange: (value) => updateItem({ ctaLink: value }) }),
+    h(TextInput, { key: "bg", label: "Background color", value: item.backgroundColor, onChange: (value) => updateItem({ backgroundColor: value }) }),
+    h(ImageField, { key: "image", label: "Card image", value: item.imageUrl, onChange: (value) => updateItem({ imageUrl: value }), className: "full", folder: "abroadways/homepage" }),
+    h(TextArea, { key: "description", label: "Description", value: item.description, onChange: (value) => updateItem({ description: value }), className: "full" }),
+    h(TextArea, { key: "bullets", label: "Bullets, one per line", value: lines(item.bullets), onChange: (value) => updateItem({ bullets: lineList(value) }), className: "full" }),
+  ];
+  if (type === "successStories") return [
+    h(TextInput, { key: "student", label: "Student name", value: item.studentName, onChange: (value) => updateItem({ studentName: value }) }),
+    h(TextInput, { key: "country", label: "Country / destination", value: item.country || item.destination, onChange: (value) => updateItem({ country: value, destination: value }) }),
+    h(TextInput, { key: "qualification", label: "Study level / qualification", value: item.qualification || item.studyLevel, onChange: (value) => updateItem({ qualification: value, studyLevel: value }) }),
+    h(TextInput, { key: "status", label: "Status badge", value: item.status, onChange: (value) => updateItem({ status: value }) }),
+    h(ImageField, { key: "image", label: "Student image", value: item.imageUrl, onChange: (value) => updateItem({ imageUrl: value }), className: "full", folder: "abroadways/stories" }),
+    h(TextArea, { key: "story", label: "Story text", value: item.storyText || item.text, onChange: (value) => updateItem({ storyText: value, text: value }), className: "full" }),
+    h(TextArea, { key: "tags", label: "Tags, one per line", value: lines(item.tags), onChange: (value) => updateItem({ tags: lineList(value) }), className: "full" }),
+  ];
+  if (type === "serviceChips") return [
+    h(TextInput, { key: "label", label: "Chip label", value: item.label || item.title, onChange: (value) => updateItem({ label: value, title: value }) }),
+    h(TextInput, { key: "icon", label: "Icon text", value: item.icon, onChange: (value) => updateItem({ icon: value }) }),
+    h(TextInput, { key: "color", label: "Icon color", value: item.color, onChange: (value) => updateItem({ color: value }) }),
+    h(TextInput, { key: "position", label: "Position note", value: item.position, onChange: (value) => updateItem({ position: value }) }),
+    h(ImageField, { key: "image", label: "Optional icon image", value: item.imageUrl, onChange: (value) => updateItem({ imageUrl: value }), className: "full", folder: "abroadways/homepage" }),
+  ];
+  if (type === "partnersSection") return [
+    h(TextInput, { key: "name", label: "Partner name", value: item.partnerName || item.title, onChange: (value) => updateItem({ partnerName: value, title: value }) }),
+    h(TextInput, { key: "status", label: "Status text", value: item.statusText || item.authorizationText, onChange: (value) => updateItem({ statusText: value, authorizationText: value }) }),
+    h(TextInput, { key: "website", label: "Website URL", value: item.websiteUrl, onChange: (value) => updateItem({ websiteUrl: value }) }),
+    h(TextInput, { key: "order", label: "Display order", value: item.displayOrder, onChange: (value) => updateItem({ displayOrder: Number(value) || index + 1 }), type: "number" }),
+    h(ImageField, { key: "logo", label: "Partner logo URL", value: item.partnerLogoUrl || item.imageUrl, onChange: (value) => updateItem({ partnerLogoUrl: value, imageUrl: value }), className: "full", folder: "abroadways/partners" }),
+    h(TextArea, { key: "description", label: "Description", value: item.description, onChange: (value) => updateItem({ description: value }), className: "full" }),
+  ];
+  if (type === "faqSection") return [
+    h(TextInput, { key: "question", label: "Question", value: item.question || item.title, onChange: (value) => updateItem({ question: value, title: value }), className: "full" }),
+    h(TextArea, { key: "answer", label: "Answer", value: item.answer || item.description, onChange: (value) => updateItem({ answer: value, description: value }), className: "full" }),
+  ];
+  if (type === "imageGallery") return [
+    h(ImageField, { key: "image", label: "Image URL", value: item.imageUrl || item.url, onChange: (value) => updateItem({ imageUrl: value, url: value }), className: "full", folder: "abroadways/gallery" }),
+    h(TextInput, { key: "alt", label: "Alt text", value: item.altText, onChange: (value) => updateItem({ altText: value }) }),
+    h(TextInput, { key: "caption", label: "Caption", value: item.caption || item.title, onChange: (value) => updateItem({ caption: value, title: value }) }),
+  ];
+  return [
+    h(TextInput, { key: "title", label: "Title", value: item.title, onChange: (value) => updateItem({ title: value }) }),
+    h(TextArea, { key: "description", label: "Description", value: item.description, onChange: (value) => updateItem({ description: value }), className: "full" }),
+  ];
 }
 
 function PageManager() {
@@ -2565,12 +3065,12 @@ function PageManager() {
 
 function normalizePageDraft(item = {}) {
   const isHome = item.routeKey === "home" || item.slug === "/";
-  const sections = Array.isArray(item.bodySections) && item.bodySections.some((section) => ["success-metrics", "study-pathway", "feature-cards", "services-preview", "academy-teaser", "partners-section", "success-stories", "service-bubbles", "blog-preview", "consultation-cta", "insights-section", "consultation-form", "resource-tiles"].includes(section.key)) ? item.bodySections : isHome ? defaultHomeSections() : item.bodySections || [];
+  const sections = Array.isArray(item.bodySections) && item.bodySections.some((section) => ["success-metrics", "study-pathway", "feature-cards", "services-preview", "academy-teaser", "partners-section", "success-stories", "service-bubbles", "blog-preview", "consultation-cta", "insights-section", "consultation-form", "resource-tiles", "cta-banner", "faq-section", "image-gallery", "partner-cta"].includes(section.key)) ? item.bodySections : isHome ? defaultHomeSections() : item.bodySections || [];
   return { ...item, imageUrl: firstImage(item, ""), bodySectionsText: jsonText(sections), heroButtonText: item.heroButtonText || item.ctaButtonText || item.ctaText || "", heroButtonLink: item.heroButtonLink || item.ctaButtonLink || item.ctaLink || "", heroSecondaryButtonText: item.heroSecondaryButtonText || "", heroSecondaryButtonLink: item.heroSecondaryButtonLink || "", heroBadgeText: item.heroBadgeText || "" };
 }
 
 function pagePayload(draft) {
-  return { id: draft.id, title: draft.title, routeKey: draft.routeKey || (draft.slug === "/" ? "home" : String(draft.slug || "").replace(/^\//, "")), slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, imageUrls: draft.imageUrl ? [draft.imageUrl] : [], heroButtonText: draft.heroButtonText, heroButtonLink: draft.heroButtonLink, heroSecondaryButtonText: draft.heroSecondaryButtonText, heroSecondaryButtonLink: draft.heroSecondaryButtonLink, heroBadgeText: draft.heroBadgeText, ctaTitle: draft.ctaTitle, ctaText: draft.heroButtonText || draft.ctaText, ctaButtonText: draft.heroButtonText, ctaButtonLink: draft.heroButtonLink, ctaLink: draft.heroButtonLink, bodySections: parseJsonText(draft.bodySectionsText, []), seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
+  return { id: draft.id, title: draft.title, routeKey: draft.routeKey || (draft.slug === "/" ? "home" : String(draft.slug || "").replace(/^\//, "")), slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, imageUrls: draft.imageUrl ? [draft.imageUrl] : [], heroButtonText: draft.heroButtonText, heroButtonLink: draft.heroButtonLink, heroSecondaryButtonText: draft.heroSecondaryButtonText, heroSecondaryButtonLink: draft.heroSecondaryButtonLink, heroBadgeText: draft.heroBadgeText, ctaTitle: draft.ctaTitle, ctaText: draft.heroButtonText || draft.ctaText, ctaButtonText: draft.heroButtonText, ctaButtonLink: draft.heroButtonLink, ctaLink: draft.heroButtonLink, bodySections: parseJsonText(draft.bodySectionsText, []), homepageRevisions: draft.homepageRevisions, seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
 }
 
 function HomeSectionImageTools({ draft, setDraft }) {
