@@ -381,6 +381,7 @@ export async function update(collection, id, patch) {
   const db = await getMongoDb();
   const updatedAt = new Date().toISOString();
   const updatePatch = { ...patch, updatedAt };
+  delete updatePatch._id;
   if (db) {
     await db.collection(collection).updateOne(mongoIdFilter(id), { $set: updatePatch });
     return normalizeDocument(await db.collection(collection).findOne(mongoIdFilter(id)));

@@ -631,7 +631,16 @@ async function api(path, options = {}) {
     },
     ...options,
   });
-  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  if (!response.ok) {
+    let message = `API error: ${response.status}`;
+    try {
+      const payload = await response.json();
+      message = payload.error || payload.message || message;
+    } catch {
+      // keep the status-based fallback
+    }
+    throw new Error(message);
+  }
   return response.json();
 }
 
@@ -656,6 +665,25 @@ async function uploadMediaFile(file, details = {}) {
       mimeType: file.type,
       title: details.title || file.name,
       altText: details.altText || details.title || file.name,
+      folder: details.folder || "abroadways/media",
+      caption: details.caption || "",
+      tags: details.tags || [],
+    }),
+  });
+  return result.item;
+}
+
+async function replaceMediaFile(id, file, details = {}) {
+  if (!id) throw new Error("Choose a media item to replace.");
+  if (!file) throw new Error("Choose an image to upload.");
+  if (!String(file.type || "").startsWith("image/")) throw new Error("Only image files are supported.");
+  const dataUrl = await fileToDataUrl(file);
+  const result = await api(`/media/${id}/replace`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      dataUrl,
+      fileName: file.name,
+      mimeType: file.type,
       folder: details.folder || "abroadways/media",
     }),
   });
@@ -706,6 +734,7 @@ const statusOptions = ["draft", "published", "archived"];
 const leadStatusOptions = ["new", "contacted", "qualified", "closed", "lost"];
 const allowedCountrySlugs = destinations.map((item) => item.slug);
 const allowedCountryNames = destinations.map((item) => item.name);
+const mediaFolders = ["Homepage", "Countries", "Blogs", "Academy", "Partners", "Logos", "Success Stories", "Miscellaneous"];
 
 function itemId(item) {
   return item?.id || item?._id;
@@ -713,6 +742,29 @@ function itemId(item) {
 
 function mediaUrl(item = {}) {
   return item.url || item.secureUrl || item.imageUrl || "";
+}
+
+function mediaTags(item = {}) {
+  return Array.isArray(item.tags) ? item.tags : String(item.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean);
+}
+
+function tagsText(tags) {
+  return mediaTags({ tags }).join(", ");
+}
+
+function formatFileSize(bytes) {
+  const size = Number(bytes || 0);
+  if (!size) return "Size unknown";
+  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function mediaType(item = {}) {
+  return item.mimeType || (item.format ? `image/${item.format}` : item.source || item.provider || "image");
+}
+
+function isLargeMedia(item = {}) {
+  return Number(item.bytes || 0) > 1024 * 1024 || Number(item.width || 0) > 2200;
 }
 
 function cssSize(value, fallback = "auto") {
@@ -2412,16 +2464,18 @@ function ImageField({ label, value, onChange, className = "", folder = "abroadwa
   const [media, setMedia] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const refreshMedia = React.useCallback(() => {
+    return api("/media").then((data) => setMedia(data.items || [])).catch(() => null);
+  }, []);
   React.useEffect(() => {
     let active = true;
-    api("/media").then((data) => {
-      if (active) setMedia(data.items || []);
-    }).catch(() => null);
+    refreshMedia().then(() => active || null);
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshMedia]);
   const upload = async (file) => {
     if (!file) return;
     setUploading(true);
@@ -2429,7 +2483,7 @@ function ImageField({ label, value, onChange, className = "", folder = "abroadwa
     try {
       const item = await uploadMediaFile(file, { title: file.name, altText: label, folder });
       setMedia((current) => [item, ...current]);
-      onChange(item.url || item.secureUrl || "");
+      onChange(mediaUrl(item), item);
       setMessage("Uploaded and selected.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Upload failed.");
@@ -2440,9 +2494,10 @@ function ImageField({ label, value, onChange, className = "", folder = "abroadwa
   return h(Field, { label, className: cx("image-field", className) },
     h("input", { value: value || "", placeholder: "Paste image URL or upload/select from media", onChange: (event) => onChange(event.target.value) }),
     h("div", { className: "image-field-tools" },
-      h("select", { value: "", onChange: (event) => event.target.value && onChange(event.target.value) }, h("option", { value: "" }, "Select from Media Library"), media.filter(mediaUrl).map((item) => h("option", { key: itemId(item) || mediaUrl(item), value: mediaUrl(item) }, item.title || item.altText || item.publicId || mediaUrl(item)))),
-      h("button", { type: "button", className: "mini-button", onClick: () => inputRef.current?.click(), disabled: uploading }, h(ImageIcon, { size: 15 }), uploading ? "Uploading..." : "Upload Image"),
+      h("button", { type: "button", className: "mini-button", onClick: () => setPickerOpen(true) }, h(Search, { size: 15 }), "Select from Media"),
+      h("button", { type: "button", className: "mini-button", onClick: () => inputRef.current?.click(), disabled: uploading }, h(ImageIcon, { size: 15 }), uploading ? "Uploading..." : "Upload New"),
       value && h("button", { type: "button", className: "mini-button", onClick: () => navigator.clipboard?.writeText(value).catch(() => null) }, h(Copy, { size: 15 }), "Copy URL"),
+      value && h("button", { type: "button", className: "mini-button danger", onClick: () => onChange("") }, h(X, { size: 15 }), "Clear"),
       h("input", { ref: inputRef, type: "file", accept: "image/*", hidden: true, onChange: (event) => upload(event.target.files?.[0]) }),
     ),
     h("div", {
@@ -2459,10 +2514,70 @@ function ImageField({ label, value, onChange, className = "", folder = "abroadwa
       },
     }, value ? h("img", { src: value, alt: `${label} preview` }) : h("span", null, "Drag and drop an image here")),
     message && h("small", { className: cx(message.includes("failed") || message.includes("Only") || message.includes("Choose") ? "field-error" : "field-success") }, message),
+    pickerOpen && h(MediaPickerModal, {
+      media,
+      folder,
+      onClose: () => setPickerOpen(false),
+      onRefresh: refreshMedia,
+      onSelect: (item) => {
+        onChange(mediaUrl(item), item);
+        setPickerOpen(false);
+      },
+      onPasteUrl: (url) => {
+        onChange(url);
+        setPickerOpen(false);
+      },
+    }),
   );
 }
 
-function MediaUploadPanel({ onUploaded, title = "Upload Image" }) {
+function MediaPickerModal({ media = [], folder = "abroadways/media", onClose, onRefresh, onSelect, onPasteUrl }) {
+  const inputRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [folderFilter, setFolderFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
+  const [url, setUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const folders = Array.from(new Set([...mediaFolders, ...media.map((item) => item.folder).filter(Boolean)])).sort();
+  const tags = Array.from(new Set(media.flatMap(mediaTags))).sort();
+  const filtered = media.filter((item) => {
+    const haystack = [item.title, item.altText, item.caption, item.publicId, item.url, item.folder, ...mediaTags(item)].join(" ").toLowerCase();
+    return mediaUrl(item) && (!search || haystack.includes(search.toLowerCase())) && (!folderFilter || item.folder === folderFilter) && (!tagFilter || mediaTags(item).includes(tagFilter));
+  });
+  const upload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const item = await uploadMediaFile(file, { title: file.name, altText: file.name, folder });
+      await onRefresh?.();
+      onSelect(item);
+    } finally {
+      setUploading(false);
+    }
+  };
+  return h("div", { className: "media-picker-backdrop", role: "dialog", "aria-modal": "true" },
+    h("div", { className: "media-picker-modal" },
+      h("div", { className: "media-picker-head" },
+        h("div", null, h("span", { className: "eyebrow" }, "Media Library"), h("h2", null, "Select Image"), h("p", null, "Search existing media, upload a new image, or paste a URL.")),
+        h("button", { type: "button", className: "icon-button", onClick: onClose, "aria-label": "Close media picker" }, h(X, { size: 18 })),
+      ),
+      h("div", { className: "media-picker-tools" },
+        h(TextInput, { label: "Search", value: search, onChange: setSearch, placeholder: "Title, alt, folder, tags" }),
+        h(SelectInput, { label: "Folder", value: folderFilter, onChange: setFolderFilter, options: ["", ...folders] }),
+        h(SelectInput, { label: "Tag", value: tagFilter, onChange: setTagFilter, options: ["", ...tags] }),
+        h("div", { className: "media-picker-upload" }, h("button", { type: "button", className: "button button-outline", onClick: () => inputRef.current?.click(), disabled: uploading }, h(ImageIcon, { size: 16 }), uploading ? "Uploading..." : "Upload New"), h("input", { ref: inputRef, type: "file", accept: "image/*", hidden: true, onChange: (event) => upload(event.target.files?.[0]) })),
+      ),
+      h("div", { className: "media-picker-url-row" }, h("input", { value: url, placeholder: "Paste an external image URL", onChange: (event) => setUrl(event.target.value) }), h("button", { type: "button", className: "mini-button", disabled: !url, onClick: () => onPasteUrl(url) }, "Use URL")),
+      h("div", { className: "media-picker-grid" }, filtered.length ? filtered.map((item) => h("button", { key: itemId(item) || mediaUrl(item), type: "button", onClick: () => onSelect(item) },
+        h("img", { src: mediaUrl(item), alt: item.altText || item.title || "Media item", loading: "lazy" }),
+        h("span", null, item.title || item.publicId || "Image"),
+        h("small", null, item.altText || "Missing alt text"),
+      )) : h("div", { className: "empty-card" }, "No media matched your filters.")),
+    ),
+  );
+}
+
+function MediaUploadPanel({ onUploaded, title = "Upload Image", folder = "abroadways/media", tags = [] }) {
   const [status, setStatus] = useState("");
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
@@ -2470,7 +2585,7 @@ function MediaUploadPanel({ onUploaded, title = "Upload Image" }) {
     if (!file) return;
     setStatus("Uploading...");
     try {
-      const item = await uploadMediaFile(file, { title: file.name, altText: file.name });
+      const item = await uploadMediaFile(file, { title: file.name, altText: file.name, folder, tags });
       setStatus("Uploaded successfully.");
       onUploaded?.(item);
     } catch (error) {
@@ -3248,21 +3363,52 @@ function BlogEditor({ draft, setDraft, onSave, onCancel }) {
 
 function MediaManager() {
   const cms = useAdminCollection("media");
-  const [draft, setDraft] = useState({ title: "", url: "", altText: "", publicId: "" });
+  const [draft, setDraft] = useState({ title: "", url: "", altText: "", caption: "", folder: "Miscellaneous", tagsText: "" });
   const [editing, setEditing] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [search, setSearch] = useState("");
   const [folder, setFolder] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
+  const [qualityFilter, setQualityFilter] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [newFolder, setNewFolder] = useState("");
+  const [bulkFolder, setBulkFolder] = useState("");
+  const [bulkTag, setBulkTag] = useState("");
+  const [replacingId, setReplacingId] = useState("");
   const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
-  const folders = Array.from(new Set(cms.items.map((item) => item.folder).filter(Boolean))).sort();
+  const folders = Array.from(new Set([...mediaFolders, ...cms.items.map((item) => item.folder).filter(Boolean), newFolder].filter(Boolean))).sort();
+  const tags = Array.from(new Set(cms.items.flatMap(mediaTags))).sort();
+  const duplicateUrls = new Set(cms.items.map(mediaUrl).filter((url, index, urls) => url && urls.indexOf(url) !== index));
+  const missingAltCount = cms.items.filter((item) => !String(item.altText || "").trim()).length;
+  const largeCount = cms.items.filter(isLargeMedia).length;
+  const duplicateCount = cms.items.filter((item) => duplicateUrls.has(mediaUrl(item))).length;
   const filteredMedia = cms.items.filter((item) => {
-    const haystack = [item.title, item.altText, item.publicId, item.url, item.folder].join(" ").toLowerCase();
-    return (!search || haystack.includes(search.toLowerCase())) && (!folder || item.folder === folder);
+    const itemTags = mediaTags(item);
+    const haystack = [item.title, item.altText, item.caption, item.publicId, item.url, item.folder, ...itemTags].join(" ").toLowerCase();
+    const recent = Date.now() - new Date(item.createdAt || item.uploadedAt || item.updatedAt || 0).getTime() < 1000 * 60 * 60 * 24 * 14;
+    return (!search || haystack.includes(search.toLowerCase()))
+      && (!folder || item.folder === folder)
+      && (!typeFilter || item.source === typeFilter || item.provider === typeFilter || mediaType(item).includes(typeFilter))
+      && (!tagFilter || itemTags.includes(tagFilter))
+      && (!qualityFilter || (qualityFilter === "recent" && recent) || (qualityFilter === "missing-alt" && !String(item.altText || "").trim()) || (qualityFilter === "large" && isLargeMedia(item)) || (qualityFilter === "duplicate" && duplicateUrls.has(mediaUrl(item))));
   });
+  const selectedItems = cms.items.filter((item) => selectedIds.includes(itemId(item)));
+  const toggleSelected = (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const submit = async (event) => {
     event.preventDefault();
-    await cms.saveRecord({}, { ...draft, publicId: draft.publicId || slugify(draft.title || draft.url), folder: draft.folder || "url-library", uploadedBy: "admin", uploadedAt: new Date().toISOString() });
-    setDraft({ title: "", url: "", altText: "", publicId: "" });
+    await cms.saveRecord({}, {
+      ...draft,
+      publicId: draft.publicId || slugify(draft.title || draft.url),
+      folder: draft.folder || "Miscellaneous",
+      tags: lineList(String(draft.tagsText || "").replace(/,/g, "\n")),
+      source: "external",
+      provider: "external",
+      uploadedBy: "admin",
+      uploadedAt: new Date().toISOString(),
+      status: "published",
+    });
+    setDraft({ title: "", url: "", altText: "", caption: "", folder: "Miscellaneous", tagsText: "" });
   };
   const copyUrl = async (url) => {
     await navigator.clipboard?.writeText(url).catch(() => null);
@@ -3270,28 +3416,86 @@ function MediaManager() {
   };
   const saveEdit = async (event) => {
     event.preventDefault();
-    const saved = await cms.saveRecord(editing, { title: editing.title, url: editing.url, publicId: editing.publicId, folder: editing.folder, altText: editing.altText, uploadedBy: editing.uploadedBy || "admin" });
+    const saved = await cms.saveRecord(editing, { ...editing, tags: lineList(String(editing.tagsText || tagsText(editing.tags)).replace(/,/g, "\n")), uploadedBy: editing.uploadedBy || "admin" });
     setEditing(null);
     return saved;
   };
+  const startEdit = (item) => setEditing({ ...item, tagsText: tagsText(item.tags) });
+  const replaceImage = async (item, file) => {
+    if (!file) return;
+    setReplacingId(itemId(item));
+    try {
+      await replaceMediaFile(itemId(item), file, { folder: item.folder || "abroadways/media" });
+      cms.setMessage("Image replaced successfully.");
+      await cms.refresh();
+    } catch (error) {
+      cms.setMessage(error instanceof Error ? error.message : "Replace failed.");
+    } finally {
+      setReplacingId("");
+    }
+  };
+  const bulkDelete = async () => {
+    if (!selectedIds.length || !window.confirm(`Delete ${selectedIds.length} selected media item(s)?`)) return;
+    await Promise.all(selectedItems.map((item) => api(`/media/${itemId(item)}`, { method: "DELETE" })));
+    setSelectedIds([]);
+    await cms.refresh();
+  };
+  const bulkAssignFolder = async () => {
+    if (!selectedIds.length || !bulkFolder) return;
+    await Promise.all(selectedItems.map((item) => api(`/media/${itemId(item)}`, { method: "PUT", body: JSON.stringify({ ...item, folder: bulkFolder }) })));
+    setSelectedIds([]);
+    await cms.refresh();
+  };
+  const bulkAddTag = async () => {
+    if (!selectedIds.length || !bulkTag.trim()) return;
+    await Promise.all(selectedItems.map((item) => {
+      const nextTags = Array.from(new Set([...mediaTags(item), bulkTag.trim()]));
+      return api(`/media/${itemId(item)}`, { method: "PUT", body: JSON.stringify({ ...item, tags: nextTags }) });
+    }));
+    setBulkTag("");
+    setSelectedIds([]);
+    await cms.refresh();
+  };
   return h("section", null,
-    h(CmsHeader, { title: "Media Library", copy: "Upload images to Cloudinary, add image URLs, preview, copy URLs, edit alt text, and delete media items." }),
+    h(CmsHeader, { title: "Media Library Pro", copy: "Upload, search, tag, organize, replace, clean up, and reuse AbroadWays image assets." }),
     h(renderAlerts, { ...cms }),
-    h(MediaUploadPanel, { title: "Upload Image to Cloudinary", onUploaded: (item) => {
+    h("div", { className: "media-cleanup-panel" },
+      h("article", null, h("strong", null, missingAltCount), h("span", null, "Missing alt text"), h("button", { type: "button", className: "mini-button", onClick: () => setQualityFilter("missing-alt") }, "Fix")),
+      h("article", null, h("strong", null, largeCount), h("span", null, "Large images"), h("button", { type: "button", className: "mini-button", onClick: () => setQualityFilter("large") }, "Filter")),
+      h("article", null, h("strong", null, duplicateCount), h("span", null, "Duplicate URLs"), h("button", { type: "button", className: "mini-button", onClick: () => setQualityFilter("duplicate") }, "Filter")),
+      h("article", null, h("strong", null, "Deferred"), h("span", null, "Unused detection"), h("small", null, "Needs page usage tracking")),
+    ),
+    h(MediaUploadPanel, { title: "Upload Image to Cloudinary", folder: draft.folder || "abroadways/media", onUploaded: (item) => {
       cms.setMessage("Image uploaded successfully.");
       setPreviewUrl(mediaUrl(item));
       cms.refresh();
     } }),
-    h("div", { className: "media-filter-bar" }, h(TextInput, { label: "Search media", value: search, onChange: setSearch, placeholder: "Title, alt text, URL, folder" }), h(SelectInput, { label: "Folder", value: folder, onChange: setFolder, options: ["", ...folders] })),
+    h("div", { className: "media-filter-bar media-pro-filter-bar" },
+      h(TextInput, { label: "Search media", value: search, onChange: setSearch, placeholder: "Title, alt text, URL, folder, tags" }),
+      h(SelectInput, { label: "Folder", value: folder, onChange: setFolder, options: ["", ...folders] }),
+      h(SelectInput, { label: "Tag", value: tagFilter, onChange: setTagFilter, options: ["", ...tags] }),
+      h(SelectInput, { label: "Type/source", value: typeFilter, onChange: setTypeFilter, options: ["", "cloudinary", "external", "local", "image"] }),
+      h(SelectInput, { label: "Cleanup filter", value: qualityFilter, onChange: setQualityFilter, options: ["", "recent", "missing-alt", "large", "duplicate"] }),
+      h(TextInput, { label: "Create folder", value: newFolder, onChange: setNewFolder, placeholder: "New folder name" }),
+    ),
+    selectedIds.length > 0 && h("div", { className: "media-bulk-bar" },
+      h("strong", null, `${selectedIds.length} selected`),
+      h(SelectInput, { label: "Assign folder", value: bulkFolder, onChange: setBulkFolder, options: ["", ...folders] }),
+      h("button", { type: "button", className: "mini-button", onClick: bulkAssignFolder, disabled: !bulkFolder }, "Apply folder"),
+      h(TextInput, { label: "Add tag", value: bulkTag, onChange: setBulkTag, placeholder: "tag" }),
+      h("button", { type: "button", className: "mini-button", onClick: bulkAddTag, disabled: !bulkTag.trim() }, "Add tag"),
+      h("button", { type: "button", className: "mini-button danger", onClick: bulkDelete }, h(Trash2, { size: 15 }), "Delete selected"),
+    ),
     previewUrl && h("div", { className: "upload-preview-card" }, h("img", { src: previewUrl, alt: "Latest upload preview" }), h("button", { type: "button", className: "mini-button", onClick: () => copyUrl(previewUrl) }, h(Copy, { size: 15 }), "Copy URL")),
     h("form", { className: "cms-editor", onSubmit: submit },
       h("h2", null, "Add Image by URL"),
       h("div", { className: "cms-form-grid" },
         h(TextInput, { label: "Image title", value: draft.title, onChange: (value) => set("title", value) }),
-        h(TextInput, { label: "Public ID", value: draft.publicId, onChange: (value) => set("publicId", value) }),
-        h(TextInput, { label: "Folder", value: draft.folder, onChange: (value) => set("folder", value), placeholder: "url-library" }),
+        h(SelectInput, { label: "Folder", value: draft.folder, onChange: (value) => set("folder", value), options: folders }),
+        h(TextInput, { label: "Tags", value: draft.tagsText, onChange: (value) => set("tagsText", value), placeholder: "homepage, hero, counselling" }),
         h(TextInput, { label: "Image URL", value: draft.url, onChange: (value) => set("url", value), className: "full" }),
         h(TextInput, { label: "Alt text", value: draft.altText, onChange: (value) => set("altText", value), className: "full" }),
+        h(TextInput, { label: "Caption", value: draft.caption, onChange: (value) => set("caption", value), className: "full" }),
       ),
       h("button", { className: "button button-primary", type: "submit" }, h(Plus, { size: 18 }), "Add Image"),
     ),
@@ -3300,24 +3504,34 @@ function MediaManager() {
       h("div", { className: "cms-form-grid" },
         h(TextInput, { label: "Image title", value: editing.title, onChange: (value) => setEditing((current) => ({ ...current, title: value })) }),
         h(TextInput, { label: "Public ID", value: editing.publicId, onChange: (value) => setEditing((current) => ({ ...current, publicId: value })) }),
-        h(TextInput, { label: "Folder", value: editing.folder, onChange: (value) => setEditing((current) => ({ ...current, folder: value })) }),
+        h(SelectInput, { label: "Folder", value: editing.folder, onChange: (value) => setEditing((current) => ({ ...current, folder: value })), options: folders }),
+        h(TextInput, { label: "Tags", value: editing.tagsText, onChange: (value) => setEditing((current) => ({ ...current, tagsText: value })) }),
         h(TextInput, { label: "Image URL", value: mediaUrl(editing), onChange: (value) => setEditing((current) => ({ ...current, url: value })), className: "full" }),
         h(TextInput, { label: "Alt text", value: editing.altText, onChange: (value) => setEditing((current) => ({ ...current, altText: value })), className: "full" }),
+        h(TextInput, { label: "Caption", value: editing.caption, onChange: (value) => setEditing((current) => ({ ...current, caption: value })), className: "full" }),
       ),
       h(FormActions, { onCancel: () => setEditing(null) }),
     ),
     h("div", { className: "media-grid" }, filteredMedia.map((item) => {
       const url = mediaUrl(item);
+      const id = itemId(item);
+      const replaceInputId = `replace-${String(id || url).replace(/[^a-z0-9_-]/gi, "-")}`;
       return h("article", { key: itemId(item) || url, className: "media-card" },
-        h("img", { src: url, alt: item.altText || item.title || "CMS media" }),
+        h("div", { className: "media-card-select" }, h("input", { type: "checkbox", checked: selectedIds.includes(id), onChange: () => toggleSelected(id), "aria-label": `Select ${item.title || "media item"}` })),
+        h("img", { src: url, alt: item.altText || item.title || "CMS media", loading: "lazy" }),
         h("div", { className: "media-card-body" },
           h("strong", null, item.title || item.publicId || "Image"),
-          h("span", null, item.altText || "No alt text"),
-          h("span", null, `${item.folder || "No folder"}${item.provider ? ` / ${item.provider}` : ""}`),
-          item.width && item.height && h("span", null, `${item.width}x${item.height} / ${Math.round(Number(item.bytes || 0) / 1024)} KB`),
+          h("span", { className: cx(!item.altText && "media-warning") }, item.altText || "Missing alt text"),
+          item.caption && h("span", null, item.caption),
+          h("span", null, `${item.folder || "No folder"} / ${item.source || item.provider || "external"}`),
+          h("span", null, `${mediaType(item)}${item.width && item.height ? ` / ${item.width}x${item.height}` : ""} / ${formatFileSize(item.bytes)}`),
+          h("span", null, `Created: ${formatDate(item.createdAt || item.uploadedAt || item.updatedAt)}`),
+          mediaTags(item).length ? h("div", { className: "media-tag-row" }, mediaTags(item).map((tag) => h("em", { key: tag }, tag))) : h("span", null, "No tags"),
           h("div", { className: "cms-row-actions" },
-            h("button", { type: "button", className: "mini-button", onClick: () => setEditing(item) }, h(Edit3, { size: 15 }), "Edit"),
+            h("button", { type: "button", className: "mini-button", onClick: () => startEdit(item) }, h(Edit3, { size: 15 }), "Edit"),
             h("button", { type: "button", className: "mini-button", onClick: () => copyUrl(url) }, h(Copy, { size: 15 }), "Copy URL"),
+            h("button", { type: "button", className: "mini-button", onClick: () => document.getElementById(replaceInputId)?.click(), disabled: replacingId === id }, h(ImageIcon, { size: 15 }), replacingId === id ? "Replacing..." : "Replace"),
+            h("input", { id: replaceInputId, type: "file", accept: "image/*", hidden: true, onChange: (event) => replaceImage(item, event.target.files?.[0]) }),
             h("button", { type: "button", className: "mini-button danger", onClick: () => cms.deleteRecord(item, item.title || "media item") }, h(Trash2, { size: 15 }), "Delete"),
           ),
         ),

@@ -250,8 +250,44 @@ function assertUploadPayload(payload) {
 async function deleteCloudinaryAsset(media) {
   if (!cloudinaryReady()) return;
   const publicId = media?.cloudinaryPublicId || media?.publicId;
-  if (!publicId || media?.provider !== "cloudinary") return;
+  if (!publicId || (media?.provider !== "cloudinary" && media?.source !== "cloudinary")) return;
   await cloudinary.uploader.destroy(publicId, { resource_type: "image" }).catch(() => null);
+}
+
+function normalizeTags(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  return String(value || "").split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeMediaPayload(payload = {}, existing = {}, admin) {
+  const now = new Date().toISOString();
+  const url = payload.url || payload.secureUrl || existing.url || "";
+  const source = payload.source || payload.provider || existing.source || existing.provider || (url && !url.startsWith("/") ? "external" : "local");
+  return {
+    ...existing,
+    ...payload,
+    title: String(payload.title || existing.title || payload.fileName || "Media item").trim(),
+    url,
+    secureUrl: payload.secureUrl || url,
+    publicId: payload.publicId || payload.cloudinaryPublicId || existing.publicId || existing.cloudinaryPublicId || "",
+    cloudinaryPublicId: payload.cloudinaryPublicId || payload.publicId || existing.cloudinaryPublicId || existing.publicId || "",
+    altText: String(payload.altText || existing.altText || payload.title || existing.title || "").trim(),
+    caption: payload.caption ?? existing.caption ?? "",
+    folder: payload.folder || existing.folder || "Miscellaneous",
+    tags: normalizeTags(payload.tags ?? existing.tags),
+    format: payload.format || existing.format || "",
+    mimeType: payload.mimeType || existing.mimeType || (payload.format ? `image/${payload.format}` : ""),
+    width: payload.width ?? existing.width,
+    height: payload.height ?? existing.height,
+    bytes: payload.bytes ?? existing.bytes,
+    source,
+    provider: source,
+    uploadedBy: existing.uploadedBy || admin?.email,
+    uploadedAt: existing.uploadedAt || payload.uploadedAt || now,
+    createdAt: existing.createdAt || payload.createdAt || now,
+    updatedAt: now,
+    status: payload.status || existing.status || "published",
+  };
 }
 
 async function handleMediaUpload(request, response) {
@@ -281,24 +317,75 @@ async function handleMediaUpload(request, response) {
     context: payload.altText ? { alt: payload.altText } : undefined,
   });
   const title = String(payload.title || payload.fileName || upload.original_filename || "Uploaded image").trim();
-  const item = await store.create("media", {
+  const item = await store.create("media", normalizeMediaPayload({
     title,
     url: upload.secure_url,
     secureUrl: upload.secure_url,
     publicId: upload.public_id,
     cloudinaryPublicId: upload.public_id,
+    source: "cloudinary",
     provider: "cloudinary",
     altText: payload.altText || title,
+    caption: payload.caption || "",
     folder,
+    tags: payload.tags,
     format: upload.format,
+    mimeType: `image/${upload.format}`,
     width: upload.width,
     height: upload.height,
     bytes: upload.bytes,
-    uploadedBy: admin.email,
-    uploadedAt: new Date().toISOString(),
     status: "published",
-  });
+  }, {}, admin));
   send(response, 201, { item });
+}
+
+async function handleMediaReplace(request, response, id) {
+  if (request.method !== "PATCH") {
+    send(response, 405, { error: "Method not allowed" });
+    return;
+  }
+  const admin = requireAdmin(request, response);
+  if (!admin) return;
+  const existing = await store.get("media", id);
+  if (!existing) {
+    send(response, 404, { error: "Media item not found" });
+    return;
+  }
+  if (!cloudinaryReady()) {
+    send(response, 503, { error: "Cloudinary upload is not configured. You can still edit the media URL manually." });
+    return;
+  }
+  const payload = await readBody(request);
+  const validationError = assertUploadPayload(payload);
+  if (validationError) {
+    send(response, 400, { error: validationError });
+    return;
+  }
+  const folder = payload.folder || existing.folder || "abroadways/media";
+  const upload = await cloudinary.uploader.upload(payload.dataUrl, {
+    folder,
+    resource_type: "image",
+    use_filename: true,
+    unique_filename: true,
+    filename_override: payload.fileName,
+    context: existing.altText ? { alt: existing.altText } : undefined,
+  });
+  await deleteCloudinaryAsset(existing);
+  const item = await store.update("media", id, normalizeMediaPayload({
+    url: upload.secure_url,
+    secureUrl: upload.secure_url,
+    publicId: upload.public_id,
+    cloudinaryPublicId: upload.public_id,
+    source: "cloudinary",
+    provider: "cloudinary",
+    folder,
+    format: upload.format,
+    mimeType: `image/${upload.format}`,
+    width: upload.width,
+    height: upload.height,
+    bytes: upload.bytes,
+  }, existing, admin));
+  send(response, 200, { item });
 }
 
 async function handleApi(request, response, pathname) {
@@ -323,12 +410,17 @@ async function handleApi(request, response, pathname) {
   }
   if (request.method === "POST") {
     if (collection !== "leads" && !requireAdmin(request, response)) return;
-    send(response, 201, { item: await store.create(collection, await readBody(request)) });
+    const admin = adminFromRequest(request);
+    const body = await readBody(request);
+    send(response, 201, { item: await store.create(collection, collection === "media" ? normalizeMediaPayload(body, {}, admin) : body) });
     return;
   }
   if (request.method === "PUT" && id) {
-    if (!requireAdmin(request, response)) return;
-    send(response, 200, { item: await store.update(collection, id, await readBody(request)) });
+    const admin = requireAdmin(request, response);
+    if (!admin) return;
+    const body = await readBody(request);
+    const existing = collection === "media" ? await store.get(collection, id) : {};
+    send(response, 200, { item: await store.update(collection, id, collection === "media" ? normalizeMediaPayload(body, existing || {}, admin) : body) });
     return;
   }
   if (request.method === "DELETE" && id) {
@@ -356,6 +448,11 @@ createServer(async (request, response) => {
     }
     if (pathname === "/api/media/upload") {
       await handleMediaUpload(request, response);
+      return;
+    }
+    const mediaReplaceMatch = pathname.match(/^\/api\/media\/([^/]+)\/replace$/);
+    if (mediaReplaceMatch) {
+      await handleMediaReplace(request, response, mediaReplaceMatch[1]);
       return;
     }
     if (pathname.startsWith("/api/")) {
