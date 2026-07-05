@@ -116,8 +116,139 @@ const countrySeedsRaw = [
   },
 ];
 
+const destinationDetails = {
+  Canada: ["CAD", "Ottawa", "Toronto, Vancouver, Montreal, Calgary, Ottawa", "September, January, and selected May intakes", 18000, 38000, 1200, 2200],
+  Australia: ["AUD", "Canberra", "Sydney, Melbourne, Brisbane, Perth, Adelaide", "February, July, and selected trimester intakes", 22000, 45000, 1400, 2500],
+  "United Kingdom": ["GBP", "London", "London, Manchester, Birmingham, Leeds, Glasgow", "September, January, and selected spring intakes", 12000, 28000, 900, 1800],
+  "New Zealand": ["NZD", "Wellington", "Auckland, Wellington, Christchurch, Hamilton, Dunedin", "February, July, and selected rolling starts", 22000, 38000, 1300, 2200],
+  Malaysia: ["MYR", "Kuala Lumpur", "Kuala Lumpur, Subang Jaya, Shah Alam, Penang, Johor Bahru", "Multiple intakes across the year", 18000, 55000, 1800, 3200],
+};
+
+const detailedSubjects = ["Business", "Engineering", "IT / Computer Science", "Data Science", "Health Sciences", "Hospitality", "Accounting & Finance", "Marketing / Communication", "Education", "Creative Arts"];
+
+function detailedCountrySeed(country) {
+  const [currency, capital, cities, intakes, tuitionMin, tuitionMax, livingMin, livingMax] = destinationDetails[country.countryName];
+  const c = country.countryName;
+  const facts = {
+    location: c === "Malaysia" ? "Southeast Asia" : c === "United Kingdom" ? "Europe" : c === "Canada" ? "North America" : "Oceania",
+    population: c === "New Zealand" ? "About 5 million" : c === "Malaysia" ? "About 34 million" : c === "Canada" ? "About 40 million" : c === "Australia" ? "About 27 million" : "About 68 million",
+    capital,
+    majorCities: cities,
+    language: c === "Canada" ? "English and French" : c === "Malaysia" ? "Malay and English widely used in higher education" : "English",
+    currency,
+    intakes,
+    averageCost: `${currency} ${tuitionMin.toLocaleString()}-${tuitionMax.toLocaleString()}+ tuition per year, depending on programme and provider`,
+    fundingOptions: "University scholarships, merit awards, early application discounts, and provider-specific awards",
+    studyLevels: "Foundation, diploma, bachelor, masters, and PhD routes where available",
+    workOptionsNote: "Work and post-study options may be available depending on current rules, programme type, and student conditions.",
+    safetyNote: "Students should review city, housing, campus support, and living costs before applying.",
+  };
+  return {
+    heroCtaText: "Start Pathway Planner",
+    heroCtaLink: "/pathway-planner",
+    heroImages: country.galleryImages,
+    heroMainImageUrl: country.heroImage,
+    heroSideImageUrl1: country.galleryImages?.[1] || "/images/abroadways-destination-planning.png",
+    heroSideImageUrl2: "/images/consultation-counsellor.png",
+    displayOrder: Object.keys(destinationDetails).indexOf(c) + 1,
+    sectionsNav: ["Overview", "Facts & Figures", `Why ${c}?`, "Education System", "Top Institutes", "Subjects", "Tuition Fee", "Scholarship", "Pathway", "FAQs"].map((label) => ({ label, anchor: label.toLowerCase().replace(/&/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") === `why-${c.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` ? "why-study" : label === "Tuition Fee" ? "tuition-cost" : label === "Scholarship" ? "scholarships" : label === "Top Institutes" ? "top-institutes" : label === "Education System" ? "education-system" : label === "Facts & Figures" ? "facts" : label === "Subjects" ? "subjects" : label === "Pathway" ? "pathway" : label === "FAQs" ? "faqs" : "overview" })),
+    overviewSection: {
+      heading: `Study in ${c} with a clear plan`,
+      intro: [
+        `${c} is a focused study destination for Bangladeshi students who want recognised qualifications, practical planning, and a realistic application timeline.`,
+        "AbroadWays helps students compare course fit, budget, intake, documents, and visa preparation before applying.",
+      ],
+      highlightCards: [
+        { title: "Profile-led counselling", description: "Shortlist realistic options before application." },
+        { title: "Budget planning", description: "Review tuition, living cost, and family funding early." },
+        { title: "Visa-ready documents", description: "Prepare a consistent file with clear guidance." },
+      ],
+    },
+    countryFacts: facts,
+    factsAndFiguresTable: [
+      { label: "Capital", value: capital },
+      { label: "Major cities", value: cities },
+      { label: "Language", value: facts.language },
+      { label: "Currency", value: currency },
+      { label: "Common intakes", value: intakes },
+      { label: "Average study cost", value: facts.averageCost, note: "Costs vary by city, provider, subject, and intake." },
+      { label: "Study levels", value: facts.studyLevels },
+    ],
+    whyStudy: {
+      heading: `Why study in ${c}?`,
+      paragraphs: [`${c} can be a strong fit when the course, budget, intake, and document plan match the student's profile.`, "Students should compare academic fit, affordability, English readiness, scholarships, and visa requirements before applying."],
+      advantageCards: ["Quality education", "Diverse learning environment", "Career-focused planning", "Quality of life", "Scholarship possibilities", "Student support"].map((title) => ({ title, description: `${title} should be reviewed against your profile, city choice, budget, and programme plan.` })),
+    },
+    educationSystem: {
+      heading: `${c} education system`,
+      intro: `The education system in ${c} includes multiple provider types and qualification levels. Students should choose the route that fits previous study and future plans.`,
+      imageUrl: country.heroImage,
+      sections: [
+        { title: "Pathway and foundation", description: "Preparation routes may be available before degree-level study." },
+        { title: "Diploma and bachelor", description: "Entry requirements vary by provider, subject, and previous qualification." },
+        { title: "Postgraduate study", description: "Masters and graduate programmes usually require relevant academic background and strong documents." },
+      ],
+      qualificationTable: [
+        { qualification: "Foundation / pathway", duration: "6-12 months", description: "Preparation route where available." },
+        { qualification: "Diploma", duration: "1-2 years", description: "Applied route that may connect to further study." },
+        { qualification: "Bachelor", duration: "3-4 years", description: "Undergraduate degree route with subject-specific requirements." },
+        { qualification: "Masters", duration: "1-2 years", description: "Postgraduate route based on previous qualification and programme fit." },
+      ],
+    },
+    topUniversitiesTable: [
+      { universityName: `${c} University Option 1`, location: cities.split(",")[0], admissionRequirement: "Requirements vary by programme", languageRequirement: "English requirement varies by level", rankingNote: "Ranking and admission requirements vary by intake and programme." },
+      { universityName: `${c} University Option 2`, location: cities.split(",")[1]?.trim() || capital, admissionRequirement: "Profile review required", languageRequirement: "Check provider requirement before applying", rankingNote: "Use verified university data before final application." },
+    ],
+    topCollegesTable: [
+      { collegeName: `${c} Pathway / College Option`, location: cities.split(",")[0], whyChoose: "May suit applied or pathway study", programsOffered: "Business, IT, hospitality, health, and foundation routes where available", applicationFee: "Varies", annualTuition: "Varies by programme" },
+    ],
+    topSubjects: { heading: `Popular subjects in ${c}`, intro: "Subject choice should connect academic background, career goals, budget, and admission requirements.", imageUrl: country.heroImage, subjects: detailedSubjects },
+    tuitionAndCost: {
+      heading: `Tuition fee and living cost in ${c}`,
+      intro: "Costs should be checked against the latest university and visa guidance before application.",
+      rows: [
+        { studyLevel: "Foundation / diploma", tuitionRange: `${currency} ${tuitionMin.toLocaleString()}-${Math.round(tuitionMax * 0.75).toLocaleString()} per year`, livingCost: `${currency} ${livingMin}-${livingMax} per month`, notes: "Varies by provider and city." },
+        { studyLevel: "Bachelor", tuitionRange: `${currency} ${tuitionMin.toLocaleString()}-${tuitionMax.toLocaleString()} per year`, livingCost: `${currency} ${livingMin}-${livingMax} per month`, notes: "Subject and campus can change cost." },
+        { studyLevel: "Masters", tuitionRange: `${currency} ${Math.round(tuitionMin * 1.1).toLocaleString()}-${Math.round(tuitionMax * 1.2).toLocaleString()} per year`, livingCost: `${currency} ${livingMin}-${livingMax} per month`, notes: "Professional subjects may cost more." },
+      ],
+      disclaimer: "Costs vary by institution, programme, city, lifestyle, exchange rate, and intake. Always verify current figures before applying.",
+    },
+    scholarshipsSection: {
+      heading: `${c} scholarship guidance`,
+      intro: "Scholarships may be merit-based, subject-based, intake-based, or university-specific. Availability is not guaranteed.",
+      scholarshipCards: [
+        { name: "Merit-based awards", amount: "Varies", eligibility: "Academic profile and programme choice", deadline: "Varies by intake", notes: "Apply early where possible." },
+        { name: "University discounts", amount: "Varies", eligibility: "Depends on provider policy", deadline: "Check before application", notes: "Awards may change each intake." },
+      ],
+    },
+    postStudyPathways: {
+      heading: `${c} post-study and pathway guidance`,
+      intro: "Work and post-study options may be available depending on current rules, qualification, provider, and student conditions.",
+      cards: [
+        { title: "Work while studying", description: facts.workOptionsNote, disclaimer: "Rules can change and must be checked before applying." },
+        { title: "Post-study planning", description: "Some graduates may have post-study options depending on current policy and qualification.", disclaimer: "No visa or immigration outcome is guaranteed." },
+        { title: "Career direction", description: "Choose programmes that fit academic background and long-term plans.", disclaimer: "Professional licensing rules may apply in some fields." },
+      ],
+    },
+    finalCta: { heading: "Start Your Study Abroad Journey", text: `Compare your ${c} options with an AbroadWays counsellor and plan documents, budget, intake, and next steps.`, buttonText: "Start Pathway Planner", buttonLink: "/pathway-planner" },
+    averageTuitionMin: tuitionMin,
+    averageTuitionMax: tuitionMax,
+    livingCostMin: livingMin,
+    livingCostMax: livingMax,
+    currency,
+    languageRequirement: "English requirement depends on provider, level, and programme.",
+    scholarshipNote: "Scholarship availability depends on profile, university policy, programme, and intake.",
+    postStudyNote: facts.workOptionsNote,
+    workWhileStudyingNote: facts.workOptionsNote,
+    bestFor: ["Practical planning", "Focused course comparison", "Budget review", "Document preparation"],
+    popularSubjects: detailedSubjects,
+    applicationTimeline: "Start 6-12 months before intake where possible.",
+  };
+}
+
 const countrySeeds = countrySeedsRaw.map((country) => ({
   ...country,
+  ...detailedCountrySeed(country),
   ctaText: "Start Pathway Planner",
   ctaLink: "/pathway-planner",
   seoTitle: `${country.heroHeading} | Abroadways`,

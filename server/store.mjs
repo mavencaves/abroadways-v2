@@ -64,6 +64,7 @@ async function seedMongoIfNeeded() {
       { upsert: true },
     );
   }
+  await backfillCountryDefaults();
 
   for (const blog of seedData.blogs) {
     await mongoDb.collection("blogs").updateOne(
@@ -127,6 +128,62 @@ async function backfillSettingsDefaults() {
     { _id: settings._id },
     { $set: { ...patch, updatedAt: new Date().toISOString() } },
   );
+}
+
+async function backfillCountryDefaults() {
+  for (const seedCountry of seedData.countries || []) {
+    const country = await mongoDb.collection("countries").findOne({ slug: seedCountry.slug });
+    if (!country) continue;
+    const patch = missingDefaultsPatch(country, seedCountry, [
+      "heroCtaText",
+      "heroCtaLink",
+      "heroImages",
+      "heroMainImageUrl",
+      "heroSideImageUrl1",
+      "heroSideImageUrl2",
+      "displayOrder",
+      "sectionsNav",
+      "overviewSection",
+      "countryFacts",
+      "factsAndFiguresTable",
+      "whyStudy",
+      "educationSystem",
+      "topUniversitiesTable",
+      "topCollegesTable",
+      "topSubjects",
+      "tuitionAndCost",
+      "scholarshipsSection",
+      "postStudyPathways",
+      "finalCta",
+      "averageTuitionMin",
+      "averageTuitionMax",
+      "livingCostMin",
+      "livingCostMax",
+      "currency",
+      "languageRequirement",
+      "scholarshipNote",
+      "postStudyNote",
+      "workWhileStudyingNote",
+      "bestFor",
+      "popularSubjects",
+      "applicationTimeline",
+    ]);
+    if (!Object.keys(patch).length) continue;
+    await mongoDb.collection("countries").updateOne(
+      { _id: country._id },
+      { $set: { ...patch, updatedAt: new Date().toISOString() } },
+    );
+  }
+}
+
+function missingDefaultsPatch(current = {}, seed = {}, keys = []) {
+  const patch = {};
+  for (const key of keys) {
+    const value = current[key];
+    const missing = value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length);
+    if (missing && seed[key] !== undefined) patch[key] = seed[key];
+  }
+  return patch;
 }
 
 function settingsDefaultsPatch(settings = {}, seedSettings = {}) {
@@ -331,6 +388,53 @@ function backfillLocalDefaults(data) {
         next.settings[0] = { ...next.settings[0], ...patch, updatedAt: new Date().toISOString() };
         changed = true;
       }
+    }
+  }
+  next.countries = Array.isArray(next.countries) ? [...next.countries] : [];
+  for (const seedCountry of seedData.countries || []) {
+    const index = next.countries.findIndex((country) => country.slug === seedCountry.slug || country.id === seedCountry.id);
+    if (index === -1) {
+      next.countries.push(stampSeed(seedCountry));
+      changed = true;
+      continue;
+    }
+    const patch = missingDefaultsPatch(next.countries[index], seedCountry, [
+      "heroCtaText",
+      "heroCtaLink",
+      "heroImages",
+      "heroMainImageUrl",
+      "heroSideImageUrl1",
+      "heroSideImageUrl2",
+      "displayOrder",
+      "sectionsNav",
+      "overviewSection",
+      "countryFacts",
+      "factsAndFiguresTable",
+      "whyStudy",
+      "educationSystem",
+      "topUniversitiesTable",
+      "topCollegesTable",
+      "topSubjects",
+      "tuitionAndCost",
+      "scholarshipsSection",
+      "postStudyPathways",
+      "finalCta",
+      "averageTuitionMin",
+      "averageTuitionMax",
+      "livingCostMin",
+      "livingCostMax",
+      "currency",
+      "languageRequirement",
+      "scholarshipNote",
+      "postStudyNote",
+      "workWhileStudyingNote",
+      "bestFor",
+      "popularSubjects",
+      "applicationTimeline",
+    ]);
+    if (Object.keys(patch).length) {
+      next.countries[index] = { ...next.countries[index], ...patch, updatedAt: new Date().toISOString() };
+      changed = true;
     }
   }
   for (const collection of ["universities", "courses", "scholarships"]) {

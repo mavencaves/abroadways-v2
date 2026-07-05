@@ -53,6 +53,9 @@ const routes = {
   universities: "/universities",
   courses: "/courses",
   scholarships: "/scholarships",
+  findStudyOptions: "/find-study-options",
+  compareCountries: "/compare-countries",
+  costCalculator: "/cost-calculator",
   whoAreWe: "/who-are-we",
   planner: "/pathway-planner",
   blog: "/blog",
@@ -205,6 +208,255 @@ const destinations = [
     ],
   },
 ];
+
+const destinationProfiles = {
+  Canada: {
+    location: "North America",
+    population: "About 40 million",
+    capital: "Ottawa",
+    majorCities: "Toronto, Vancouver, Montreal, Calgary, Ottawa",
+    language: "English and French",
+    currency: "CAD",
+    intakes: "September, January, and selected May intakes",
+    averageCost: "CAD 18,000-38,000+ tuition per year, depending on programme and institution",
+    fundingOptions: "University awards, merit scholarships, bursaries, and limited external funding",
+    studyLevels: "Diploma, bachelor, postgraduate certificate, masters, PhD",
+    workOptionsNote: "Work options may be available depending on current rules, programme type, and study permit conditions.",
+    safetyNote: "Known for multicultural cities and student support, but students should review city, campus, and housing choices carefully.",
+    tuitionMin: 18000,
+    tuitionMax: 38000,
+    livingMin: 1200,
+    livingMax: 2200,
+    bestFor: ["Applied programmes", "Co-op style learning", "Multicultural campuses", "Long-term academic planning"],
+  },
+  Australia: {
+    location: "Oceania",
+    population: "About 27 million",
+    capital: "Canberra",
+    majorCities: "Sydney, Melbourne, Brisbane, Perth, Adelaide",
+    language: "English",
+    currency: "AUD",
+    intakes: "February, July, and selected trimester intakes",
+    averageCost: "AUD 22,000-45,000+ tuition per year, depending on programme and provider",
+    fundingOptions: "University scholarships, destination awards, merit discounts, and faculty awards",
+    studyLevels: "Foundation, diploma, bachelor, masters, PhD",
+    workOptionsNote: "Student work and post-study options depend on current government rules, location, and qualification.",
+    safetyNote: "Large international student communities and strong campus services are common in major study cities.",
+    tuitionMin: 22000,
+    tuitionMax: 45000,
+    livingMin: 1400,
+    livingMax: 2500,
+    bestFor: ["Modern campuses", "Practical courses", "IT and business pathways", "City-based student life"],
+  },
+  "United Kingdom": {
+    location: "Europe",
+    population: "About 68 million",
+    capital: "London",
+    majorCities: "London, Manchester, Birmingham, Leeds, Glasgow",
+    language: "English",
+    currency: "GBP",
+    intakes: "September, January, and selected spring intakes",
+    averageCost: "GBP 12,000-28,000+ tuition per year, depending on institution and subject",
+    fundingOptions: "University scholarships, merit awards, regional discounts, and early-deposit awards",
+    studyLevels: "Foundation, bachelor, pre-masters, masters, PhD",
+    workOptionsNote: "Work and graduate route rules can change, so students should verify current guidance before applying.",
+    safetyNote: "The UK has mature international student support systems, with cost and housing varying by city.",
+    tuitionMin: 12000,
+    tuitionMax: 28000,
+    livingMin: 900,
+    livingMax: 1800,
+    bestFor: ["One-year masters", "Wide course choice", "Recognised qualifications", "September intake planning"],
+  },
+  "New Zealand": {
+    location: "Oceania",
+    population: "About 5 million",
+    capital: "Wellington",
+    majorCities: "Auckland, Wellington, Christchurch, Hamilton, Dunedin",
+    language: "English",
+    currency: "NZD",
+    intakes: "February, July, and selected rolling starts",
+    averageCost: "NZD 22,000-38,000+ tuition per year, depending on programme and provider",
+    fundingOptions: "University awards, limited merit scholarships, and provider-specific discounts",
+    studyLevels: "Diploma, bachelor, graduate diploma, masters, PhD",
+    workOptionsNote: "Post-study options may be available depending on qualification level, study location, and current rules.",
+    safetyNote: "Smaller cities and supportive campuses can suit students who prefer a calmer study setting.",
+    tuitionMin: 22000,
+    tuitionMax: 38000,
+    livingMin: 1300,
+    livingMax: 2200,
+    bestFor: ["Calmer campuses", "Practical learning", "Student wellbeing", "Focused pathway planning"],
+  },
+  Malaysia: {
+    location: "Southeast Asia",
+    population: "About 34 million",
+    capital: "Kuala Lumpur",
+    majorCities: "Kuala Lumpur, Subang Jaya, Shah Alam, Penang, Johor Bahru",
+    language: "Malay and English widely used in higher education",
+    currency: "MYR",
+    intakes: "Multiple intakes across the year, depending on provider and programme",
+    averageCost: "MYR 18,000-55,000+ tuition per year, depending on institution and subject",
+    fundingOptions: "Merit discounts, university awards, early application discounts, and faculty awards",
+    studyLevels: "Foundation, diploma, bachelor, masters, PhD",
+    workOptionsNote: "Work options and visa conditions should be checked before applying because rules can change.",
+    safetyNote: "Malaysia offers a nearby international study environment with varied city and campus options.",
+    tuitionMin: 18000,
+    tuitionMax: 55000,
+    livingMin: 1800,
+    livingMax: 3200,
+    bestFor: ["Value-focused study", "Nearby international education", "Flexible intakes", "Business and hospitality"],
+  },
+};
+
+const commonSubjects = ["Business", "Engineering", "IT / Computer Science", "Data Science", "Health Sciences", "Hospitality", "Accounting & Finance", "Marketing / Communication", "Education", "Creative Arts"];
+
+function countryProfile(countryName) {
+  return destinationProfiles[countryName] || destinationProfiles.Canada;
+}
+
+function defaultSectionsNav(countryName) {
+  return [
+    ["Overview", "overview"],
+    ["Facts & Figures", "facts"],
+    [`Why ${countryName}?`, "why-study"],
+    ["Education System", "education-system"],
+    ["Top Institutes", "top-institutes"],
+    ["Subjects", "subjects"],
+    ["Tuition Fee", "tuition-cost"],
+    ["Scholarship", "scholarships"],
+    ["Pathway", "pathway"],
+    ["FAQs", "faqs"],
+  ].map(([label, anchor]) => ({ label, anchor }));
+}
+
+function detailedCountryDefaults(destination) {
+  const profile = countryProfile(destination.name);
+  const country = destination.name;
+  const image = destination.image;
+  const currency = profile.currency;
+  const paragraphs = [
+    `${country} is a strong study destination for Bangladeshi students who want recognised qualifications, practical planning, and a clear application timeline.`,
+    `AbroadWays helps students compare course fit, city choice, budget, intake, documents, and visa preparation before they commit to an application.`,
+  ];
+  const advantageCards = [
+    ["Quality education", `${country} offers respected institutions and programmes across practical and academic fields.`],
+    ["Diverse learning environment", "Students can study with international peers and build confidence in a multicultural setting."],
+    ["Career-focused planning", "Course selection can be matched with academic background, budget, and future goals."],
+    ["Quality of life", "City, campus, housing, and living cost choices can be planned before application."],
+    ["Scholarship possibilities", "Merit awards and university discounts may be available depending on profile and intake."],
+    ["Student support", "International offices and campus services can help students adjust after arrival."],
+  ].map(([title, description]) => ({ title, description }));
+  return {
+    heroCtaText: "Start Pathway Planner",
+    heroCtaLink: routes.planner,
+    heroImages: destination.galleryImages || [image],
+    heroMainImageUrl: image,
+    heroSideImageUrl1: destination.galleryImages?.[1] || "/images/abroadways-destination-planning.png",
+    heroSideImageUrl2: "/images/consultation-counsellor.png",
+    displayOrder: allowedCountryNames.indexOf(country) + 1,
+    sectionsNav: defaultSectionsNav(country),
+    overview: {
+      heading: `Study in ${country} with a clear plan`,
+      intro: paragraphs,
+      highlightCards: [
+        { title: "Profile-led counselling", description: "Shortlist realistic options before application." },
+        { title: "Budget planning", description: "Review tuition, living cost, and family funding early." },
+        { title: "Visa-ready documents", description: "Prepare a consistent file with clear guidance." },
+      ],
+    },
+    countryFacts: profile,
+    factsAndFiguresTable: [
+      { label: "Capital", value: profile.capital },
+      { label: "Major cities", value: profile.majorCities },
+      { label: "Language", value: profile.language },
+      { label: "Currency", value: profile.currency },
+      { label: "Common intakes", value: profile.intakes },
+      { label: "Average study cost", value: profile.averageCost, note: "Costs vary by city, provider, subject, and intake." },
+      { label: "Study levels", value: profile.studyLevels },
+    ],
+    whyStudy: {
+      heading: `Why study in ${country}?`,
+      paragraphs: [
+        `${country} can be a good fit when the course, budget, intake, and document plan match the student's profile.`,
+        "Students should compare academic fit, affordability, English readiness, scholarship options, and visa requirements before applying.",
+      ],
+      advantageCards,
+    },
+    educationSystem: {
+      heading: `${country} education system`,
+      intro: `The education system in ${country} includes multiple levels and provider types. Students should choose a level that matches previous study, career goal, and visa planning.`,
+      imageUrl: image,
+      sections: [
+        { title: "Pathway and foundation options", description: "Useful for students who need academic preparation before a degree." },
+        { title: "Diploma and undergraduate study", description: "Programme length and entry requirements vary by institution and subject." },
+        { title: "Postgraduate study", description: "Masters and graduate programmes often require relevant academic background and strong documents." },
+      ],
+      qualificationTable: [
+        { qualification: "Foundation / pathway", duration: "6-12 months", description: "Preparation route before degree-level study where available." },
+        { qualification: "Diploma", duration: "1-2 years", description: "Applied route that may connect to further study depending on provider." },
+        { qualification: "Bachelor", duration: "3-4 years", description: "Undergraduate degree route with subject-specific entry requirements." },
+        { qualification: "Masters", duration: "1-2 years", description: "Postgraduate route based on previous qualification and programme fit." },
+      ],
+    },
+    topUniversitiesTable: [
+      { universityName: `${country} University Option 1`, location: profile.majorCities.split(",")[0], admissionRequirement: "Requirements vary by programme", languageRequirement: "English requirement varies by level", rankingNote: "Ranking and admission requirements vary by intake and programme." },
+      { universityName: `${country} University Option 2`, location: profile.majorCities.split(",")[1]?.trim() || profile.capital, admissionRequirement: "Profile review required", languageRequirement: "Check provider requirement before applying", rankingNote: "Use verified university data before final application." },
+    ],
+    topCollegesTable: [
+      { collegeName: `${country} Pathway / College Option`, location: profile.majorCities.split(",")[0], whyChoose: "May suit students seeking applied or pathway study", programsOffered: "Business, IT, hospitality, health, and foundation routes where available", applicationFee: "Varies", annualTuition: "Varies by programme" },
+    ],
+    topSubjects: {
+      heading: `Popular subjects in ${country}`,
+      intro: "Subject choice should connect academic background, career goals, budget, and admission requirements.",
+      imageUrl: image,
+      subjects: commonSubjects,
+    },
+    tuitionAndCost: {
+      heading: `Tuition fee and living cost in ${country}`,
+      intro: "Costs should be checked against the latest university and visa guidance before application.",
+      rows: [
+        { studyLevel: "Foundation / diploma", tuitionRange: `${currency} ${profile.tuitionMin?.toLocaleString?.() || profile.tuitionMin}-${Math.round(profile.tuitionMax * 0.75).toLocaleString()} per year`, livingCost: `${currency} ${profile.livingMin}-${profile.livingMax} per month`, notes: "Varies by provider and city." },
+        { studyLevel: "Bachelor", tuitionRange: `${currency} ${profile.tuitionMin?.toLocaleString?.() || profile.tuitionMin}-${profile.tuitionMax?.toLocaleString?.() || profile.tuitionMax} per year`, livingCost: `${currency} ${profile.livingMin}-${profile.livingMax} per month`, notes: "Subject and campus can change cost." },
+        { studyLevel: "Masters", tuitionRange: `${currency} ${Math.round(profile.tuitionMin * 1.1).toLocaleString()}-${Math.round(profile.tuitionMax * 1.2).toLocaleString()} per year`, livingCost: `${currency} ${profile.livingMin}-${profile.livingMax} per month`, notes: "Professional subjects may cost more." },
+      ],
+      disclaimer: "Costs vary by institution, programme, city, lifestyle, exchange rate, and intake. Always verify current figures before applying.",
+    },
+    scholarships: {
+      heading: `${country} scholarship guidance`,
+      intro: "Scholarships may be merit-based, subject-based, intake-based, or university-specific. Availability is not guaranteed.",
+      scholarshipCards: [
+        { name: "Merit-based awards", amount: "Varies", eligibility: "Academic profile, English readiness, and programme choice", deadline: "Varies by intake", notes: "Apply early where possible." },
+        { name: "University discounts", amount: "Varies", eligibility: "Depends on provider policy", deadline: "Check before application", notes: "Awards may change each intake." },
+      ],
+    },
+    postStudyPathways: {
+      heading: `${country} post-study and pathway guidance`,
+      intro: "Work and post-study options may be available depending on current rules, qualification, provider, and student conditions.",
+      cards: [
+        { title: "Work while studying", description: profile.workOptionsNote, disclaimer: "Rules can change and must be checked before applying." },
+        { title: "Post-study planning", description: "Some graduates may have post-study options depending on current policy and qualification.", disclaimer: "No visa or immigration outcome is guaranteed." },
+        { title: "Career direction", description: "Choose programmes that fit your academic background and long-term plans.", disclaimer: "Professional licensing rules may apply in some fields." },
+      ],
+    },
+    finalCta: {
+      heading: "Start Your Study Abroad Journey",
+      text: `Compare your ${country} options with an AbroadWays counsellor and plan documents, budget, intake, and next steps.`,
+      buttonText: "Start Pathway Planner",
+      buttonLink: routes.planner,
+    },
+    averageTuitionMin: profile.tuitionMin,
+    averageTuitionMax: profile.tuitionMax,
+    livingCostMin: profile.livingMin,
+    livingCostMax: profile.livingMax,
+    currency: profile.currency,
+    languageRequirement: "English requirement depends on provider, level, and programme.",
+    scholarshipNote: "Scholarship availability depends on profile, university policy, programme, and intake.",
+    postStudyNote: profile.workOptionsNote,
+    workWhileStudyingNote: profile.workOptionsNote,
+    bestFor: profile.bestFor,
+    popularSubjects: commonSubjects,
+    applicationTimeline: "Start 6-12 months before intake where possible.",
+  };
+}
 
 const services = [
   ["Country & course selection", "Shortlist destinations and courses that fit your profile, budget, goals, and intake timeline.", Compass],
@@ -1155,13 +1407,15 @@ function defaultHomeSections() {
 function mergeDestinations(cmsCountries = []) {
   const records = published(cmsCountries);
   return destinations.map((fallback) => {
+    const detailed = detailedCountryDefaults(fallback);
     const record = records.find((item) => {
       const values = [item.slug, item.legacySlug, item.countryName, item.name, item.title].filter(Boolean).map((value) => String(value).toLowerCase());
       return values.includes(fallback.slug.toLowerCase()) || values.includes(fallback.legacySlug?.toLowerCase()) || values.includes(fallback.name.toLowerCase());
     });
-    if (!record) return fallback;
+    if (!record) return { ...fallback, ...detailed };
     return {
       ...fallback,
+      ...detailed,
       name: record.countryName || record.name || record.title || fallback.name,
       chip: record.chip || fallback.chip,
       image: firstImage(record, fallback.image),
@@ -1177,6 +1431,37 @@ function mergeDestinations(cmsCountries = []) {
       visaNotes: record.visaNotes || fallback.visaNotes,
       faqs: normalizeFaqs(record.faqs, fallback.faqs),
       galleryImages: splitList(record.galleryImages || record.imageGallery, []),
+      heroCtaText: record.heroCtaText || record.ctaText || detailed.heroCtaText,
+      heroCtaLink: record.heroCtaLink || record.ctaLink || detailed.heroCtaLink,
+      heroImages: splitList(record.heroImages, detailed.heroImages),
+      heroMainImageUrl: record.heroMainImageUrl || record.heroImage || firstImage(record, detailed.heroMainImageUrl),
+      heroSideImageUrl1: record.heroSideImageUrl1 || detailed.heroSideImageUrl1,
+      heroSideImageUrl2: record.heroSideImageUrl2 || detailed.heroSideImageUrl2,
+      sectionsNav: Array.isArray(record.sectionsNav) && record.sectionsNav.length ? record.sectionsNav : detailed.sectionsNav,
+      overviewSection: record.overviewSection || (typeof record.overview === "object" ? record.overview : detailed.overview),
+      countryFacts: record.countryFacts || detailed.countryFacts,
+      factsAndFiguresTable: Array.isArray(record.factsAndFiguresTable) && record.factsAndFiguresTable.length ? record.factsAndFiguresTable : detailed.factsAndFiguresTable,
+      whyStudy: record.whyStudy || detailed.whyStudy,
+      educationSystem: record.educationSystem || detailed.educationSystem,
+      topUniversitiesTable: Array.isArray(record.topUniversitiesTable) && record.topUniversitiesTable.length ? record.topUniversitiesTable : detailed.topUniversitiesTable,
+      topCollegesTable: Array.isArray(record.topCollegesTable) && record.topCollegesTable.length ? record.topCollegesTable : detailed.topCollegesTable,
+      topSubjects: record.topSubjects || detailed.topSubjects,
+      tuitionAndCost: record.tuitionAndCost || detailed.tuitionAndCost,
+      scholarshipsSection: record.scholarshipsSection || record.scholarships || detailed.scholarships,
+      postStudyPathways: record.postStudyPathways || detailed.postStudyPathways,
+      finalCta: record.finalCta || detailed.finalCta,
+      averageTuitionMin: record.averageTuitionMin ?? detailed.averageTuitionMin,
+      averageTuitionMax: record.averageTuitionMax ?? detailed.averageTuitionMax,
+      livingCostMin: record.livingCostMin ?? detailed.livingCostMin,
+      livingCostMax: record.livingCostMax ?? detailed.livingCostMax,
+      currency: record.currency || detailed.currency,
+      languageRequirement: record.languageRequirement || detailed.languageRequirement,
+      scholarshipNote: record.scholarshipNote || detailed.scholarshipNote,
+      postStudyNote: record.postStudyNote || detailed.postStudyNote,
+      workWhileStudyingNote: record.workWhileStudyingNote || detailed.workWhileStudyingNote,
+      bestFor: splitList(record.bestFor, detailed.bestFor),
+      popularSubjects: splitList(record.popularSubjects, detailed.popularSubjects),
+      applicationTimeline: record.applicationTimeline || detailed.applicationTimeline,
       ctaText: record.ctaText || "Start Pathway Planner",
       ctaLink: record.ctaLink || routes.planner,
       seoTitle: record.seoTitle,
@@ -1424,7 +1709,12 @@ function Navbar({ items = destinations, settings = contactInfo }) {
           "div",
           { className: "dropdown", onMouseEnter: () => setDropdownOpen(true), onMouseLeave: () => setDropdownOpen(false) },
           h("button", { className: cx("nav-link dropdown-toggle", isActive(routes.studyAbroad, { startsWith: true }) && "active"), type: "button", onClick: () => setDropdownOpen((value) => !value), "aria-expanded": dropdownOpen }, "Study Abroad", h(ChevronDown, { size: 15 })),
-          h("div", { className: cx("dropdown-menu", dropdownOpen && "dropdown-menu-open") }, items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}`, className: "dropdown-item", onClick: closeAll }, destination.name))),
+          h("div", { className: cx("dropdown-menu", dropdownOpen && "dropdown-menu-open") },
+            items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}`, className: "dropdown-item", onClick: closeAll }, destination.name)),
+            h(Link, { href: routes.compareCountries, className: "dropdown-item", onClick: closeAll }, "Compare Countries"),
+            h(Link, { href: routes.costCalculator, className: "dropdown-item", onClick: closeAll }, "Cost Calculator"),
+            h(Link, { href: routes.findStudyOptions, className: "dropdown-item", onClick: closeAll }, "Find Study Options"),
+          ),
         ),
         h(Link, { href: routes.whoAreWe, className: cx("nav-link", (isActive(routes.whoAreWe) || isActive(routes.about)) && "active") }, "About Us"),
         h(Link, { href: routes.contact, className: cx("nav-link", isActive(routes.contact) && "active") }, "Contact Us"),
@@ -1449,6 +1739,9 @@ function Navbar({ items = destinations, settings = contactInfo }) {
       h(Link, { href: routes.home, onClick: closeAll }, "Home"),
       h(Link, { href: routes.studyAbroad, onClick: closeAll }, "Study Abroad"),
       items.map((destination) => h(Link, { key: destination.slug, href: `${routes.studyAbroad}/${destination.slug}`, className: "mobile-sub-link", onClick: closeAll }, destination.name)),
+      h(Link, { href: routes.compareCountries, className: "mobile-sub-link", onClick: closeAll }, "Compare Countries"),
+      h(Link, { href: routes.costCalculator, className: "mobile-sub-link", onClick: closeAll }, "Cost Calculator"),
+      h(Link, { href: routes.findStudyOptions, className: "mobile-sub-link", onClick: closeAll }, "Find Study Options"),
       h(Link, { href: routes.whoAreWe, onClick: closeAll }, "About Us"),
       h(Link, { href: routes.contact, onClick: closeAll }, "Contact Us"),
       h(Link, { href: routes.academy, onClick: closeAll }, "Academy"),
@@ -1681,7 +1974,7 @@ function FeatureCardsSection({ page }) {
     subtitle: "Two focused ways Abroadways helps students move from ideas to action.",
   });
   const cards = sectionCards(section, defaultFeatureCards);
-  return h("section", { className: "section feature-card-section" }, h("div", { className: "container" }, h("div", { className: "feature-grid" }, cards.slice(0, 2).map((card, index) => h("article", { key: card.title, className: "big-feature-card", style: { background: card.backgroundColor || softColors[index] } }, h("div", null, h("span", { className: "eyebrow" }, card.eyebrow || "BANGLADESHI STUDENTS"), h("h2", null, card.title), h("ul", null, (card.bullets || splitList(card.text, [])).slice(0, 3).map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), h("span", null, item)))), h(ButtonLink, { href: card.ctaLink || routes.services }, card.ctaText || "Learn more")), h("div", { className: "feature-card-visual" }, h("img", { src: card.imageUrl || "/images/abroadways-destination-planning.png", alt: "" })), h("span", { className: "feature-doodle", "aria-hidden": "true" }))))));
+  return h("section", { className: "section feature-card-section" }, h("div", { className: "container" }, h("div", { className: "feature-grid" }, cards.slice(0, 2).map((card, index) => h("article", { key: card.title, className: "big-feature-card", style: { background: card.backgroundColor || softColors[index] } }, h("div", null, h("span", { className: "eyebrow" }, card.eyebrow || "BANGLADESHI STUDENTS"), h("h2", null, card.title), h("ul", null, (card.bullets || splitList(card.text, [])).slice(0, 3).map((item) => h("li", { key: item, className: "feature-bullet" }, h(CheckCircle2, { size: 18, className: "feature-check" }), h("span", null, item)))), h(ButtonLink, { href: card.ctaLink || routes.services }, card.ctaText || "Learn more")), h("div", { className: "feature-card-visual" }, h("img", { src: card.imageUrl || "/images/abroadways-destination-planning.png", alt: "" })), h("span", { className: "feature-doodle", "aria-hidden": "true" }))))));
 }
 
 function ServicesPreviewSection({ page }) {
@@ -1971,15 +2264,15 @@ function ConsultationSection({ page }) {
 }
 
 function StudyOptionSearchWidget({ compact = false }) {
-  const [form, setForm] = useState({ country: "", level: "", discipline: "", budget: "" });
+  const [form, setForm] = useState({ country: "", level: "", discipline: "", budget: "", intake: "", scholarshipAvailable: false });
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const submit = (event) => {
     event.preventDefault();
     const params = new URLSearchParams();
     Object.entries(form).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+      if (value) params.set(key, String(value));
     });
-    navigateTo(`${routes.courses}${params.toString() ? `?${params.toString()}` : ""}`);
+    navigateTo(`${routes.findStudyOptions}${params.toString() ? `?${params.toString()}` : ""}`);
   };
   return h("section", { className: cx("study-option-widget-section", compact && "compact") },
     h("div", { className: "container study-option-widget" },
@@ -1989,6 +2282,8 @@ function StudyOptionSearchWidget({ compact = false }) {
         h(SelectInput, { label: "Study level", value: form.level, onChange: (value) => set("level", value), options: ["", "foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
         h(TextInput, { label: "Discipline / area", value: form.discipline, onChange: (value) => set("discipline", value), placeholder: "Business, IT, Health..." }),
         h(TextInput, { label: "Budget range", value: form.budget, onChange: (value) => set("budget", value), placeholder: "Optional" }),
+        h(TextInput, { label: "Intake", value: form.intake, onChange: (value) => set("intake", value), placeholder: "Optional" }),
+        h(Field, { label: "Scholarship" }, h("label", { className: "inline-checkbox" }, h("input", { type: "checkbox", checked: form.scholarshipAvailable, onChange: (event) => set("scholarshipAvailable", event.target.checked) }), "Needed")),
         h("button", { className: "button button-primary", type: "submit" }, "Find Options", h(ArrowRight, { size: 18 })),
       ),
     ),
@@ -2018,7 +2313,9 @@ function filterPublicPlatformItems(items, filters) {
       && (!filters.country || item.country === filters.country)
       && (!filters.level || item.level === filters.level || (Array.isArray(item.applicableLevels) && item.applicableLevels.includes(filters.level)))
       && (!filters.discipline || String(item.discipline || "").toLowerCase().includes(filters.discipline.toLowerCase()) || (Array.isArray(item.applicablePrograms) && item.applicablePrograms.join(" ").toLowerCase().includes(filters.discipline.toLowerCase())))
-      && (!filters.coverageType || item.coverageType === filters.coverageType);
+      && (!filters.coverageType || item.coverageType === filters.coverageType)
+      && (!filters.scholarshipAvailable || Boolean(item.scholarshipAvailable) === true)
+      && (!filters.intake || String(item.intake || item.intakes || "").toLowerCase().includes(String(filters.intake).toLowerCase()));
   });
 }
 
@@ -2127,6 +2424,196 @@ function ScholarshipDetailPage({ item }) {
   );
 }
 
+function queryFilters() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    search: params.get("q") || "",
+    country: params.get("country") || "",
+    level: params.get("level") || "",
+    discipline: params.get("discipline") || "",
+    budget: params.get("budget") || "",
+    intake: params.get("intake") || "",
+    scholarshipAvailable: params.get("scholarshipAvailable") === "true",
+  };
+}
+
+function FindStudyOptionsPage({ universities = [], courses = [], scholarships = [] }) {
+  const [filters, setFilters] = useState(queryFilters());
+  const update = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
+  const apply = (event) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, String(value));
+    });
+    navigateTo(`${routes.findStudyOptions}${params.toString() ? `?${params}` : ""}`);
+  };
+  const matchedUniversities = filterPublicPlatformItems(universities, filters);
+  const matchedCourses = filterPublicPlatformItems(courses, filters);
+  const matchedScholarships = filterPublicPlatformItems(scholarships, filters);
+  setSeo({
+    title: "Find Study Options | AbroadWays",
+    description: "Search universities, courses, and scholarships for AbroadWays focus countries using country, level, subject, budget, and scholarship filters.",
+    image: "/images/abroadways-destination-planning.png",
+  });
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Find Study Options", title: "Find Your Study Option", copy: "Search universities, programmes, and scholarship guidance across the five AbroadWays focus countries.", image: "/images/abroadways-destination-planning.png" }),
+    h("section", { className: "section find-options-section" }, h("div", { className: "container" },
+      h("form", { className: "study-option-form expanded", onSubmit: apply },
+        h(TextInput, { label: "Search", value: filters.search, onChange: (value) => update("search", value), placeholder: "University, subject, city..." }),
+        h(SelectInput, { label: "Country", value: filters.country, onChange: (value) => update("country", value), options: ["", ...allowedCountryNames] }),
+        h(SelectInput, { label: "Study level", value: filters.level, onChange: (value) => update("level", value), options: ["", "foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
+        h(TextInput, { label: "Discipline", value: filters.discipline, onChange: (value) => update("discipline", value), placeholder: "Business, IT..." }),
+        h(TextInput, { label: "Budget range", value: filters.budget, onChange: (value) => update("budget", value), placeholder: "Optional" }),
+        h(TextInput, { label: "Intake", value: filters.intake, onChange: (value) => update("intake", value), placeholder: "September, July..." }),
+        h(Field, { label: "Scholarship" }, h("label", { className: "inline-checkbox" }, h("input", { type: "checkbox", checked: filters.scholarshipAvailable, onChange: (event) => update("scholarshipAvailable", event.target.checked) }), "Show scholarship-friendly options")),
+        h("button", { className: "button button-primary", type: "submit" }, "Find Options", h(Search, { size: 18 })),
+      ),
+      h("div", { className: "search-tool-links" }, h(ButtonLink, { href: routes.compareCountries, variant: "outline" }, "Compare Countries"), h(ButtonLink, { href: routes.costCalculator, variant: "outline" }, "Estimate Cost")),
+      h(ResultsBlock, { title: "Matching universities", items: matchedUniversities, empty: "No university match yet. Submit your profile and AbroadWays will help shortlist options.", render: (item) => h(UniversityCard, { item }) }),
+      h(ResultsBlock, { title: "Matching courses", items: matchedCourses, empty: "No exact course match yet. Submit your profile and AbroadWays will help shortlist options.", render: (item) => h(CourseCard, { item }) }),
+      h(ResultsBlock, { title: "Matching scholarships", items: matchedScholarships, empty: "No scholarship match yet. Scholarship availability depends on university, profile, and intake.", render: (item) => h(ScholarshipCard, { item }) }),
+    )),
+    h(FinalCta),
+  );
+}
+
+function ResultsBlock({ title, items, empty, render }) {
+  return h("div", { className: "results-block" },
+    h("div", { className: "section-heading" }, h("h2", null, title), h("p", null, `${items.length} result${items.length === 1 ? "" : "s"} found`)),
+    items.length ? h("div", { className: "public-platform-grid" }, items.slice(0, 6).map((item) => render(item))) : h("div", { className: "empty-card" }, empty),
+  );
+}
+
+function CompareCountriesPage({ destinations: destinationItems }) {
+  const [selected, setSelected] = useState(["Canada", "Australia", "United Kingdom"]);
+  const toggle = (country) => setSelected((current) => {
+    if (current.includes(country)) return current.filter((item) => item !== country);
+    if (current.length >= 3) return [...current.slice(1), country];
+    return [...current, country];
+  });
+  const countries = destinationItems.filter((destination) => selected.includes(destination.name));
+  const rows = [
+    ["Average tuition range", (item) => `${item.currency || ""} ${item.averageTuitionMin || "Varies"}-${item.averageTuitionMax || "Varies"} / year`],
+    ["Living cost range", (item) => `${item.currency || ""} ${item.livingCostMin || "Varies"}-${item.livingCostMax || "Varies"} / month`],
+    ["Intakes", (item) => item.countryFacts?.intakes || item.intakes],
+    ["Language requirement", (item) => item.languageRequirement],
+    ["Scholarship availability", (item) => item.scholarshipNote],
+    ["Post-study options note", (item) => item.postStudyNote],
+    ["Work while studying note", (item) => item.workWhileStudyingNote],
+    ["Popular subjects", (item) => splitList(item.popularSubjects, item.studyAreas).slice(0, 5).join(", ")],
+    ["Application timeline", (item) => item.applicationTimeline],
+    ["Best for", (item) => splitList(item.bestFor, []).join(", ")],
+  ];
+  setSeo({
+    title: "Compare Study Abroad Countries | AbroadWays",
+    description: "Compare Canada, Australia, United Kingdom, New Zealand, and Malaysia side by side for tuition, living cost, intakes, subjects, and planning notes.",
+    image: "/images/abroadways-hero-campus.png",
+  });
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Compare Countries", title: "Compare Study Abroad Countries", copy: "Choose two or three destinations and compare costs, intakes, subjects, and planning notes side by side.", image: "/images/abroadways-hero-campus.png" }),
+    h("section", { className: "section compare-countries-section" }, h("div", { className: "container" },
+      h("div", { className: "compare-picker" }, destinationItems.map((destination) => h("button", { key: destination.slug, type: "button", className: cx(selected.includes(destination.name) && "active"), onClick: () => toggle(destination.name) }, destination.name))),
+      h("div", { className: "destination-table-wrap compare-table-wrap" },
+        h("table", { className: "destination-table compare-table" },
+          h("thead", null, h("tr", null, h("th", null, "Compare"), countries.map((country) => h("th", { key: country.name }, country.name)))),
+          h("tbody", null, rows.map(([label, getter]) => h("tr", { key: label }, h("td", null, label), countries.map((country) => h("td", { key: `${label}-${country.name}` }, getter(country) || "Varies"))))),
+        ),
+      ),
+      h("p", { className: "destination-disclaimer" }, "Rules, costs, and visa conditions can change. Always verify current requirements before applying."),
+      h("div", { className: "center-actions" }, h(ButtonLink, { href: routes.costCalculator }, "Estimate Study Cost"), h(ButtonLink, { href: routes.planner, variant: "outline" }, "Get Personal Guidance")),
+    )),
+  );
+}
+
+function CostCalculatorPage({ destinations: destinationItems }) {
+  const params = new URLSearchParams(window.location.search);
+  const initialCountry = params.get("country") || "Canada";
+  const initial = destinationItems.find((item) => item.name === initialCountry) || destinationItems[0];
+  const [form, setForm] = useState(() => calculatorDefaults(initial));
+  const [lead, setLead] = useState({ name: "", phone: "", email: "" });
+  const [message, setMessage] = useState("");
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const countryChanged = (name) => {
+    const item = destinationItems.find((destination) => destination.name === name) || destinationItems[0];
+    setForm(calculatorDefaults(item));
+  };
+  const annualTuition = Number(form.annualTuition || 0);
+  const monthlyLiving = Number(form.accommodationMonthly || 0) + Number(form.livingCostMonthly || 0);
+  const firstYear = annualTuition + monthlyLiving * 12 + Number(form.insuranceCost || 0) + Number(form.visaCost || 0) + Number(form.travelCost || 0);
+  const total = annualTuition * Number(form.durationYears || 1) + monthlyLiving * Number(form.durationMonths || 12) + Number(form.insuranceCost || 0) * Number(form.durationYears || 1) + Number(form.visaCost || 0) + Number(form.travelCost || 0);
+  const submitLead = async (event) => {
+    event.preventDefault();
+    setMessage("Sending estimate...");
+    try {
+      await api("/leads", { method: "POST", body: JSON.stringify({ ...lead, interestedCountry: form.country, educationLevel: form.level, budgetRange: `${form.currency} ${Math.round(firstYear).toLocaleString()} first-year estimate`, message: `Cost calculator estimate: first year ${form.currency} ${Math.round(firstYear).toLocaleString()}, total ${form.currency} ${Math.round(total).toLocaleString()}.`, source: "cost-calculator", status: "new" }) });
+      setMessage("Estimate sent. AbroadWays will follow up with guidance.");
+      setLead({ name: "", phone: "", email: "" });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not send estimate.");
+    }
+  };
+  setSeo({
+    title: "Study Abroad Cost Calculator | AbroadWays",
+    description: "Estimate first-year and total study abroad costs for Canada, Australia, United Kingdom, New Zealand, and Malaysia.",
+    image: "/images/abroadways-destination-planning.png",
+  });
+  return h(React.Fragment, null,
+    h(PageHero, { eyebrow: "Cost Calculator", title: "Study Abroad Cost Calculator", copy: "Estimate an approximate budget before your counselling session. Figures are planning estimates only.", image: "/images/abroadways-destination-planning.png" }),
+    h("section", { className: "section cost-calculator-section" }, h("div", { className: "container cost-calculator-grid" },
+      h("form", { className: "cost-form" },
+        h(SelectInput, { label: "Country", value: form.country, onChange: countryChanged, options: allowedCountryNames }),
+        h(SelectInput, { label: "Study level", value: form.level, onChange: (value) => set("level", value), options: ["foundation", "diploma", "bachelor", "masters", "phd", "certificate"] }),
+        h(TextInput, { label: "Annual tuition", type: "number", value: form.annualTuition, onChange: (value) => set("annualTuition", value) }),
+        h(TextInput, { label: "Accommodation monthly", type: "number", value: form.accommodationMonthly, onChange: (value) => set("accommodationMonthly", value) }),
+        h(TextInput, { label: "Living cost monthly", type: "number", value: form.livingCostMonthly, onChange: (value) => set("livingCostMonthly", value) }),
+        h(TextInput, { label: "Insurance / health cost", type: "number", value: form.insuranceCost, onChange: (value) => set("insuranceCost", value) }),
+        h(TextInput, { label: "Visa / application cost", type: "number", value: form.visaCost, onChange: (value) => set("visaCost", value) }),
+        h(TextInput, { label: "Travel cost", type: "number", value: form.travelCost, onChange: (value) => set("travelCost", value) }),
+        h(TextInput, { label: "Duration years", type: "number", value: form.durationYears, onChange: (value) => set("durationYears", value) }),
+        h(TextInput, { label: "Duration months", type: "number", value: form.durationMonths, onChange: (value) => set("durationMonths", value) }),
+        h(TextInput, { label: "Currency", value: form.currency, onChange: (value) => set("currency", value) }),
+      ),
+      h("aside", { className: "cost-result-card" },
+        h("span", { className: "eyebrow" }, "Estimated budget"),
+        h("h2", null, `${form.currency} ${Math.round(firstYear).toLocaleString()}`),
+        h("p", null, "Estimated first-year cost"),
+        h("div", null, h("strong", null, `${form.currency} ${Math.round(total).toLocaleString()}`), h("span", null, "Estimated total study cost")),
+        h("div", null, h("strong", null, `${form.currency} ${Math.round(monthlyLiving).toLocaleString()}`), h("span", null, "Estimated monthly living cost")),
+        h("p", { className: "destination-disclaimer" }, "This calculator is for planning only. Tuition, living cost, exchange rate, visa fees, insurance, and scholarship policy can change."),
+        h(ButtonLink, { href: routes.planner }, "Get a Personalized Budget Plan"),
+        h("form", { onSubmit: submitLead, className: "estimate-lead-form" },
+          h("h3", null, "Send my estimate to AbroadWays"),
+          h(TextInput, { label: "Name", value: lead.name, onChange: (value) => setLead((current) => ({ ...current, name: value })) }),
+          h(TextInput, { label: "Phone", value: lead.phone, onChange: (value) => setLead((current) => ({ ...current, phone: value })) }),
+          h(TextInput, { label: "Email", type: "email", value: lead.email, onChange: (value) => setLead((current) => ({ ...current, email: value })) }),
+          h("button", { className: "button button-primary", type: "submit" }, "Send Estimate"),
+          message && h("p", { className: "form-message" }, message),
+        ),
+      ),
+    )),
+  );
+}
+
+function calculatorDefaults(destination) {
+  const currency = destination.currency || destination.countryFacts?.currency || "CAD";
+  const annualTuition = Number(destination.averageTuitionMin || 18000);
+  const monthlyLiving = Number(destination.livingCostMin || 1200);
+  return {
+    country: destination.name,
+    level: "bachelor",
+    annualTuition,
+    accommodationMonthly: Math.round(monthlyLiving * 0.55),
+    livingCostMonthly: Math.round(monthlyLiving * 0.45),
+    insuranceCost: Math.round(annualTuition * 0.04),
+    visaCost: Math.round(annualTuition * 0.03),
+    travelCost: Math.round(annualTuition * 0.05),
+    durationYears: 1,
+    durationMonths: 12,
+    currency,
+  };
+}
+
 function PlatformRelatedSection({ title, items }) {
   return h("section", { className: "section platform-related-section" }, h("div", { className: "container" }, h(SectionHeading, { eyebrow: "Related", title }), items.length ? h("div", { className: "public-platform-grid compact" }, items.map((item) => h(Link, { key: `${item.title}-${item.link}`, href: item.link, className: "public-platform-card" }, h("h3", null, item.title), h("p", null, item.description)))) : h("div", { className: "empty-card" }, "Listings for this section will be updated soon.")));
 }
@@ -2145,21 +2632,156 @@ function CountryPlatformSections({ destination, universities, courses, scholarsh
   ));
 }
 
+function CountryPlatformInline({ destination, universities, courses, scholarships }) {
+  const countryUniversities = universities.filter((item) => item.country === destination.name).slice(0, 3);
+  const countryCourses = courses.filter((item) => item.country === destination.name).slice(0, 3);
+  const countryScholarships = scholarships.filter((item) => item.country === destination.name).slice(0, 3);
+  return h("div", { className: "country-platform-grid inline" },
+    h("article", null, h("h3", null, "Featured universities"), countryUniversities.length ? countryUniversities.map((item) => h(Link, { key: item.slug, href: `${routes.universities}/${item.slug}` }, item.name)) : h("p", null, "University listings for this country will be updated soon.")),
+    h("article", null, h("h3", null, "Featured courses"), countryCourses.length ? countryCourses.map((item) => h(Link, { key: item.slug, href: `${routes.courses}/${item.slug}` }, item.title)) : h("p", null, "Course listings for this country will be updated soon.")),
+    h("article", null, h("h3", null, "Scholarships"), countryScholarships.length ? countryScholarships.map((item) => h(Link, { key: item.slug, href: `${routes.scholarships}/${item.slug}` }, item.name)) : h("p", null, "Scholarship listings for this country will be updated soon.")),
+  );
+}
+
+function navAnchor(anchor) {
+  return String(anchor || "").replace(/^#/, "");
+}
+
+function detailParagraphs(value, fallback = []) {
+  if (Array.isArray(value)) return value.length ? value : fallback;
+  if (typeof value === "string" && value.trim()) return splitContent(value, fallback);
+  return fallback;
+}
+
+function DetailTable({ rows = [], columns = ["label", "value", "note"], labels = ["Topic", "Details", "Note"] }) {
+  return h("div", { className: "destination-table-wrap" },
+    h("table", { className: "destination-table" },
+      h("thead", null, h("tr", null, labels.map((label) => h("th", { key: label }, label)))),
+      h("tbody", null, rows.map((row, index) => h("tr", { key: `${row.label || row.universityName || row.collegeName || row.studyLevel || index}-${index}` }, columns.map((column) => h("td", { key: column }, row[column] || ""))))),
+    ),
+  );
+}
+
+function DestinationSection({ id, eyebrow, title, children, className = "" }) {
+  return h("section", { id: navAnchor(id), className: cx("section destination-long-section", className) },
+    h("div", { className: "container" },
+      h("div", { className: "section-heading" }, eyebrow && h("span", { className: "eyebrow" }, eyebrow), h("h2", null, title), h("span", { className: "scribble-line", "aria-hidden": "true" })),
+      children,
+    ),
+  );
+}
+
+function CountryHeroDetailed({ destination }) {
+  return h("section", { className: "destination-hero" },
+    h("div", { className: "container destination-hero-grid" },
+      h("div", { className: "destination-hero-copy" },
+        h("span", { className: "hero-badge" }, "Study Abroad Destination"),
+        h("h1", null, destination.heroHeading || `Study in ${destination.name} from Bangladesh`),
+        h("p", null, destination.heroSubtitle || destination.short),
+        h("div", { className: "hero-actions" },
+          h(ButtonLink, { href: destination.heroCtaLink || destination.ctaLink || routes.planner }, destination.heroCtaText || destination.ctaText || "Start Pathway Planner"),
+          h(ButtonLink, { href: routes.compareCountries, variant: "outline" }, "Compare Countries"),
+        ),
+        h("p", { className: "destination-disclaimer" }, "Costs, visa rules, scholarship policies, and work conditions can change. Always verify current requirements before applying."),
+      ),
+      h("div", { className: "destination-hero-collage" },
+        h("img", { className: "destination-main-img", src: destination.heroMainImageUrl || destination.image, alt: `${destination.name} study destination` }),
+        h("img", { className: "destination-side-img one", src: destination.heroSideImageUrl1 || destination.image, alt: `${destination.name} campus planning`, loading: "lazy" }),
+        h("img", { className: "destination-side-img two", src: destination.heroSideImageUrl2 || "/images/consultation-counsellor.png", alt: "AbroadWays counselling", loading: "lazy" }),
+      ),
+    ),
+  );
+}
+
+function DestinationStickyNav({ items = [] }) {
+  return h("nav", { className: "destination-sticky-nav", "aria-label": "Destination sections" },
+    h("div", { className: "container destination-nav-scroll" },
+      items.map((item) => h("a", { key: `${item.label}-${item.anchor}`, href: `#${navAnchor(item.anchor)}` }, item.label)),
+    ),
+  );
+}
+
 function CountryPage({ destination, universities = [], courses = [], scholarships = [] }) {
-  setSeo({ title: destination.seoTitle || `Study in ${destination.name} | Abroadways`, description: destination.seoDescription || destination.overview, image: destination.ogImage || destination.image, ogTitle: destination.ogTitle, ogDescription: destination.ogDescription });
+  const overviewSection = destination.overviewSection || detailedCountryDefaults(destination).overview;
+  const facts = destination.countryFacts || {};
+  const whyStudy = destination.whyStudy || {};
+  const education = destination.educationSystem || {};
+  const subjects = destination.topSubjects || {};
+  const cost = destination.tuitionAndCost || {};
+  const scholarshipContent = destination.scholarshipsSection || {};
+  const pathway = destination.postStudyPathways || {};
+  const finalCta = destination.finalCta || {};
+  const navItems = destination.sectionsNav?.length ? destination.sectionsNav : defaultSectionsNav(destination.name);
+  const countryScholarships = scholarships.filter((item) => item.country === destination.name).slice(0, 6);
+  setSeo({ title: destination.seoTitle || `Study in ${destination.name} from Bangladesh | AbroadWays`, description: destination.seoDescription || destination.heroSubtitle || destination.short, image: destination.ogImage || destination.heroMainImageUrl || destination.image, ogTitle: destination.ogTitle, ogDescription: destination.ogDescription });
   return h(React.Fragment, null,
-    h(PageHero, { eyebrow: "Study Abroad", title: destination.heroHeading || `Study in ${destination.name}`, copy: destination.heroSubtitle || destination.short, image: destination.image }),
-    h(CountryAtGlance, { destination }),
-    h("section", { className: "section country-detail country-landing" }, h("div", { className: "container country-detail-grid" },
-      h("div", { className: "country-story" }, h("span", { className: "eyebrow" }, "Overview"), h("h2", null, `Your ${destination.name} pathway, organised`), h("p", null, destination.overview), h("div", { className: "country-actions" }, h(ButtonLink, { href: destination.ctaLink || routes.planner }, destination.ctaText || "Start Pathway Planner"), h(ButtonLink, { href: routes.contact, variant: "outline" }, "Talk to Counsellor"))),
-      h("aside", { className: "country-panel country-benefits" }, h("h3", null, "Why study there"), h("ul", null, destination.benefits.map((item) => h("li", { key: item }, h(CheckCircle2, { size: 18 }), h("span", null, item)))), h("div", { className: "country-panel-note" }, "Profile-led planning for Bangladeshi students")),
-    )),
-    destination.galleryImages?.length ? h(CountryGallery, { images: destination.galleryImages, title: destination.name }) : null,
-    h(CountryInfoSections, { destination }),
-    h(CountryPlatformSections, { destination, universities, courses, scholarships }),
-    h(ProcessSection),
-    h(FaqSection, { items: destination.faqs }),
-    h(FinalCta),
+    h(CountryHeroDetailed, { destination }),
+    h(DestinationStickyNav, { items: navItems }),
+    h(StudyOptionSearchWidget, { compact: true }),
+    h(DestinationSection, { id: "overview", eyebrow: "Overview", title: overviewSection.heading || `Study in ${destination.name}` },
+      h("div", { className: "destination-overview-grid" },
+        h("div", null, detailParagraphs(overviewSection.intro, [destination.overview]).map((paragraph) => h("p", { key: paragraph }, paragraph))),
+        h("div", { className: "country-fact-grid" }, [
+          ["Capital", facts.capital],
+          ["Major cities", facts.majorCities],
+          ["Language", facts.language],
+          ["Currency", facts.currency || destination.currency],
+          ["Common intakes", facts.intakes || destination.intakes],
+          ["Average cost", facts.averageCost || destination.costGuide],
+        ].map(([label, value]) => h("article", { key: label }, h("span", null, label), h("strong", null, value || "Varies")))),
+      ),
+      overviewSection.highlightCards?.length ? h("div", { className: "destination-highlight-grid" }, overviewSection.highlightCards.map((card) => h("article", { key: card.title }, h("h3", null, card.title), h("p", null, card.description)))) : null,
+    ),
+    h(DestinationSection, { id: "facts", eyebrow: "Facts & Figures", title: `${destination.name} facts for students` },
+      h(DetailTable, { rows: destination.factsAndFiguresTable || [], columns: ["label", "value", "note"], labels: ["Topic", "Details", "Planning note"] }),
+    ),
+    h(DestinationSection, { id: "why-study", eyebrow: "Why study there?", title: whyStudy.heading || `Why study in ${destination.name}?` },
+      detailParagraphs(whyStudy.paragraphs, []).map((paragraph) => h("p", { key: paragraph, className: "section-intro" }, paragraph)),
+      h("div", { className: "advantage-grid" }, (whyStudy.advantageCards || []).map((card) => h("article", { key: card.title }, h(CheckCircle2, { size: 20 }), h("h3", null, card.title), h("p", null, card.description)))),
+    ),
+    h(DestinationSection, { id: "education-system", eyebrow: "Education System", title: education.heading || `${destination.name} education system` },
+      h("div", { className: "education-system-grid" },
+        h("div", null, h("p", null, education.intro), h("div", { className: "education-blocks" }, (education.sections || []).map((item) => h("article", { key: item.title }, h("h3", null, item.title), h("p", null, item.description))))),
+        h("img", { src: education.imageUrl || destination.image, alt: `${destination.name} education system`, loading: "lazy" }),
+      ),
+      h(DetailTable, { rows: education.qualificationTable || [], columns: ["qualification", "duration", "description"], labels: ["Qualification", "Typical duration", "Description"] }),
+    ),
+    h(DestinationSection, { id: "top-institutes", eyebrow: "Top Institutes", title: `${destination.name} universities and colleges` },
+      h("h3", { className: "destination-subtitle" }, "Sample university table"),
+      h(DetailTable, { rows: destination.topUniversitiesTable || [], columns: ["universityName", "location", "admissionRequirement", "languageRequirement", "rankingNote"], labels: ["University", "Location", "Admission", "Language", "Note"] }),
+      destination.topCollegesTable?.length ? h(React.Fragment, null, h("h3", { className: "destination-subtitle" }, "College and pathway options"), h(DetailTable, { rows: destination.topCollegesTable, columns: ["collegeName", "location", "whyChoose", "programsOffered", "annualTuition"], labels: ["College", "Location", "Why choose", "Programs", "Tuition"] })) : null,
+      h(CountryPlatformInline, { destination, universities, courses, scholarships }),
+    ),
+    h(DestinationSection, { id: "subjects", eyebrow: "Top Subjects", title: subjects.heading || `Popular subjects in ${destination.name}` },
+      h("div", { className: "subjects-layout" },
+        h("img", { src: subjects.imageUrl || destination.image, alt: `${destination.name} subjects`, loading: "lazy" }),
+        h("div", null, subjects.intro && h("p", null, subjects.intro), h("div", { className: "subject-chip-grid" }, splitList(subjects.subjects, destination.studyAreas).map((subject) => h("span", { key: subject }, subject)))),
+      ),
+    ),
+    h(DestinationSection, { id: "tuition-cost", eyebrow: "Tuition Fee", title: cost.heading || `${destination.name} tuition and cost guide` },
+      cost.intro && h("p", { className: "section-intro" }, cost.intro),
+      h(DetailTable, { rows: cost.rows || [], columns: ["studyLevel", "tuitionRange", "livingCost", "notes"], labels: ["Study level", "Tuition range", "Living cost", "Notes"] }),
+      h("p", { className: "destination-disclaimer" }, cost.disclaimer || "Costs vary by institution, program, city, and intake."),
+      h("div", { className: "center-actions" }, h(ButtonLink, { href: `${routes.costCalculator}?country=${encodeURIComponent(destination.name)}`, variant: "outline" }, "Estimate Cost")),
+    ),
+    h(DestinationSection, { id: "scholarships", eyebrow: "Scholarship", title: scholarshipContent.heading || `${destination.name} scholarships` },
+      scholarshipContent.intro && h("p", { className: "section-intro" }, scholarshipContent.intro),
+      h("div", { className: "scholarship-country-grid" },
+        (countryScholarships.length ? countryScholarships : (scholarshipContent.scholarshipCards || [])).map((item, index) => h("article", { key: item.slug || item.name || index },
+          h("h3", null, item.name),
+          h("p", null, item.description || item.notes || item.eligibility),
+          h("span", null, item.amount || item.coverageType || "Varies"),
+        )),
+      ),
+    ),
+    h(DestinationSection, { id: "pathway", eyebrow: "Pathway", title: pathway.heading || `${destination.name} post-study guidance` },
+      pathway.intro && h("p", { className: "section-intro" }, pathway.intro),
+      h("div", { className: "advantage-grid" }, (pathway.cards || []).map((card) => h("article", { key: card.title }, h("h3", null, card.title), h("p", null, card.description), h("small", null, card.disclaimer || "Rules can change and must be checked before applying.")))),
+    ),
+    h(DestinationSection, { id: "faqs", eyebrow: "FAQs", title: `${destination.name} study FAQs` },
+      h("div", { className: "faq-grid" }, normalizeFaqObjects(destination.faqs).map((faq) => h("article", { key: faq.question, className: "faq-card" }, h("h3", null, faq.question), h("p", null, faq.answer)))),
+    ),
+    h("section", { className: "final-cta destination-final-cta" }, h("div", { className: "container final-cta-inner" }, h("span", { className: "eyebrow" }, "Consultation"), h("h2", null, finalCta.heading || "Start Your Study Abroad Journey"), h("p", null, finalCta.text || `Plan your ${destination.name} pathway with AbroadWays.`), h(ButtonLink, { href: finalCta.buttonLink || routes.planner, variant: "light" }, finalCta.buttonText || "Start Pathway Planner"))),
   );
 }
 
@@ -3512,12 +4134,151 @@ function CountryManager() {
   return h("section", null, h(CmsHeader, { title: "Country Pages", copy: "Only the five approved Abroadways destinations are editable here." }), h(renderAlerts, { ...cms }), editing && h(CountryEditor, { draft: editing, setDraft: setEditing, onSave: save, onCancel: () => setEditing(null) }), h("div", { className: "media-grid" }, countryItems.map((item) => h("article", { key: item.slug, className: "media-card" }, h("img", { src: item.heroImage || "/images/abroadways-hero-campus.png", alt: item.countryName }), h("div", { className: "media-card-body" }, h("strong", null, item.countryName), h(StatusBadge, { status: item.status || "published" }), h("div", { className: "cms-row-actions" }, h("button", { type: "button", className: "mini-button", onClick: () => setEditing(item) }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: `${routes.studyAbroad}/${item.slug}`, className: "mini-button" }, h(Eye, { size: 15 }), "View"), h("button", { type: "button", className: "mini-button", onClick: () => cms.patchRecord(item, { status: item.status === "published" ? "archived" : "published" }) }, h(Archive, { size: 15 }), item.status === "published" ? "Archive" : "Publish")))))));
 }
 
+function pipeRowsText(rows = [], columns = []) {
+  return Array.isArray(rows) ? rows.map((row) => columns.map((column) => row?.[column] || "").join(" | ")).join("\n") : "";
+}
+
+function parsePipeRows(value, columns = []) {
+  return String(value || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    const parts = line.split("|").map((part) => part.trim());
+    return columns.reduce((row, column, index) => ({ ...row, [column]: parts[index] || "" }), {});
+  });
+}
+
+function parseCardsText(value) {
+  return parsePipeRows(value, ["title", "description", "icon"]);
+}
+
+function cardsText(cards = []) {
+  return pipeRowsText(cards, ["title", "description", "icon"]);
+}
+
 function normalizeCountryDraft(item = {}) {
-  return { ...item, countryName: item.countryName || item.name || item.title || "", heroImage: firstImage(item, ""), galleryImagesText: lines(item.galleryImages || item.imageGallery), benefitsText: lines(item.benefits), studyAreasText: lines(item.studyAreas), requirementsText: lines(item.requirements), faqsText: faqText(item.faqs) };
+  const name = item.countryName || item.name || item.title || "";
+  const fallback = detailedCountryDefaults(destinations.find((destination) => destination.name === name || destination.slug === item.slug) || destinations[0]);
+  const overviewSection = item.overviewSection || (typeof item.overview === "object" ? item.overview : fallback.overview);
+  const facts = item.countryFacts || fallback.countryFacts;
+  const whyStudy = item.whyStudy || fallback.whyStudy;
+  const education = item.educationSystem || fallback.educationSystem;
+  const subjects = item.topSubjects || fallback.topSubjects;
+  const cost = item.tuitionAndCost || fallback.tuitionAndCost;
+  const scholarshipsSection = item.scholarshipsSection || item.scholarships || fallback.scholarships;
+  const pathway = item.postStudyPathways || fallback.postStudyPathways;
+  const finalCta = item.finalCta || fallback.finalCta;
+  return {
+    ...item,
+    countryName: name,
+    heroImage: firstImage(item, fallback.heroMainImageUrl),
+    heroImagesText: lines(item.heroImages || fallback.heroImages),
+    galleryImagesText: lines(item.galleryImages || item.imageGallery),
+    benefitsText: lines(item.benefits),
+    studyAreasText: lines(item.studyAreas),
+    requirementsText: lines(item.requirements),
+    faqsText: faqText(item.faqs),
+    sectionsNavText: pipeRowsText(item.sectionsNav || fallback.sectionsNav, ["label", "anchor"]),
+    overviewHeading: overviewSection.heading || "",
+    overviewIntroText: lines(overviewSection.intro),
+    overviewHighlightsText: cardsText(overviewSection.highlightCards),
+    factsLocation: facts.location || "",
+    factsPopulation: facts.population || "",
+    factsCapital: facts.capital || "",
+    factsMajorCities: facts.majorCities || "",
+    factsLanguage: facts.language || "",
+    factsCurrency: facts.currency || item.currency || "",
+    factsIntakes: facts.intakes || item.intakes || "",
+    factsAverageCost: facts.averageCost || "",
+    factsFundingOptions: facts.fundingOptions || "",
+    factsStudyLevels: facts.studyLevels || "",
+    factsWorkOptionsNote: facts.workOptionsNote || "",
+    factsSafetyNote: facts.safetyNote || "",
+    factsAndFiguresText: pipeRowsText(item.factsAndFiguresTable || fallback.factsAndFiguresTable, ["label", "value", "note"]),
+    whyHeading: whyStudy.heading || "",
+    whyParagraphsText: lines(whyStudy.paragraphs),
+    advantageCardsText: cardsText(whyStudy.advantageCards),
+    educationHeading: education.heading || "",
+    educationIntro: education.intro || "",
+    educationImageUrl: education.imageUrl || "",
+    educationSectionsText: cardsText(education.sections),
+    qualificationTableText: pipeRowsText(education.qualificationTable, ["qualification", "duration", "description"]),
+    topUniversitiesText: pipeRowsText(item.topUniversitiesTable || fallback.topUniversitiesTable, ["universityName", "location", "admissionRequirement", "languageRequirement", "rankingNote", "websiteUrl"]),
+    topCollegesText: pipeRowsText(item.topCollegesTable || fallback.topCollegesTable, ["collegeName", "location", "whyChoose", "programsOffered", "applicationFee", "annualTuition", "websiteUrl"]),
+    topSubjectsHeading: subjects.heading || "",
+    topSubjectsIntro: subjects.intro || "",
+    topSubjectsImageUrl: subjects.imageUrl || "",
+    popularSubjectsText: lines(item.popularSubjects || subjects.subjects),
+    tuitionHeading: cost.heading || "",
+    tuitionIntro: cost.intro || "",
+    tuitionRowsText: pipeRowsText(cost.rows, ["studyLevel", "tuitionRange", "livingCost", "notes"]),
+    tuitionDisclaimer: cost.disclaimer || "",
+    scholarshipsHeading: scholarshipsSection.heading || "",
+    scholarshipsIntro: scholarshipsSection.intro || "",
+    scholarshipCardsText: pipeRowsText(scholarshipsSection.scholarshipCards, ["name", "amount", "eligibility", "deadline", "notes"]),
+    pathwayHeading: pathway.heading || "",
+    pathwayIntro: pathway.intro || "",
+    pathwayCardsText: pipeRowsText(pathway.cards, ["title", "description", "disclaimer"]),
+    finalCtaHeading: finalCta.heading || "",
+    finalCtaText: finalCta.text || "",
+    finalCtaButtonText: finalCta.buttonText || "",
+    finalCtaButtonLink: finalCta.buttonLink || routes.planner,
+    bestForText: lines(item.bestFor || fallback.bestFor),
+  };
 }
 
 function countryPayload(draft) {
-  return { id: draft.id, countryName: draft.countryName, slug: draft.slug, heroHeading: draft.heroHeading, heroSubtitle: draft.heroSubtitle, heroImage: draft.heroImage, galleryImages: lineList(draft.galleryImagesText), overview: draft.overview, benefits: lineList(draft.benefitsText), studyAreas: lineList(draft.studyAreasText), intakes: draft.intakes, costGuide: draft.costGuide, requirements: lineList(draft.requirementsText), visaNotes: draft.visaNotes, faqs: parseFaqText(draft.faqsText), ctaText: draft.ctaText, ctaLink: draft.ctaLink, seoTitle: draft.seoTitle, seoDescription: draft.seoDescription, ogImage: draft.ogImage, status: draft.status || "draft" };
+  return {
+    id: draft.id,
+    countryName: draft.countryName,
+    slug: draft.slug,
+    heroHeading: draft.heroHeading,
+    heroSubtitle: draft.heroSubtitle,
+    heroCtaText: draft.heroCtaText || draft.ctaText,
+    heroCtaLink: draft.heroCtaLink || draft.ctaLink,
+    heroImage: draft.heroImage,
+    heroMainImageUrl: draft.heroMainImageUrl || draft.heroImage,
+    heroSideImageUrl1: draft.heroSideImageUrl1,
+    heroSideImageUrl2: draft.heroSideImageUrl2,
+    heroImages: lineList(draft.heroImagesText),
+    galleryImages: lineList(draft.galleryImagesText),
+    sectionsNav: parsePipeRows(draft.sectionsNavText, ["label", "anchor"]),
+    overview: draft.overview,
+    overviewSection: { heading: draft.overviewHeading, intro: lineList(draft.overviewIntroText), highlightCards: parseCardsText(draft.overviewHighlightsText) },
+    countryFacts: { location: draft.factsLocation, population: draft.factsPopulation, capital: draft.factsCapital, majorCities: draft.factsMajorCities, language: draft.factsLanguage, currency: draft.factsCurrency, intakes: draft.factsIntakes, averageCost: draft.factsAverageCost, fundingOptions: draft.factsFundingOptions, studyLevels: draft.factsStudyLevels, workOptionsNote: draft.factsWorkOptionsNote, safetyNote: draft.factsSafetyNote },
+    factsAndFiguresTable: parsePipeRows(draft.factsAndFiguresText, ["label", "value", "note"]),
+    whyStudy: { heading: draft.whyHeading, paragraphs: lineList(draft.whyParagraphsText), advantageCards: parseCardsText(draft.advantageCardsText) },
+    educationSystem: { heading: draft.educationHeading, intro: draft.educationIntro, imageUrl: draft.educationImageUrl, sections: parseCardsText(draft.educationSectionsText), qualificationTable: parsePipeRows(draft.qualificationTableText, ["qualification", "duration", "description"]) },
+    topUniversitiesTable: parsePipeRows(draft.topUniversitiesText, ["universityName", "location", "admissionRequirement", "languageRequirement", "rankingNote", "websiteUrl"]),
+    topCollegesTable: parsePipeRows(draft.topCollegesText, ["collegeName", "location", "whyChoose", "programsOffered", "applicationFee", "annualTuition", "websiteUrl"]),
+    topSubjects: { heading: draft.topSubjectsHeading, intro: draft.topSubjectsIntro, imageUrl: draft.topSubjectsImageUrl, subjects: lineList(draft.popularSubjectsText) },
+    tuitionAndCost: { heading: draft.tuitionHeading, intro: draft.tuitionIntro, rows: parsePipeRows(draft.tuitionRowsText, ["studyLevel", "tuitionRange", "livingCost", "notes"]), disclaimer: draft.tuitionDisclaimer },
+    scholarshipsSection: { heading: draft.scholarshipsHeading, intro: draft.scholarshipsIntro, scholarshipCards: parsePipeRows(draft.scholarshipCardsText, ["name", "amount", "eligibility", "deadline", "notes"]) },
+    postStudyPathways: { heading: draft.pathwayHeading, intro: draft.pathwayIntro, cards: parsePipeRows(draft.pathwayCardsText, ["title", "description", "disclaimer"]) },
+    finalCta: { heading: draft.finalCtaHeading, text: draft.finalCtaText, buttonText: draft.finalCtaButtonText, buttonLink: draft.finalCtaButtonLink },
+    benefits: lineList(draft.benefitsText),
+    studyAreas: lineList(draft.studyAreasText),
+    intakes: draft.intakes,
+    costGuide: draft.costGuide,
+    requirements: lineList(draft.requirementsText),
+    visaNotes: draft.visaNotes,
+    faqs: parseFaqText(draft.faqsText),
+    ctaText: draft.ctaText,
+    ctaLink: draft.ctaLink,
+    averageTuitionMin: draft.averageTuitionMin,
+    averageTuitionMax: draft.averageTuitionMax,
+    livingCostMin: draft.livingCostMin,
+    livingCostMax: draft.livingCostMax,
+    currency: draft.factsCurrency || draft.currency,
+    languageRequirement: draft.languageRequirement,
+    scholarshipNote: draft.scholarshipNote,
+    postStudyNote: draft.postStudyNote,
+    workWhileStudyingNote: draft.workWhileStudyingNote,
+    bestFor: lineList(draft.bestForText),
+    popularSubjects: lineList(draft.popularSubjectsText),
+    applicationTimeline: draft.applicationTimeline,
+    seoTitle: draft.seoTitle,
+    seoDescription: draft.seoDescription,
+    ogImage: draft.ogImage,
+    status: draft.status || "draft",
+  };
 }
 
 function CountryEditor({ draft, setDraft, onSave, onCancel }) {
@@ -3535,17 +4296,71 @@ function CountryEditor({ draft, setDraft, onSave, onCancel }) {
       h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }),
       h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }),
       h(ImageField, { label: "Hero image", value: draft.heroImage, onChange: (value) => set("heroImage", value), className: "full", folder: "abroadways/countries" }),
+      h(ImageField, { label: "Hero main image", value: draft.heroMainImageUrl || draft.heroImage, onChange: (value) => set("heroMainImageUrl", value), folder: "abroadways/countries" }),
+      h(ImageField, { label: "Hero side image 1", value: draft.heroSideImageUrl1, onChange: (value) => set("heroSideImageUrl1", value), folder: "abroadways/countries" }),
+      h(ImageField, { label: "Hero side image 2", value: draft.heroSideImageUrl2, onChange: (value) => set("heroSideImageUrl2", value), folder: "abroadways/countries" }),
+      h(TextInput, { label: "Hero CTA text", value: draft.heroCtaText || draft.ctaText, onChange: (value) => set("heroCtaText", value) }),
+      h(TextInput, { label: "Hero CTA link", value: draft.heroCtaLink || draft.ctaLink, onChange: (value) => set("heroCtaLink", value) }),
+      h(TextArea, { label: "Hero images, one URL per line", value: draft.heroImagesText, onChange: (value) => set("heroImagesText", value), className: "full" }),
+      h(TextArea, { label: "Section navigation: Label | anchor", value: draft.sectionsNavText, onChange: (value) => set("sectionsNavText", value), className: "full" }),
       h(GalleryImageEditor, { label: "Gallery images", value: draft.galleryImagesText, onChange: (value) => set("galleryImagesText", value) }),
       h(TextArea, { label: "Overview", value: draft.overview, onChange: (value) => set("overview", value), className: "full" }),
+      h(TextInput, { label: "Overview heading", value: draft.overviewHeading, onChange: (value) => set("overviewHeading", value), className: "full" }),
+      h(TextArea, { label: "Overview paragraphs, one per line", value: draft.overviewIntroText, onChange: (value) => set("overviewIntroText", value), className: "full" }),
+      h(TextArea, { label: "Overview highlights: Title | description | icon", value: draft.overviewHighlightsText, onChange: (value) => set("overviewHighlightsText", value), className: "full" }),
+      h(TextInput, { label: "Location", value: draft.factsLocation, onChange: (value) => set("factsLocation", value) }),
+      h(TextInput, { label: "Population", value: draft.factsPopulation, onChange: (value) => set("factsPopulation", value) }),
+      h(TextInput, { label: "Capital", value: draft.factsCapital, onChange: (value) => set("factsCapital", value) }),
+      h(TextInput, { label: "Major cities", value: draft.factsMajorCities, onChange: (value) => set("factsMajorCities", value) }),
+      h(TextInput, { label: "Language", value: draft.factsLanguage, onChange: (value) => set("factsLanguage", value) }),
+      h(TextInput, { label: "Currency", value: draft.factsCurrency || draft.currency, onChange: (value) => set("factsCurrency", value) }),
+      h(TextArea, { label: "Facts & figures rows: Label | value | note", value: draft.factsAndFiguresText, onChange: (value) => set("factsAndFiguresText", value), className: "full" }),
       h(TextArea, { label: "Why study there", value: draft.benefitsText, onChange: (value) => set("benefitsText", value) }),
+      h(TextInput, { label: "Why study heading", value: draft.whyHeading, onChange: (value) => set("whyHeading", value), className: "full" }),
+      h(TextArea, { label: "Why study paragraphs, one per line", value: draft.whyParagraphsText, onChange: (value) => set("whyParagraphsText", value), className: "full" }),
+      h(TextArea, { label: "Advantage cards: Title | description | icon", value: draft.advantageCardsText, onChange: (value) => set("advantageCardsText", value), className: "full" }),
       h(TextArea, { label: "Popular study areas", value: draft.studyAreasText, onChange: (value) => set("studyAreasText", value) }),
       h(TextArea, { label: "Intake guidance", value: draft.intakes, onChange: (value) => set("intakes", value) }),
       h(TextArea, { label: "Approximate cost guide", value: draft.costGuide, onChange: (value) => set("costGuide", value) }),
       h(TextArea, { label: "Requirements", value: draft.requirementsText, onChange: (value) => set("requirementsText", value) }),
       h(TextArea, { label: "Visa support notes", value: draft.visaNotes, onChange: (value) => set("visaNotes", value) }),
+      h(TextInput, { label: "Education heading", value: draft.educationHeading, onChange: (value) => set("educationHeading", value), className: "full" }),
+      h(TextArea, { label: "Education intro", value: draft.educationIntro, onChange: (value) => set("educationIntro", value), className: "full" }),
+      h(ImageField, { label: "Education image", value: draft.educationImageUrl, onChange: (value) => set("educationImageUrl", value), className: "full", folder: "abroadways/countries" }),
+      h(TextArea, { label: "Education blocks: Title | description", value: draft.educationSectionsText, onChange: (value) => set("educationSectionsText", value), className: "full" }),
+      h(TextArea, { label: "Qualification table: Qualification | duration | description", value: draft.qualificationTableText, onChange: (value) => set("qualificationTableText", value), className: "full" }),
+      h(TextArea, { label: "Top universities: Name | location | admission | language | note | website", value: draft.topUniversitiesText, onChange: (value) => set("topUniversitiesText", value), className: "full" }),
+      h(TextArea, { label: "Top colleges: Name | location | why choose | programs | fee | tuition | website", value: draft.topCollegesText, onChange: (value) => set("topCollegesText", value), className: "full" }),
+      h(TextInput, { label: "Top subjects heading", value: draft.topSubjectsHeading, onChange: (value) => set("topSubjectsHeading", value), className: "full" }),
+      h(TextArea, { label: "Top subjects intro", value: draft.topSubjectsIntro, onChange: (value) => set("topSubjectsIntro", value), className: "full" }),
+      h(ImageField, { label: "Top subjects image", value: draft.topSubjectsImageUrl, onChange: (value) => set("topSubjectsImageUrl", value), className: "full", folder: "abroadways/countries" }),
+      h(TextInput, { label: "Tuition heading", value: draft.tuitionHeading, onChange: (value) => set("tuitionHeading", value), className: "full" }),
+      h(TextArea, { label: "Tuition intro", value: draft.tuitionIntro, onChange: (value) => set("tuitionIntro", value), className: "full" }),
+      h(TextArea, { label: "Tuition rows: Level | tuition range | living cost | notes", value: draft.tuitionRowsText, onChange: (value) => set("tuitionRowsText", value), className: "full" }),
+      h(TextArea, { label: "Tuition disclaimer", value: draft.tuitionDisclaimer, onChange: (value) => set("tuitionDisclaimer", value), className: "full" }),
+      h(TextInput, { label: "Scholarships heading", value: draft.scholarshipsHeading, onChange: (value) => set("scholarshipsHeading", value), className: "full" }),
+      h(TextArea, { label: "Scholarships intro", value: draft.scholarshipsIntro, onChange: (value) => set("scholarshipsIntro", value), className: "full" }),
+      h(TextArea, { label: "Scholarship cards: Name | amount | eligibility | deadline | notes", value: draft.scholarshipCardsText, onChange: (value) => set("scholarshipCardsText", value), className: "full" }),
+      h(TextInput, { label: "Post-study heading", value: draft.pathwayHeading, onChange: (value) => set("pathwayHeading", value), className: "full" }),
+      h(TextArea, { label: "Post-study intro", value: draft.pathwayIntro, onChange: (value) => set("pathwayIntro", value), className: "full" }),
+      h(TextArea, { label: "Pathway cards: Title | description | disclaimer", value: draft.pathwayCardsText, onChange: (value) => set("pathwayCardsText", value), className: "full" }),
       h(TextArea, { label: "FAQs, one per line: Question | Answer", value: draft.faqsText, onChange: (value) => set("faqsText", value), className: "full" }),
       h(TextInput, { label: "CTA text", value: draft.ctaText, onChange: (value) => set("ctaText", value) }),
       h(TextInput, { label: "CTA link", value: draft.ctaLink, onChange: (value) => set("ctaLink", value) }),
+      h(TextInput, { label: "Final CTA heading", value: draft.finalCtaHeading, onChange: (value) => set("finalCtaHeading", value), className: "full" }),
+      h(TextArea, { label: "Final CTA text", value: draft.finalCtaText, onChange: (value) => set("finalCtaText", value), className: "full" }),
+      h(TextInput, { label: "Final CTA button text", value: draft.finalCtaButtonText, onChange: (value) => set("finalCtaButtonText", value) }),
+      h(TextInput, { label: "Final CTA button link", value: draft.finalCtaButtonLink, onChange: (value) => set("finalCtaButtonLink", value) }),
+      h(TextInput, { label: "Average tuition min", value: draft.averageTuitionMin, onChange: (value) => set("averageTuitionMin", value), type: "number" }),
+      h(TextInput, { label: "Average tuition max", value: draft.averageTuitionMax, onChange: (value) => set("averageTuitionMax", value), type: "number" }),
+      h(TextInput, { label: "Living cost min", value: draft.livingCostMin, onChange: (value) => set("livingCostMin", value), type: "number" }),
+      h(TextInput, { label: "Living cost max", value: draft.livingCostMax, onChange: (value) => set("livingCostMax", value), type: "number" }),
+      h(TextInput, { label: "Language requirement", value: draft.languageRequirement, onChange: (value) => set("languageRequirement", value), className: "full" }),
+      h(TextArea, { label: "Scholarship note", value: draft.scholarshipNote, onChange: (value) => set("scholarshipNote", value), className: "full" }),
+      h(TextArea, { label: "Post-study note", value: draft.postStudyNote, onChange: (value) => set("postStudyNote", value), className: "full" }),
+      h(TextArea, { label: "Work while studying note", value: draft.workWhileStudyingNote, onChange: (value) => set("workWhileStudyingNote", value), className: "full" }),
+      h(TextArea, { label: "Best for, one per line", value: draft.bestForText, onChange: (value) => set("bestForText", value), className: "full" }),
+      h(TextInput, { label: "Application timeline", value: draft.applicationTimeline, onChange: (value) => set("applicationTimeline", value), className: "full" }),
       h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
       h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
       h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/countries" }),
@@ -4374,6 +5189,9 @@ function App() {
     if (path === routes.academy) return h(AcademyPage, { cms });
     if (path === routes.partners) return h(PartnersPage, { cms, settings });
     if (path === routes.universities) return h(UniversitiesPage, { universities: universityItems });
+    if (path === routes.findStudyOptions) return h(FindStudyOptionsPage, { universities: universityItems, courses: courseItems, scholarships: scholarshipItems });
+    if (path === routes.compareCountries) return h(CompareCountriesPage, { destinations: destinationItems });
+    if (path === routes.costCalculator) return h(CostCalculatorPage, { destinations: destinationItems });
     if (path.startsWith(`${routes.universities}/`)) {
       const item = universityItems.find((entry) => path === `${routes.universities}/${entry.slug}`);
       return item ? h(UniversityDetailPage, { item, courses: courseItems, scholarships: scholarshipItems }) : h(NotFoundPage);
