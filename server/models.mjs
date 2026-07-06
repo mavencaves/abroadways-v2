@@ -172,6 +172,28 @@ export const modelSchemas = {
     defaultSeoDescription: "string",
     defaultOgImage: "string",
   },
+  Partner: {
+    partnerName: "string",
+    slug: "string",
+    partnerType: "string",
+    statusText: "string",
+    shortDescription: "string",
+    fullDescription: "string",
+    partnerLogo: "object",
+    partnerLogoUrl: "string",
+    partnerLogoAlt: "string",
+    websiteUrl: "string",
+    authorizationProofUrl: "string",
+    displayOrder: "number|string",
+    featured: "boolean",
+    active: "boolean",
+    status: "draft|published|archived",
+    seoTitle: "string",
+    seoDescription: "string",
+    ogImage: "string",
+    createdAt: "date",
+    updatedAt: "date",
+  },
 };
 
-export const collections = ["pages", "countries", "blogs", "leads", "media", "settings", "universities", "courses", "scholarships"];
+export const collections = ["pages", "countries", "blogs", "leads", "media", "settings", "universities", "courses", "scholarships", "partners"];

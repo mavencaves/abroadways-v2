@@ -241,7 +241,7 @@ function publishedOnly(items) {
   return items.filter((item) => !item.status || item.status === "published");
 }
 
-const platformCollections = new Set(["universities", "courses", "scholarships"]);
+const platformCollections = new Set(["universities", "courses", "scholarships", "partners"]);
 
 function normalizeFilterValue(value = "") {
   return String(value || "").trim().toLowerCase();

@@ -56,6 +56,8 @@ const routes = {
   findStudyOptions: "/find-study-options",
   compareCountries: "/compare-countries",
   costCalculator: "/cost-calculator",
+  dashboardPartners: "/dashboard/partners",
+  dashboardAcademy: "/dashboard/academy",
   whoAreWe: "/who-are-we",
   planner: "/pathway-planner",
   blog: "/blog",
@@ -796,19 +798,31 @@ const defaultStories = [
   },
 ];
 
-const adminRoutes = [
-  ["/dashboard", "Overview", LayoutDashboard],
-  ["/dashboard/homepage", "Homepage", Edit3],
-  ["/dashboard/pages", "Pages", BookOpenCheck],
-  ["/dashboard/countries", "Countries", Compass],
-  ["/dashboard/universities", "Universities", Landmark],
-  ["/dashboard/courses", "Courses", GraduationCap],
-  ["/dashboard/scholarships", "Scholarships", BadgeCheck],
-  ["/dashboard/blogs", "Blogs", Newspaper],
-  ["/dashboard/leads", "Leads", UsersRound],
-  ["/dashboard/media", "Media", ImageIcon],
-  ["/dashboard/settings", "Settings", Settings],
+const adminRouteGroups = [
+  ["Website", [
+    ["/dashboard", "Dashboard", LayoutDashboard],
+    ["/dashboard/homepage", "Homepage Builder", Edit3],
+    ["/dashboard/pages", "Pages", BookOpenCheck],
+    ["/dashboard/countries", "Countries", Compass],
+    ["/dashboard/academy", "Academy", GraduationCap],
+    ["/dashboard/partners", "Partners", ShieldCheck],
+  ]],
+  ["Study Platform", [
+    ["/dashboard/universities", "Universities", Landmark],
+    ["/dashboard/courses", "Courses", GraduationCap],
+    ["/dashboard/scholarships", "Scholarships", BadgeCheck],
+    ["/dashboard/leads", "Leads", UsersRound],
+  ]],
+  ["Content", [
+    ["/dashboard/blogs", "Blogs", Newspaper],
+    ["/dashboard/media", "Media Library", ImageIcon],
+  ]],
+  ["Settings", [
+    ["/dashboard/settings", "Branding & System", Settings],
+  ]],
 ];
+
+const adminRoutes = adminRouteGroups.flatMap(([, routes]) => routes);
 
 function cx(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -959,7 +973,7 @@ async function publicApi(path) {
 }
 
 function useCmsData(path) {
-  const [cms, setCms] = useState({ pages: [], countries: [], blogs: [], universities: [], courses: [], scholarships: [], settings: [], loaded: false });
+  const [cms, setCms] = useState({ pages: [], countries: [], blogs: [], universities: [], courses: [], scholarships: [], partners: [], settings: [], loaded: false });
   React.useEffect(() => {
     let active = true;
     Promise.all([
@@ -969,8 +983,9 @@ function useCmsData(path) {
       publicApi("/universities").catch(() => ({ items: [] })),
       publicApi("/courses").catch(() => ({ items: [] })),
       publicApi("/scholarships").catch(() => ({ items: [] })),
+      publicApi("/partners").catch(() => ({ items: [] })),
       publicApi("/settings").catch(() => ({ items: [] })),
-    ]).then(([pages, countries, blogs, universities, courses, scholarships, settings]) => {
+    ]).then(([pages, countries, blogs, universities, courses, scholarships, partners, settings]) => {
       if (!active) return;
       setCms({
         pages: pages.items || [],
@@ -979,6 +994,7 @@ function useCmsData(path) {
         universities: universities.items || [],
         courses: courses.items || [],
         scholarships: scholarships.items || [],
+        partners: partners.items || [],
         settings: settings.items || [],
         loaded: true,
       });
@@ -1106,11 +1122,57 @@ function previewPathFor(collection, item) {
   if (collection === "pages") return item.routeKey === "home" || item.slug === "/" ? "/" : item.slug?.startsWith("/") ? item.slug : `/${item.slug || item.routeKey || ""}`;
   if (collection === "countries") return `${routes.studyAbroad}/${item.slug}`;
   if (collection === "blogs") return `${routes.blog}/${item.slug}`;
+  if (collection === "partners") return routes.partners;
   return "/";
 }
 
 function firstImage(record, fallback) {
-  return record?.heroImage || record?.featuredImage || record?.imageUrl || record?.image || record?.ogImage || record?.url || record?.imageUrls?.[0] || fallback;
+  return imageUrlOf(record?.heroMainImage || record?.heroImageObject || record?.partnerLogo || record?.examLogo) || record?.heroImage || record?.featuredImage || record?.imageUrl || record?.image || record?.ogImage || record?.url || record?.imageUrls?.[0] || fallback;
+}
+
+function imageUrlOf(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.imageUrl || value.url || value.secureUrl || "";
+}
+
+function normalizeImageObject(value = {}, fallbackUrl = "", fallbackAlt = "") {
+  if (typeof value === "string") return { imageUrl: value, altText: fallbackAlt, width: "", height: "", maxWidth: "", maxHeight: "", objectFit: "cover", objectPosition: "center", borderRadius: "", displayMode: "responsive", mediaId: "", source: value ? "external" : "" };
+  return {
+    imageUrl: value.imageUrl || value.url || fallbackUrl || "",
+    altText: value.altText || value.alt || fallbackAlt || "",
+    caption: value.caption || "",
+    width: value.width || "",
+    height: value.height || "",
+    maxWidth: value.maxWidth || "",
+    maxHeight: value.maxHeight || "",
+    objectFit: value.objectFit || "cover",
+    objectPosition: value.objectPosition || "center",
+    borderRadius: value.borderRadius || "",
+    displayMode: value.displayMode || "responsive",
+    mediaId: value.mediaId || "",
+    source: value.source || (value.mediaId ? "media-library" : value.imageUrl || value.url ? "external" : ""),
+  };
+}
+
+function imageStyleFrom(value = {}, fallback = {}) {
+  const image = normalizeImageObject(value);
+  const style = {
+    objectFit: image.objectFit || fallback.objectFit || "cover",
+    objectPosition: image.objectPosition || fallback.objectPosition || "center",
+    maxWidth: cssSize(image.maxWidth, fallback.maxWidth || "100%"),
+  };
+  if (image.borderRadius || fallback.borderRadius) style.borderRadius = cssSize(image.borderRadius, fallback.borderRadius);
+  if (image.maxHeight || fallback.maxHeight) style.maxHeight = cssSize(image.maxHeight, fallback.maxHeight);
+  if (image.displayMode === "fixed") {
+    if (image.width) style.width = cssSize(image.width);
+    if (image.height) style.height = cssSize(image.height);
+  } else {
+    style.width = image.width ? cssSize(image.width) : fallback.width || "100%";
+    style.height = image.height ? cssSize(image.height) : fallback.height || "auto";
+  }
+  Object.keys(style).forEach((key) => style[key] === undefined && delete style[key]);
+  return style;
 }
 
 function splitList(value, fallback = []) {
@@ -1126,17 +1188,24 @@ function normalizePartners(value = defaultPartners) {
   return source
     .map((partner, index) => ({
       partnerName: partner.partnerName || partner.name || "Partner",
-      partnerLogoUrl: partner.partnerLogoUrl || partner.logoUrl || "",
-      partnerLogoAlt: partner.partnerLogoAlt || partner.logoAlt || `${partner.partnerName || partner.name || "Partner"} logo`,
+      slug: partner.slug || slugify(partner.partnerName || partner.name || "partner"),
+      partnerLogo: normalizeImageObject(partner.partnerLogo, partner.partnerLogoUrl || partner.logoUrl || "", partner.partnerLogoAlt || partner.logoAlt || `${partner.partnerName || partner.name || "Partner"} logo`),
+      partnerLogoUrl: imageUrlOf(partner.partnerLogo) || partner.partnerLogoUrl || partner.logoUrl || "",
+      partnerLogoAlt: partner.partnerLogo?.altText || partner.partnerLogoAlt || partner.logoAlt || `${partner.partnerName || partner.name || "Partner"} logo`,
       partnerType: partner.partnerType || partner.type || "Partner",
       statusText: partner.statusText || partner.authorizationText || partner.authorization || "",
       authorizationText: partner.statusText || partner.authorizationText || partner.authorization || "",
-      description: partner.description || "",
+      shortDescription: partner.shortDescription || partner.description || "",
+      fullDescription: partner.fullDescription || partner.description || "",
+      description: partner.shortDescription || partner.description || partner.fullDescription || "",
       websiteUrl: partner.websiteUrl || partner.url || "",
-      status: partner.status || "active",
+      authorizationProofUrl: partner.authorizationProofUrl || "",
+      featured: Boolean(partner.featured),
+      active: partner.active !== false && partner.status !== "inactive",
+      status: partner.status || "published",
       displayOrder: Number(partner.displayOrder || index + 1),
     }))
-    .filter((partner) => partner.status !== "inactive")
+    .filter((partner) => partner.active && partner.status !== "archived")
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
@@ -1158,6 +1227,7 @@ function normalizeAcademyTracks(value = academyTracks) {
         title: track.title || examName,
         examLogoUrl: track.examLogoUrl || track.logoUrl || track.imageUrl || "",
         examLogoAlt: track.examLogoAlt || track.logoAlt || `${examName} logo`,
+        examLogo: normalizeImageObject(track.examLogo, track.examLogoUrl || track.logoUrl || track.imageUrl || "", track.examLogoAlt || track.logoAlt || `${examName} logo`),
         statusBadge: track.statusBadge || track.badgeText || "Coming Soon",
         icon: track.icon || initialsFor(examName),
         displayOrder: Number(track.displayOrder || index + 1),
@@ -1434,9 +1504,12 @@ function mergeDestinations(cmsCountries = []) {
       heroCtaText: record.heroCtaText || record.ctaText || detailed.heroCtaText,
       heroCtaLink: record.heroCtaLink || record.ctaLink || detailed.heroCtaLink,
       heroImages: splitList(record.heroImages, detailed.heroImages),
-      heroMainImageUrl: record.heroMainImageUrl || record.heroImage || firstImage(record, detailed.heroMainImageUrl),
-      heroSideImageUrl1: record.heroSideImageUrl1 || detailed.heroSideImageUrl1,
-      heroSideImageUrl2: record.heroSideImageUrl2 || detailed.heroSideImageUrl2,
+      heroMainImage: normalizeImageObject(record.heroMainImage, record.heroMainImageUrl || record.heroImage || firstImage(record, detailed.heroMainImageUrl), `${record.countryName || fallback.name} hero image`),
+      heroSideImage1: normalizeImageObject(record.heroSideImage1, record.heroSideImageUrl1 || detailed.heroSideImageUrl1, `${record.countryName || fallback.name} side image 1`),
+      heroSideImage2: normalizeImageObject(record.heroSideImage2, record.heroSideImageUrl2 || detailed.heroSideImageUrl2, `${record.countryName || fallback.name} side image 2`),
+      heroMainImageUrl: record.heroMainImageUrl || imageUrlOf(record.heroMainImage) || record.heroImage || firstImage(record, detailed.heroMainImageUrl),
+      heroSideImageUrl1: record.heroSideImageUrl1 || imageUrlOf(record.heroSideImage1) || detailed.heroSideImageUrl1,
+      heroSideImageUrl2: record.heroSideImageUrl2 || imageUrlOf(record.heroSideImage2) || detailed.heroSideImageUrl2,
       sectionsNav: Array.isArray(record.sectionsNav) && record.sectionsNav.length ? record.sectionsNav : detailed.sectionsNav,
       overviewSection: record.overviewSection || (typeof record.overview === "object" ? record.overview : detailed.overview),
       countryFacts: record.countryFacts || detailed.countryFacts,
@@ -1549,6 +1622,10 @@ function normalizeScholarships(cmsScholarships = []) {
     seoDescription: record.seoDescription || record.description || "Scholarship and budget guidance listing by AbroadWays.",
     ogImage: record.ogImage || "/images/abroadways-hero-campus.png",
   }));
+}
+
+function normalizePartnerRecords(cmsPartners = [], fallbackPartners = defaultPartners) {
+  return normalizePartners(cmsPartners.length ? cmsPartners : fallbackPartners);
 }
 
 function normalizeFaqObjects(items = []) {
@@ -2653,31 +2730,218 @@ function detailParagraphs(value, fallback = []) {
   return fallback;
 }
 
+function excerptText(value = "", max = 170) {
+  const text = String(value || "").trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).trim()}...`;
+}
+
 function DetailTable({ rows = [], columns = ["label", "value", "note"], labels = ["Topic", "Details", "Note"] }) {
   return h("div", { className: "destination-table-wrap" },
     h("table", { className: "destination-table" },
       h("thead", null, h("tr", null, labels.map((label) => h("th", { key: label }, label)))),
-      h("tbody", null, rows.map((row, index) => h("tr", { key: `${row.label || row.universityName || row.collegeName || row.studyLevel || index}-${index}` }, columns.map((column) => h("td", { key: column }, row[column] || ""))))),
+      h("tbody", null, rows.map((row, index) => h("tr", { key: `${row.label || row.universityName || row.collegeName || row.studyLevel || index}-${index}` }, columns.map((column, columnIndex) => h("td", { key: column, "data-label": labels[columnIndex] || column }, row[column] || ""))))),
     ),
   );
 }
 
-function DestinationSection({ id, eyebrow, title, children, className = "" }) {
-  return h("section", { id: navAnchor(id), className: cx("section destination-long-section", className) },
-    h("div", { className: "container" },
-      h("div", { className: "section-heading" }, eyebrow && h("span", { className: "eyebrow" }, eyebrow), h("h2", null, title), h("span", { className: "scribble-line", "aria-hidden": "true" })),
-      children,
+function CollapsibleTable({ rows = [], columns, labels, previewCount = 5, summary = "View full table" }) {
+  const previewRows = rows.slice(0, previewCount);
+  if (!rows.length) return h("div", { className: "empty-card compact" }, "This information will be updated soon.");
+  return h("div", { className: "collapsible-table-block" },
+    h(DetailTable, { rows: previewRows, columns, labels }),
+    rows.length > previewCount ? h("details", { className: "destination-details" },
+      h("summary", null, summary),
+      h(DetailTable, { rows: rows.slice(previewCount), columns, labels }),
+    ) : null,
+  );
+}
+
+function QuickSummaryCards({ destination }) {
+  const facts = destination.countryFacts || {};
+  const cards = [
+    ["Capital", facts.capital, MapPin],
+    ["Major Cities", facts.majorCities, Landmark],
+    ["Language", facts.language, BookOpenCheck],
+    ["Currency", facts.currency || destination.currency, Sparkles],
+    ["Common Intakes", facts.intakes || destination.intakes, CalendarIcon],
+    ["Average Cost", facts.averageCost || destination.costGuide, ShieldCheck],
+  ];
+  return h("section", { className: "destination-summary-section" }, h("div", { className: "container destination-summary-grid" },
+    cards.map(([label, value, Icon]) => h("article", { key: label },
+      h("div", { className: "summary-icon" }, h(Icon, { size: 18 })),
+      h("span", null, label),
+      h("strong", null, value || "Varies"),
+    )),
+  ));
+}
+
+function CalendarIcon({ size = 18 }) {
+  return h("span", { className: "calendar-icon", style: { width: size, height: size }, "aria-hidden": "true" }, "●");
+}
+
+function DestinationActionSidebar({ destination }) {
+  return h("aside", { className: "destination-action-sidebar" },
+    h("span", { className: "eyebrow" }, "Plan smarter"),
+    h("h3", null, `Need help with ${destination.name}?`),
+    h("p", null, "Use these quick tools or speak with an AbroadWays counsellor."),
+    h(ButtonLink, { href: routes.planner }, "Book Free Consultation"),
+    h(ButtonLink, { href: routes.findStudyOptions, variant: "outline" }, "Find Study Options"),
+    h(ButtonLink, { href: routes.compareCountries, variant: "outline" }, "Compare Countries"),
+    h(ButtonLink, { href: `${routes.costCalculator}?country=${encodeURIComponent(destination.name)}`, variant: "outline" }, "Cost Calculator"),
+  );
+}
+
+function MobileActionStrip({ destination }) {
+  return h("div", { className: "destination-mobile-actions" },
+    h(ButtonLink, { href: routes.planner }, "Book Free Consultation"),
+    h(ButtonLink, { href: routes.findStudyOptions, variant: "outline" }, "Find Options"),
+    h(ButtonLink, { href: `${routes.costCalculator}?country=${encodeURIComponent(destination.name)}`, variant: "outline" }, "Estimate Cost"),
+  );
+}
+
+function OverviewSectionContent({ destination, overviewSection, facts }) {
+  const paragraphs = detailParagraphs(overviewSection.intro, [destination.overview]).filter(Boolean);
+  const visible = paragraphs.slice(0, 2);
+  const hidden = paragraphs.slice(2);
+  return h("div", { className: "destination-overview-grid cleaned" },
+    h("div", { className: "overview-copy" },
+      visible.map((paragraph) => h("p", { key: paragraph }, paragraph)),
+      hidden.length ? h("details", { className: "destination-details" },
+        h("summary", null, "Read more"),
+        hidden.map((paragraph) => h("p", { key: paragraph }, paragraph)),
+      ) : null,
     ),
+    h("aside", { className: "planning-notes-card" },
+      h("span", { className: "eyebrow" }, "Planning Notes"),
+      h("h3", null, "Check these before applying"),
+      h("ul", null,
+        [facts.fundingOptions && `Funding: ${facts.fundingOptions}`, facts.workOptionsNote, facts.safetyNote, "Requirements vary by university, intake, and program."].filter(Boolean).slice(0, 4).map((item) => h("li", { key: item }, h(CheckCircle2, { size: 16 }), h("span", null, item))),
+      ),
+    ),
+  );
+}
+
+function FactsCardGrid({ rows = [] }) {
+  return h("div", { className: "facts-card-grid" },
+    rows.map((row, index) => h("article", { key: `${row.label || index}-${index}` },
+      h("span", null, row.label || "Fact"),
+      h("strong", null, row.value || "Varies"),
+      row.note && h("p", null, row.note),
+    )),
+  );
+}
+
+function WhyStudyCards({ cards = [] }) {
+  return h("div", { className: "advantage-grid cleaned" },
+    cards.slice(0, 6).map((card) => h("article", { key: card.title },
+      h("div", { className: "advantage-icon" }, h(CheckCircle2, { size: 19 })),
+      h("h3", null, card.title),
+      h("p", null, excerptText(card.description, 135)),
+      String(card.description || "").length > 135 ? h("details", { className: "mini-details" }, h("summary", null, "More"), h("p", null, card.description)) : null,
+    )),
+  );
+}
+
+function EducationSystemContent({ destination, education }) {
+  const blocks = (education.sections || []).slice(0, 3);
+  return h(React.Fragment, null,
+    h("div", { className: "education-system-grid cleaned" },
+      h("div", null,
+        education.intro && h("p", { className: "section-intro compact" }, excerptText(education.intro, 260)),
+        String(education.intro || "").length > 260 ? h("details", { className: "destination-details" }, h("summary", null, "View full education system explanation"), h("p", null, education.intro)) : null,
+        h("div", { className: "education-blocks cleaned" }, blocks.map((item) => h("article", { key: item.title }, h("h3", null, item.title), h("p", null, excerptText(item.description, 145))))),
+      ),
+      h("img", { src: education.imageUrl || destination.image, alt: `${destination.name} education system`, loading: "lazy" }),
+    ),
+    h(CollapsibleTable, { rows: education.qualificationTable || [], columns: ["qualification", "duration", "description"], labels: ["Qualification", "Typical duration", "Description"], previewCount: 4, summary: "View full qualification table" }),
+  );
+}
+
+function InstituteContent({ destination, universities, courses, scholarships }) {
+  return h(React.Fragment, null,
+    h(CountryPlatformInline, { destination, universities, courses, scholarships }),
+    h("details", { className: "destination-details table-details", open: false },
+      h("summary", null, "Sample university requirement table"),
+      h(CollapsibleTable, { rows: destination.topUniversitiesTable || [], columns: ["universityName", "location", "admissionRequirement", "languageRequirement", "rankingNote"], labels: ["University", "Location", "Admission", "Language", "Note"], previewCount: 5, summary: "View remaining universities" }),
+    ),
+    destination.topCollegesTable?.length ? h("details", { className: "destination-details table-details" },
+      h("summary", null, "College and pathway options"),
+      h(CollapsibleTable, { rows: destination.topCollegesTable, columns: ["collegeName", "location", "whyChoose", "programsOffered", "annualTuition"], labels: ["College", "Location", "Why choose", "Programs", "Tuition"], previewCount: 5, summary: "View remaining colleges" }),
+    ) : null,
+  );
+}
+
+function TuitionCards({ cost = [] }) {
+  return h("div", { className: "tuition-card-grid" },
+    cost.slice(0, 3).map((row) => h("article", { key: row.studyLevel },
+      h("span", null, row.studyLevel || "Study level"),
+      h("strong", null, row.tuitionRange || "Varies"),
+      h("p", null, row.livingCost || "Living cost varies by city and lifestyle."),
+      row.notes && h("small", null, row.notes),
+    )),
+  );
+}
+
+function ScholarshipCards({ destination, countryScholarships, scholarshipContent }) {
+  const fallbackCards = [
+    { name: "University Merit Awards", eligibility: "Based on academic profile and institution policy.", amount: "Varies" },
+    { name: "Early Application Discounts", eligibility: "May be available for selected intakes and providers.", amount: "Varies" },
+    { name: "Country / Provider Scholarships", eligibility: "Depends on country, provider, course, and intake.", amount: "Varies" },
+    { name: "Profile-based Support", eligibility: "Counsellors can help check fit and documents.", amount: "Varies" },
+  ];
+  const cards = countryScholarships.length ? countryScholarships : (scholarshipContent.scholarshipCards?.length ? scholarshipContent.scholarshipCards : fallbackCards);
+  return h("div", { className: "scholarship-country-grid cleaned" },
+    cards.slice(0, 6).map((item, index) => h("article", { key: item.slug || item.name || index },
+      h("h3", null, item.name),
+      h("p", null, excerptText(item.description || item.notes || item.eligibility, 145)),
+      h("span", null, item.amount || item.coverageType || "Varies"),
+      h(ButtonLink, { href: `${routes.scholarships}?country=${encodeURIComponent(destination.name)}`, variant: "outline" }, "View Scholarships"),
+    )),
+  );
+}
+
+function PathwayCards({ cards = [] }) {
+  return h("div", { className: "advantage-grid pathway-clean-grid" },
+    cards.slice(0, 3).map((card) => h("article", { key: card.title },
+      h("h3", null, card.title),
+      h("p", null, excerptText(card.description, 150)),
+      h("small", null, card.disclaimer || "Rules may change and must be checked before applying."),
+    )),
+  );
+}
+
+function FaqAccordion({ items = [] }) {
+  const visible = normalizeFaqObjects(items).slice(0, 8);
+  return h("div", { className: "faq-accordion" },
+    visible.map((faq, index) => h("details", { key: faq.question, open: index === 0 },
+      h("summary", null, faq.question),
+      h("p", null, faq.answer),
+    )),
+  );
+}
+
+function DestinationSection({ id, eyebrow, title, children, className = "", contained = true }) {
+  const content = h(React.Fragment, null,
+    h("div", { className: "section-heading" }, eyebrow && h("span", { className: "eyebrow" }, eyebrow), h("h2", null, title), h("span", { className: "scribble-line", "aria-hidden": "true" })),
+    children,
+  );
+  return h("section", { id: navAnchor(id), className: cx("section destination-long-section", className) },
+    contained ? h("div", { className: "container" }, content) : content,
   );
 }
 
 function CountryHeroDetailed({ destination }) {
+  const mainImage = normalizeImageObject(destination.heroMainImage, destination.heroMainImageUrl || destination.image, `${destination.name} study destination`);
+  const sideImage1 = normalizeImageObject(destination.heroSideImage1, destination.heroSideImageUrl1 || destination.image, `${destination.name} campus planning`);
+  const sideImage2 = normalizeImageObject(destination.heroSideImage2, destination.heroSideImageUrl2 || "/images/consultation-counsellor.png", "AbroadWays counselling");
+  const heroSubtitle = destination.heroSubtitle || destination.short;
   return h("section", { className: "destination-hero" },
     h("div", { className: "container destination-hero-grid" },
       h("div", { className: "destination-hero-copy" },
-        h("span", { className: "hero-badge" }, "Study Abroad Destination"),
+        h("span", { className: "hero-badge" }, `${destination.name} Destination`),
         h("h1", null, destination.heroHeading || `Study in ${destination.name} from Bangladesh`),
-        h("p", null, destination.heroSubtitle || destination.short),
+        h("p", null, excerptText(heroSubtitle, 185)),
         h("div", { className: "hero-actions" },
           h(ButtonLink, { href: destination.heroCtaLink || destination.ctaLink || routes.planner }, destination.heroCtaText || destination.ctaText || "Start Pathway Planner"),
           h(ButtonLink, { href: routes.compareCountries, variant: "outline" }, "Compare Countries"),
@@ -2685,9 +2949,9 @@ function CountryHeroDetailed({ destination }) {
         h("p", { className: "destination-disclaimer" }, "Costs, visa rules, scholarship policies, and work conditions can change. Always verify current requirements before applying."),
       ),
       h("div", { className: "destination-hero-collage" },
-        h("img", { className: "destination-main-img", src: destination.heroMainImageUrl || destination.image, alt: `${destination.name} study destination` }),
-        h("img", { className: "destination-side-img one", src: destination.heroSideImageUrl1 || destination.image, alt: `${destination.name} campus planning`, loading: "lazy" }),
-        h("img", { className: "destination-side-img two", src: destination.heroSideImageUrl2 || "/images/consultation-counsellor.png", alt: "AbroadWays counselling", loading: "lazy" }),
+        h("img", { className: "destination-main-img", src: imageUrlOf(mainImage), alt: mainImage.altText || `${destination.name} study destination`, style: imageStyleFrom(mainImage, { objectFit: "cover" }) }),
+        h("img", { className: "destination-side-img one", src: imageUrlOf(sideImage1), alt: sideImage1.altText || `${destination.name} campus planning`, loading: "lazy", style: imageStyleFrom(sideImage1, { objectFit: "cover" }) }),
+        h("img", { className: "destination-side-img two", src: imageUrlOf(sideImage2), alt: sideImage2.altText || "AbroadWays counselling", loading: "lazy", style: imageStyleFrom(sideImage2, { objectFit: "cover" }) }),
       ),
     ),
   );
@@ -2711,75 +2975,72 @@ function CountryPage({ destination, universities = [], courses = [], scholarship
   const scholarshipContent = destination.scholarshipsSection || {};
   const pathway = destination.postStudyPathways || {};
   const finalCta = destination.finalCta || {};
-  const navItems = destination.sectionsNav?.length ? destination.sectionsNav : defaultSectionsNav(destination.name);
+  const navItems = [
+    { label: "Overview", anchor: "overview" },
+    { label: "Facts", anchor: "facts" },
+    { label: "Why", anchor: "why-study" },
+    { label: "Education", anchor: "education-system" },
+    { label: "Institutes", anchor: "top-institutes" },
+    { label: "Subjects", anchor: "subjects" },
+    { label: "Cost", anchor: "tuition-cost" },
+    { label: "Scholarship", anchor: "scholarships" },
+    { label: "Pathway", anchor: "pathway" },
+    { label: "FAQ", anchor: "faqs" },
+  ];
   const countryScholarships = scholarships.filter((item) => item.country === destination.name).slice(0, 6);
   setSeo({ title: destination.seoTitle || `Study in ${destination.name} from Bangladesh | AbroadWays`, description: destination.seoDescription || destination.heroSubtitle || destination.short, image: destination.ogImage || destination.heroMainImageUrl || destination.image, ogTitle: destination.ogTitle, ogDescription: destination.ogDescription });
   return h(React.Fragment, null,
     h(CountryHeroDetailed, { destination }),
     h(DestinationStickyNav, { items: navItems }),
-    h(StudyOptionSearchWidget, { compact: true }),
-    h(DestinationSection, { id: "overview", eyebrow: "Overview", title: overviewSection.heading || `Study in ${destination.name}` },
-      h("div", { className: "destination-overview-grid" },
-        h("div", null, detailParagraphs(overviewSection.intro, [destination.overview]).map((paragraph) => h("p", { key: paragraph }, paragraph))),
-        h("div", { className: "country-fact-grid" }, [
-          ["Capital", facts.capital],
-          ["Major cities", facts.majorCities],
-          ["Language", facts.language],
-          ["Currency", facts.currency || destination.currency],
-          ["Common intakes", facts.intakes || destination.intakes],
-          ["Average cost", facts.averageCost || destination.costGuide],
-        ].map(([label, value]) => h("article", { key: label }, h("span", null, label), h("strong", null, value || "Varies")))),
+    h(QuickSummaryCards, { destination }),
+    h(MobileActionStrip, { destination }),
+    h("div", { className: "container destination-content-shell" },
+      h("main", { className: "destination-content-main" },
+        h(DestinationSection, { id: "overview", eyebrow: "Overview", title: overviewSection.heading || `Study in ${destination.name}`, contained: false },
+          h(OverviewSectionContent, { destination, overviewSection, facts }),
+          overviewSection.highlightCards?.length ? h("div", { className: "destination-highlight-grid cleaned" }, overviewSection.highlightCards.slice(0, 3).map((card) => h("article", { key: card.title }, h("h3", null, card.title), h("p", null, excerptText(card.description, 130))))) : null,
+        ),
+        h(DestinationSection, { id: "facts", eyebrow: "Facts & Figures", title: `${destination.name} facts for students`, contained: false },
+          h(FactsCardGrid, { rows: (destination.factsAndFiguresTable || []).slice(0, 8) }),
+          (destination.factsAndFiguresTable || []).length > 8 ? h("details", { className: "destination-details table-details" }, h("summary", null, "View all facts"), h(DetailTable, { rows: destination.factsAndFiguresTable || [], columns: ["label", "value", "note"], labels: ["Topic", "Details", "Planning note"] })) : null,
+        ),
+        h(StudyOptionSearchWidget, { compact: true }),
+        h(DestinationSection, { id: "why-study", eyebrow: "Why study there?", title: whyStudy.heading || `Why study in ${destination.name}?`, contained: false },
+          detailParagraphs(whyStudy.paragraphs, []).slice(0, 1).map((paragraph) => h("p", { key: paragraph, className: "section-intro compact" }, paragraph)),
+          h(WhyStudyCards, { cards: whyStudy.advantageCards || [] }),
+        ),
+        h(DestinationSection, { id: "education-system", eyebrow: "Education System", title: education.heading || `${destination.name} education system`, contained: false },
+          h(EducationSystemContent, { destination, education }),
+        ),
+        h(DestinationSection, { id: "top-institutes", eyebrow: "Top Institutes", title: `${destination.name} universities and colleges`, contained: false },
+          h(InstituteContent, { destination, universities, courses, scholarships }),
+        ),
+        h(DestinationSection, { id: "subjects", eyebrow: "Top Subjects", title: subjects.heading || `Popular subjects in ${destination.name}`, contained: false },
+          h("div", { className: "subjects-layout cleaned" },
+            h("img", { src: subjects.imageUrl || destination.image, alt: `${destination.name} subjects`, loading: "lazy" }),
+            h("div", null, subjects.intro && h("p", null, excerptText(subjects.intro, 210)), h("div", { className: "subject-chip-grid" }, splitList(subjects.subjects, destination.studyAreas).map((subject) => h("span", { key: subject }, subject)))),
+          ),
+        ),
+        h(DestinationSection, { id: "tuition-cost", eyebrow: "Tuition Fee", title: cost.heading || `${destination.name} tuition and cost guide`, contained: false },
+          cost.intro && h("p", { className: "section-intro compact" }, excerptText(cost.intro, 220)),
+          h(TuitionCards, { cost: cost.rows || [] }),
+          (cost.rows || []).length > 3 ? h("details", { className: "destination-details table-details" }, h("summary", null, "View detailed cost table"), h(DetailTable, { rows: cost.rows || [], columns: ["studyLevel", "tuitionRange", "livingCost", "notes"], labels: ["Study level", "Tuition range", "Living cost", "Notes"] })) : null,
+          h("p", { className: "destination-disclaimer" }, cost.disclaimer || "Costs vary by institution, program, city, exchange rate, and intake."),
+          h("div", { className: "center-actions" }, h(ButtonLink, { href: `${routes.costCalculator}?country=${encodeURIComponent(destination.name)}`, variant: "outline" }, "Estimate My Cost")),
+        ),
+        h(DestinationSection, { id: "scholarships", eyebrow: "Scholarship", title: scholarshipContent.heading || `${destination.name} scholarships`, contained: false },
+          scholarshipContent.intro && h("p", { className: "section-intro compact" }, excerptText(scholarshipContent.intro, 220)),
+          h(ScholarshipCards, { destination, countryScholarships, scholarshipContent }),
+        ),
+        h(DestinationSection, { id: "pathway", eyebrow: "Pathway", title: pathway.heading || `${destination.name} pathway guidance`, contained: false },
+          pathway.intro && h("p", { className: "section-intro compact" }, excerptText(pathway.intro, 220)),
+          h(PathwayCards, { cards: pathway.cards || [] }),
+        ),
+        h(DestinationSection, { id: "faqs", eyebrow: "FAQs", title: `${destination.name} study FAQs`, contained: false },
+          h(FaqAccordion, { items: destination.faqs }),
+        ),
       ),
-      overviewSection.highlightCards?.length ? h("div", { className: "destination-highlight-grid" }, overviewSection.highlightCards.map((card) => h("article", { key: card.title }, h("h3", null, card.title), h("p", null, card.description)))) : null,
-    ),
-    h(DestinationSection, { id: "facts", eyebrow: "Facts & Figures", title: `${destination.name} facts for students` },
-      h(DetailTable, { rows: destination.factsAndFiguresTable || [], columns: ["label", "value", "note"], labels: ["Topic", "Details", "Planning note"] }),
-    ),
-    h(DestinationSection, { id: "why-study", eyebrow: "Why study there?", title: whyStudy.heading || `Why study in ${destination.name}?` },
-      detailParagraphs(whyStudy.paragraphs, []).map((paragraph) => h("p", { key: paragraph, className: "section-intro" }, paragraph)),
-      h("div", { className: "advantage-grid" }, (whyStudy.advantageCards || []).map((card) => h("article", { key: card.title }, h(CheckCircle2, { size: 20 }), h("h3", null, card.title), h("p", null, card.description)))),
-    ),
-    h(DestinationSection, { id: "education-system", eyebrow: "Education System", title: education.heading || `${destination.name} education system` },
-      h("div", { className: "education-system-grid" },
-        h("div", null, h("p", null, education.intro), h("div", { className: "education-blocks" }, (education.sections || []).map((item) => h("article", { key: item.title }, h("h3", null, item.title), h("p", null, item.description))))),
-        h("img", { src: education.imageUrl || destination.image, alt: `${destination.name} education system`, loading: "lazy" }),
-      ),
-      h(DetailTable, { rows: education.qualificationTable || [], columns: ["qualification", "duration", "description"], labels: ["Qualification", "Typical duration", "Description"] }),
-    ),
-    h(DestinationSection, { id: "top-institutes", eyebrow: "Top Institutes", title: `${destination.name} universities and colleges` },
-      h("h3", { className: "destination-subtitle" }, "Sample university table"),
-      h(DetailTable, { rows: destination.topUniversitiesTable || [], columns: ["universityName", "location", "admissionRequirement", "languageRequirement", "rankingNote"], labels: ["University", "Location", "Admission", "Language", "Note"] }),
-      destination.topCollegesTable?.length ? h(React.Fragment, null, h("h3", { className: "destination-subtitle" }, "College and pathway options"), h(DetailTable, { rows: destination.topCollegesTable, columns: ["collegeName", "location", "whyChoose", "programsOffered", "annualTuition"], labels: ["College", "Location", "Why choose", "Programs", "Tuition"] })) : null,
-      h(CountryPlatformInline, { destination, universities, courses, scholarships }),
-    ),
-    h(DestinationSection, { id: "subjects", eyebrow: "Top Subjects", title: subjects.heading || `Popular subjects in ${destination.name}` },
-      h("div", { className: "subjects-layout" },
-        h("img", { src: subjects.imageUrl || destination.image, alt: `${destination.name} subjects`, loading: "lazy" }),
-        h("div", null, subjects.intro && h("p", null, subjects.intro), h("div", { className: "subject-chip-grid" }, splitList(subjects.subjects, destination.studyAreas).map((subject) => h("span", { key: subject }, subject)))),
-      ),
-    ),
-    h(DestinationSection, { id: "tuition-cost", eyebrow: "Tuition Fee", title: cost.heading || `${destination.name} tuition and cost guide` },
-      cost.intro && h("p", { className: "section-intro" }, cost.intro),
-      h(DetailTable, { rows: cost.rows || [], columns: ["studyLevel", "tuitionRange", "livingCost", "notes"], labels: ["Study level", "Tuition range", "Living cost", "Notes"] }),
-      h("p", { className: "destination-disclaimer" }, cost.disclaimer || "Costs vary by institution, program, city, and intake."),
-      h("div", { className: "center-actions" }, h(ButtonLink, { href: `${routes.costCalculator}?country=${encodeURIComponent(destination.name)}`, variant: "outline" }, "Estimate Cost")),
-    ),
-    h(DestinationSection, { id: "scholarships", eyebrow: "Scholarship", title: scholarshipContent.heading || `${destination.name} scholarships` },
-      scholarshipContent.intro && h("p", { className: "section-intro" }, scholarshipContent.intro),
-      h("div", { className: "scholarship-country-grid" },
-        (countryScholarships.length ? countryScholarships : (scholarshipContent.scholarshipCards || [])).map((item, index) => h("article", { key: item.slug || item.name || index },
-          h("h3", null, item.name),
-          h("p", null, item.description || item.notes || item.eligibility),
-          h("span", null, item.amount || item.coverageType || "Varies"),
-        )),
-      ),
-    ),
-    h(DestinationSection, { id: "pathway", eyebrow: "Pathway", title: pathway.heading || `${destination.name} post-study guidance` },
-      pathway.intro && h("p", { className: "section-intro" }, pathway.intro),
-      h("div", { className: "advantage-grid" }, (pathway.cards || []).map((card) => h("article", { key: card.title }, h("h3", null, card.title), h("p", null, card.description), h("small", null, card.disclaimer || "Rules can change and must be checked before applying.")))),
-    ),
-    h(DestinationSection, { id: "faqs", eyebrow: "FAQs", title: `${destination.name} study FAQs` },
-      h("div", { className: "faq-grid" }, normalizeFaqObjects(destination.faqs).map((faq) => h("article", { key: faq.question, className: "faq-card" }, h("h3", null, faq.question), h("p", null, faq.answer)))),
+      h(DestinationActionSidebar, { destination }),
     ),
     h("section", { className: "final-cta destination-final-cta" }, h("div", { className: "container final-cta-inner" }, h("span", { className: "eyebrow" }, "Consultation"), h("h2", null, finalCta.heading || "Start Your Study Abroad Journey"), h("p", null, finalCta.text || `Plan your ${destination.name} pathway with AbroadWays.`), h(ButtonLink, { href: finalCta.buttonLink || routes.planner, variant: "light" }, finalCta.buttonText || "Start Pathway Planner"))),
   );
@@ -2827,7 +3088,8 @@ function ServicesPage({ cms }) {
 }
 
 function AcademyPage({ cms }) {
-  const page = pageCopy(findPage(cms, "academy", "/academy"), {
+  const academyRecord = findPage(cms, "academy", "/academy");
+  const page = pageCopy(academyRecord, {
     eyebrow: "Coming soon",
     title: "AbroadWays Academy is Coming Soon",
     copy: "A dedicated academic preparation platform for English tests, graduate exams, and international study readiness.",
@@ -2854,19 +3116,20 @@ function AcademyPage({ cms }) {
   const tracks = normalizeAcademyTracks(sectionItems(tracksSection, "items", academyTracks));
   const whyItems = sectionItems(whySection, "items", []);
   setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
+  const heroImage = normalizeImageObject(academyRecord?.heroImageObject || page.image, page.image, "AbroadWays Academy preview");
   return h(React.Fragment, null,
-    h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }),
+    h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: imageUrlOf(heroImage) || page.image }),
     h("section", { className: "section academy-page-section" },
       h("div", { className: "container" },
         h("div", { className: "academy-coming-card" },
           h("span", { className: "eyebrow" }, "Separate platform later"),
           h("h2", null, "Being built as a focused academic preparation platform"),
-          h("p", null, "This teaser page introduces Abroadways Academy before the full learning platform and account experience are launched."),
+          h("p", null, academyRecord?.comingSoonText || "This teaser page introduces Abroadways Academy before the full learning platform and account experience are launched."),
           h(ButtonLink, { href: page.ctaButtonLink || routes.contact }, page.ctaButtonText || "Join Interest List"),
         ),
         h(SectionHeading, { eyebrow: "Academy", title: tracksSection.title || tracksSection.heading, copy: "The full platform is not live yet. These tracks are planned for a later academic launch." }),
         h("div", { className: "academy-track-grid" }, tracks.map((track, index) => h("article", { key: `${track.examName}-${index}`, style: { background: track.backgroundColor || softColors[index % softColors.length] } },
-          h("span", { className: "academy-logo-mark" }, track.examLogoUrl ? h("img", { src: track.examLogoUrl, alt: track.examLogoAlt }) : track.icon || initialsFor(track.examName)),
+          h("span", { className: "academy-logo-mark" }, track.examLogoUrl ? h("img", { src: track.examLogoUrl, alt: track.examLogoAlt, style: imageStyleFrom(track.examLogo, { objectFit: "contain" }) }) : track.icon || initialsFor(track.examName)),
           h("small", null, track.statusBadge || "Coming Soon"),
           h("h3", null, track.examName),
           h("p", null, track.description),
@@ -2874,11 +3137,11 @@ function AcademyPage({ cms }) {
         h("div", { className: "academy-why-grid" }, whyItems.map((item, index) => h("article", { key: `${item.title}-${index}` }, h(CheckCircle2, { size: 22 }), h("h3", null, item.title), h("p", null, item.description)))),
       ),
     ),
-    h("section", { className: "final-cta academy-final-cta" }, h("div", { className: "container final-cta-inner" }, h("span", { className: "eyebrow" }, "Need guidance now?"), h("h2", null, "Talk to Abroadways about your exam and study plan."), h(ButtonLink, { href: routes.contact, variant: "light" }, "Talk to Abroadways"))),
+    h("section", { className: "final-cta academy-final-cta" }, h("div", { className: "container final-cta-inner" }, h("span", { className: "eyebrow" }, "Need guidance now?"), h("h2", null, academyRecord?.ctaHeading || "Talk to Abroadways about your exam and study plan."), academyRecord?.ctaText && h("p", null, academyRecord.ctaText), h(ButtonLink, { href: academyRecord?.ctaButtonLink || routes.contact, variant: "light" }, academyRecord?.ctaButtonText || "Talk to Abroadways"))),
   );
 }
 
-function PartnersPage({ cms, settings }) {
+function PartnersPage({ cms, settings, partners: partnerItems = [] }) {
   const page = pageCopy(findPage(cms, "partners", "/partners"), {
     eyebrow: "Our Partners",
     title: "Our Partners",
@@ -2892,7 +3155,7 @@ function PartnersPage({ cms, settings }) {
     ogDescription: "Authorized testing and education partner signals managed from AbroadWays CMS settings.",
     ogImage: "/images/abroadways-hero-campus.png",
   });
-  const partners = normalizePartners(settings.partners);
+  const partners = partnerItems.length ? partnerItems : normalizePartners(settings.partners);
   setSeo({ title: page.seoTitle, description: page.seoDescription, image: page.ogImage || page.image, ogTitle: page.ogTitle, ogDescription: page.ogDescription });
   return h(React.Fragment, null,
     h(PageHero, { eyebrow: page.eyebrow, title: page.title, copy: page.copy, image: page.image }),
@@ -2904,12 +3167,12 @@ function PartnersPage({ cms, settings }) {
           h("span", { className: "scribble-line", "aria-hidden": "true" }),
           h("p", null, "Partner names, logos, descriptions, status text, and display order are editable from Dashboard Settings."),
         ),
-        h("div", { className: "partners-page-grid" }, partners.map((partner) => h("article", { key: partner.partnerName, className: "partner-card partners-page-card" },
-          h("div", { className: "partner-logo-box" }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerLogoAlt || partner.partnerName }) : h("span", { className: "partner-logo-fallback" }, initialsFor(partner.partnerName))),
+        h("div", { className: "partners-page-grid" }, partners.map((partner) => h("article", { key: partner.slug || partner.partnerName, className: "partner-card partners-page-card" },
+          h("div", { className: "partner-logo-box" }, partner.partnerLogoUrl ? h("img", { src: partner.partnerLogoUrl, alt: partner.partnerLogoAlt || partner.partnerName, style: imageStyleFrom(partner.partnerLogo, { objectFit: "contain", height: "80px" }) }) : h("span", { className: "partner-logo-fallback" }, initialsFor(partner.partnerName))),
           h("small", null, partner.partnerType),
           h("h3", null, partner.partnerName),
           h("strong", null, partner.statusText || partner.authorizationText),
-          h("p", null, partner.description),
+          h("p", null, partner.shortDescription || partner.description),
           partner.websiteUrl && h("a", { href: partner.websiteUrl, target: "_blank", rel: "noreferrer" }, "Visit website"),
         ))),
       ),
@@ -3158,7 +3421,7 @@ function AuthGate({ section }) {
 
 function DashboardPage({ section = "overview" }) {
   setSeo({ title: "Abroadways CMS Dashboard", description: "Admin CMS dashboard for Abroadways V2 Pro." });
-  return h("div", { className: "dashboard" }, h(DashboardSidebar), h("main", { className: "dashboard-main" }, section === "overview" && h(DashboardOverview), section === "homepage" && h(HomepageBuilder), section === "pages" && h(PageManager), section === "countries" && h(CountryManager), section === "universities" && h(UniversityManager), section === "courses" && h(CourseManager), section === "scholarships" && h(ScholarshipManager), section === "blogs" && h(BlogManager), section === "leads" && h(LeadManagerPro), section === "media" && h(MediaManager), section === "settings" && h(SettingsManager)));
+  return h("div", { className: "dashboard" }, h(DashboardSidebar), h("main", { className: "dashboard-main" }, section === "overview" && h(DashboardOverview), section === "homepage" && h(HomepageBuilder), section === "pages" && h(PageManager), section === "countries" && h(CountryManager), section === "academy" && h(AcademyManager), section === "partners" && h(PartnerManager), section === "universities" && h(UniversityManager), section === "courses" && h(CourseManager), section === "scholarships" && h(ScholarshipManager), section === "blogs" && h(BlogManager), section === "leads" && h(LeadManagerPro), section === "media" && h(MediaManager), section === "settings" && h(SettingsManager)));
 }
 
 function DashboardSidebar() {
@@ -3166,7 +3429,10 @@ function DashboardSidebar() {
     "aside",
     { className: "dashboard-sidebar" },
     h(Link, { href: routes.home, className: "brand dashboard-brand" }, h("span", { className: "brand-mark" }, "A"), h("span", null, "Abroadways CMS")),
-    adminRoutes.map(([href, label, Icon]) => h(Link, { key: href, href, className: "dashboard-link" }, h(Icon, { size: 18 }), label)),
+    adminRouteGroups.map(([group, links]) => h("div", { key: group, className: "dashboard-nav-group" },
+      h("span", { className: "dashboard-nav-label" }, group),
+      links.map(([href, label, Icon]) => h(Link, { key: href, href, className: "dashboard-link" }, h(Icon, { size: 18 }), label)),
+    )),
     h("button", { className: "dashboard-link dashboard-logout", type: "button", onClick: logoutAdmin }, h(LogOut, { size: 18 }), "Logout"),
   );
 }
@@ -3318,6 +3584,38 @@ function TextArea({ label, value, onChange, placeholder = "", className = "" }) 
 
 function SelectInput({ label, value, onChange, options, className = "" }) {
   return h(Field, { label, className }, h("select", { value: value || "", onChange: (event) => onChange(event.target.value) }, options.map((item) => h("option", { key: item, value: item }, item || "All"))));
+}
+
+function StructuredImageField({ label, value, onChange, className = "", folder = "abroadways/media", objectFitDefault = "cover" }) {
+  const image = normalizeImageObject(value, "", `${label} image`);
+  const update = (patch) => onChange({ ...image, ...patch });
+  return h("div", { className: cx("structured-image-field", className) },
+    h(ImageField, {
+      label,
+      value: image.imageUrl,
+      folder,
+      onChange: (url, mediaItem) => update({
+        imageUrl: url,
+        altText: image.altText || mediaItem?.altText || mediaItem?.title || `${label} image`,
+        width: image.width || mediaItem?.width || "",
+        height: image.height || mediaItem?.height || "",
+        mediaId: itemId(mediaItem) || image.mediaId || "",
+        source: mediaItem ? "media-library" : url ? "external" : "",
+      }),
+    }),
+    h("div", { className: "structured-image-controls" },
+      h(TextInput, { label: "Alt text", value: image.altText, onChange: (value) => update({ altText: value }) }),
+      h(TextInput, { label: "Caption", value: image.caption, onChange: (value) => update({ caption: value }) }),
+      h(TextInput, { label: "Width", value: image.width, onChange: (value) => update({ width: value }), placeholder: "auto or px" }),
+      h(TextInput, { label: "Height", value: image.height, onChange: (value) => update({ height: value }), placeholder: "auto or px" }),
+      h(TextInput, { label: "Max width", value: image.maxWidth, onChange: (value) => update({ maxWidth: value }), placeholder: "100%, 240px..." }),
+      h(TextInput, { label: "Max height", value: image.maxHeight, onChange: (value) => update({ maxHeight: value }), placeholder: "Optional" }),
+      h(SelectInput, { label: "Object fit", value: image.objectFit || objectFitDefault, onChange: (value) => update({ objectFit: value }), options: ["cover", "contain", "fill", "none"] }),
+      h(SelectInput, { label: "Object position", value: image.objectPosition || "center", onChange: (value) => update({ objectPosition: value }), options: ["center", "top", "bottom", "left", "right"] }),
+      h(TextInput, { label: "Border radius", value: image.borderRadius, onChange: (value) => update({ borderRadius: value }), placeholder: "0, 8, 999px" }),
+      h(SelectInput, { label: "Display mode", value: image.displayMode || "responsive", onChange: (value) => update({ displayMode: value }), options: ["responsive", "fixed", "original"] }),
+    ),
+  );
 }
 
 function ImageField({ label, value, onChange, className = "", folder = "abroadways/media" }) {
@@ -4169,6 +4467,9 @@ function normalizeCountryDraft(item = {}) {
     ...item,
     countryName: name,
     heroImage: firstImage(item, fallback.heroMainImageUrl),
+    heroMainImage: normalizeImageObject(item.heroMainImage, item.heroMainImageUrl || item.heroImage || firstImage(item, fallback.heroMainImageUrl), `${name} hero image`),
+    heroSideImage1: normalizeImageObject(item.heroSideImage1, item.heroSideImageUrl1 || fallback.heroSideImageUrl1, `${name} side image 1`),
+    heroSideImage2: normalizeImageObject(item.heroSideImage2, item.heroSideImageUrl2 || fallback.heroSideImageUrl2, `${name} side image 2`),
     heroImagesText: lines(item.heroImages || fallback.heroImages),
     galleryImagesText: lines(item.galleryImages || item.imageGallery),
     benefitsText: lines(item.benefits),
@@ -4234,9 +4535,12 @@ function countryPayload(draft) {
     heroCtaText: draft.heroCtaText || draft.ctaText,
     heroCtaLink: draft.heroCtaLink || draft.ctaLink,
     heroImage: draft.heroImage,
-    heroMainImageUrl: draft.heroMainImageUrl || draft.heroImage,
-    heroSideImageUrl1: draft.heroSideImageUrl1,
-    heroSideImageUrl2: draft.heroSideImageUrl2,
+    heroMainImage: normalizeImageObject(draft.heroMainImage, draft.heroMainImageUrl || draft.heroImage, `${draft.countryName} hero image`),
+    heroSideImage1: normalizeImageObject(draft.heroSideImage1, draft.heroSideImageUrl1, `${draft.countryName} side image 1`),
+    heroSideImage2: normalizeImageObject(draft.heroSideImage2, draft.heroSideImageUrl2, `${draft.countryName} side image 2`),
+    heroMainImageUrl: imageUrlOf(draft.heroMainImage) || draft.heroMainImageUrl || draft.heroImage,
+    heroSideImageUrl1: imageUrlOf(draft.heroSideImage1) || draft.heroSideImageUrl1,
+    heroSideImageUrl2: imageUrlOf(draft.heroSideImage2) || draft.heroSideImageUrl2,
     heroImages: lineList(draft.heroImagesText),
     galleryImages: lineList(draft.galleryImagesText),
     sectionsNav: parsePipeRows(draft.sectionsNavText, ["label", "anchor"]),
@@ -4289,16 +4593,17 @@ function CountryEditor({ draft, setDraft, onSave, onCancel }) {
   };
   return h("form", { className: "cms-editor", onSubmit: submit },
     h("h2", null, `Edit ${draft.countryName}`),
+    h("div", { className: "editor-tab-row" }, ["Basics", "Hero", "Overview", "Facts & Figures", "Why Study", "Education System", "Top Institutes", "Subjects", "Tuition & Cost", "Scholarships", "Post-study", "FAQs", "CTA", "Compare & Cost Data"].map((label) => h("span", { key: label }, label))),
     h("div", { className: "cms-form-grid" },
       h(SelectInput, { label: "Country", value: draft.countryName, onChange: (value) => set("countryName", value), options: allowedCountryNames }),
       h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", value) }),
       h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
       h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }),
       h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }),
-      h(ImageField, { label: "Hero image", value: draft.heroImage, onChange: (value) => set("heroImage", value), className: "full", folder: "abroadways/countries" }),
-      h(ImageField, { label: "Hero main image", value: draft.heroMainImageUrl || draft.heroImage, onChange: (value) => set("heroMainImageUrl", value), folder: "abroadways/countries" }),
-      h(ImageField, { label: "Hero side image 1", value: draft.heroSideImageUrl1, onChange: (value) => set("heroSideImageUrl1", value), folder: "abroadways/countries" }),
-      h(ImageField, { label: "Hero side image 2", value: draft.heroSideImageUrl2, onChange: (value) => set("heroSideImageUrl2", value), folder: "abroadways/countries" }),
+      h(ImageField, { label: "Legacy hero image URL", value: draft.heroImage, onChange: (value) => set("heroImage", value), className: "full", folder: "abroadways/countries" }),
+      h(StructuredImageField, { label: "Hero main image", value: draft.heroMainImage, onChange: (value) => set("heroMainImage", value), className: "full", folder: "abroadways/countries" }),
+      h(StructuredImageField, { label: "Hero side image 1", value: draft.heroSideImage1, onChange: (value) => set("heroSideImage1", value), className: "full", folder: "abroadways/countries" }),
+      h(StructuredImageField, { label: "Hero side image 2", value: draft.heroSideImage2, onChange: (value) => set("heroSideImage2", value), className: "full", folder: "abroadways/countries" }),
       h(TextInput, { label: "Hero CTA text", value: draft.heroCtaText || draft.ctaText, onChange: (value) => set("heroCtaText", value) }),
       h(TextInput, { label: "Hero CTA link", value: draft.heroCtaLink || draft.ctaLink, onChange: (value) => set("heroCtaLink", value) }),
       h(TextArea, { label: "Hero images, one URL per line", value: draft.heroImagesText, onChange: (value) => set("heroImagesText", value), className: "full" }),
@@ -4412,6 +4717,233 @@ function BlogEditor({ draft, setDraft, onSave, onCancel }) {
       h(TextArea, { label: "Meta description", value: draft.metaDescription, onChange: (value) => set("metaDescription", value), className: "full" }),
     ),
     h(FormActions, { onCancel }),
+  );
+}
+
+function defaultPartnerDraft() {
+  return normalizePartnerDraft({ status: "published", active: true, featured: false, partnerType: "Testing Partner", displayOrder: 99 });
+}
+
+function normalizePartnerDraft(item = {}) {
+  const name = item.partnerName || item.name || "";
+  return {
+    ...item,
+    partnerName: name,
+    slug: item.slug || slugify(name || "partner"),
+    partnerType: item.partnerType || "Testing Partner",
+    statusText: item.statusText || item.authorizationText || "",
+    shortDescription: item.shortDescription || item.description || "",
+    fullDescription: item.fullDescription || item.description || "",
+    partnerLogo: normalizeImageObject(item.partnerLogo, item.partnerLogoUrl || "", item.partnerLogoAlt || `${name || "Partner"} logo`),
+    websiteUrl: item.websiteUrl || "",
+    authorizationProofUrl: item.authorizationProofUrl || "",
+    displayOrder: item.displayOrder ?? 99,
+    featured: Boolean(item.featured),
+    active: item.active !== false,
+    status: item.status || "published",
+  };
+}
+
+function partnerPayload(draft) {
+  const logo = normalizeImageObject(draft.partnerLogo, "", `${draft.partnerName || "Partner"} logo`);
+  return {
+    id: draft.id,
+    partnerName: draft.partnerName,
+    slug: draft.slug || slugify(draft.partnerName),
+    partnerType: draft.partnerType,
+    statusText: draft.statusText,
+    authorizationText: draft.statusText,
+    shortDescription: draft.shortDescription,
+    fullDescription: draft.fullDescription,
+    description: draft.shortDescription,
+    partnerLogo: logo,
+    partnerLogoUrl: logo.imageUrl,
+    partnerLogoAlt: logo.altText,
+    websiteUrl: draft.websiteUrl,
+    authorizationProofUrl: draft.authorizationProofUrl,
+    displayOrder: Number(draft.displayOrder || 99),
+    featured: boolValue(draft.featured, false),
+    active: boolValue(draft.active, true),
+    status: draft.status || "published",
+    seoTitle: draft.seoTitle,
+    seoDescription: draft.seoDescription,
+    ogImage: draft.ogImage,
+  };
+}
+
+function PartnerManager() {
+  const cms = useAdminCollection("partners");
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState("");
+  const filtered = cms.items.filter((item) => [item.partnerName, item.partnerType, item.statusText, item.shortDescription, item.status].join(" ").toLowerCase().includes(search.toLowerCase()));
+  const save = async (draft) => {
+    const saved = await cms.saveRecord(draft, partnerPayload(draft));
+    setEditing(normalizePartnerDraft(saved));
+  };
+  return h("section", null,
+    h(CmsHeader, { title: "Partners", copy: "Manage partner logos, authorization text, descriptions, display order, SEO, and public visibility.", action: h("div", { className: "cms-actions" }, h(Link, { href: routes.partners, className: "button button-outline" }, h(Eye, { size: 18 }), "Preview Partners"), h("button", { className: "button button-primary", type: "button", onClick: () => setEditing(defaultPartnerDraft()) }, h(Plus, { size: 18 }), "New Partner")) }),
+    h(renderAlerts, { ...cms }),
+    editing && h(PartnerEditor, { draft: editing, setDraft: setEditing, onSave: save, onCancel: () => setEditing(null) }),
+    h("div", { className: "platform-filter-bar" }, h(TextInput, { label: "Search partners", value: search, onChange: setSearch, placeholder: "LanguageCert, Pearson VUE..." })),
+    h("div", { className: "platform-admin-grid" }, filtered.length ? filtered.sort((a, b) => Number(a.displayOrder || 99) - Number(b.displayOrder || 99)).map((item) => {
+      const draft = normalizePartnerDraft(item);
+      return h("article", { key: itemId(item) || draft.slug, className: "platform-admin-card" },
+        h("div", { className: "platform-logo-box" }, draft.partnerLogo.imageUrl ? h("img", { src: draft.partnerLogo.imageUrl, alt: draft.partnerLogo.altText || draft.partnerName, style: imageStyleFrom(draft.partnerLogo, { objectFit: "contain" }) }) : h("span", null, initialsFor(draft.partnerName))),
+        h("div", null, h("strong", null, draft.partnerName), h("span", null, `${draft.partnerType} / ${draft.statusText || "Status text not set"}`), h("span", null, `Order: ${draft.displayOrder} / ${draft.active ? "Active" : "Inactive"}`), h(StatusBadge, { status: draft.status || "published" })),
+        h("div", { className: "cms-row-actions" }, h("button", { type: "button", className: "mini-button", onClick: () => setEditing(draft) }, h(Edit3, { size: 15 }), "Edit"), h(Link, { href: routes.partners, className: "mini-button" }, h(Eye, { size: 15 }), "Preview"), h("button", { type: "button", className: "mini-button", onClick: () => cms.patchRecord(item, { ...item, active: !draft.active }) }, draft.active ? "Hide" : "Show"), h("button", { type: "button", className: "mini-button danger", onClick: () => cms.deleteRecord(item, draft.partnerName || "partner") }, h(Trash2, { size: 15 }), "Delete")),
+      );
+    }) : h("article", { className: "empty-card" }, "No partners match your filters.")),
+  );
+}
+
+function PartnerEditor({ draft, setDraft, onSave, onCancel }) {
+  const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+  const submit = (event) => {
+    event.preventDefault();
+    onSave(draft);
+  };
+  return h("form", { className: "cms-editor platform-editor", onSubmit: submit },
+    h("h2", null, itemId(draft) ? "Edit Partner" : "Create Partner"),
+    h("p", null, `Last updated: ${formatDate(draft.updatedAt || draft.createdAt)}`),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "Partner name", value: draft.partnerName, onChange: (value) => setDraft((current) => ({ ...current, partnerName: value, slug: current.slug || slugify(value) })) }),
+      h(TextInput, { label: "Slug", value: draft.slug, onChange: (value) => set("slug", slugify(value)) }),
+      h(TextInput, { label: "Partner type", value: draft.partnerType, onChange: (value) => set("partnerType", value) }),
+      h(TextInput, { label: "Status text", value: draft.statusText, onChange: (value) => set("statusText", value), className: "full" }),
+      h(StructuredImageField, { label: "Partner logo", value: draft.partnerLogo, onChange: (value) => set("partnerLogo", value), className: "full", folder: "abroadways/partners", objectFitDefault: "contain" }),
+      h(TextArea, { label: "Short description", value: draft.shortDescription, onChange: (value) => set("shortDescription", value), className: "full" }),
+      h(TextArea, { label: "Full description", value: draft.fullDescription, onChange: (value) => set("fullDescription", value), className: "full" }),
+      h(TextInput, { label: "Website URL", value: draft.websiteUrl, onChange: (value) => set("websiteUrl", value) }),
+      h(TextInput, { label: "Authorization proof URL", value: draft.authorizationProofUrl, onChange: (value) => set("authorizationProofUrl", value) }),
+      h(TextInput, { label: "Display order", value: draft.displayOrder, onChange: (value) => set("displayOrder", value), type: "number" }),
+      h(SelectInput, { label: "Featured", value: String(draft.featured), onChange: (value) => set("featured", value === "true"), options: ["false", "true"] }),
+      h(SelectInput, { label: "Active", value: String(draft.active), onChange: (value) => set("active", value === "true"), options: ["true", "false"] }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/partners" }),
+    ),
+    h(FormActions, { onCancel }),
+  );
+}
+
+function AcademyManager() {
+  const cms = useAdminCollection("pages");
+  const [draft, setDraft] = useState(null);
+  React.useEffect(() => {
+    if (!draft && !cms.loading) {
+      const page = cms.items.find((item) => item.routeKey === "academy" || item.slug === "/academy") || { id: "academy", routeKey: "academy", slug: "/academy", title: "Academy", status: "published" };
+      setDraft(normalizeAcademyDraft(page));
+    }
+  }, [cms.items, cms.loading, draft]);
+  const save = async (event) => {
+    event.preventDefault();
+    const saved = await cms.saveRecord(draft, academyPayload(draft));
+    setDraft(normalizeAcademyDraft(saved));
+  };
+  return h("section", null,
+    h(CmsHeader, { title: "Academy", copy: "Edit the coming-soon Academy page, exam cards, logos, CTA, and SEO without opening generic page JSON.", action: h(Link, { href: routes.academy, className: "button button-outline" }, h(Eye, { size: 18 }), "Preview Academy") }),
+    h(renderAlerts, { ...cms }),
+    draft ? h(AcademyEditor, { draft, setDraft, onSave: save }) : h("div", { className: "notice-card" }, "Loading Academy editor..."),
+  );
+}
+
+function normalizeAcademyDraft(item = {}) {
+  const page = pageCopy(item, {
+    title: "AbroadWays Academy is Coming Soon",
+    copy: "A dedicated academic preparation platform for English tests, graduate exams, and international study readiness.",
+    image: "/images/abroadways-destination-planning.png",
+  });
+  const tracksSection = sectionFor(page, "academy-tracks", { items: academyTracks });
+  return {
+    ...item,
+    routeKey: "academy",
+    slug: "/academy",
+    title: item.title || "Academy",
+    heroHeading: item.heroHeading || page.title,
+    heroSubtitle: item.heroSubtitle || page.copy,
+    heroImage: normalizeImageObject(item.heroImageObject || item.heroImage || firstImage(item, page.image), page.image, "AbroadWays Academy preview"),
+    comingSoonText: item.comingSoonText || "This page is a teaser. The full Academy platform is being built.",
+    examCards: normalizeAcademyTracks(sectionItems(tracksSection, "items", academyTracks)).map((track, index) => ({ ...track, examLogo: normalizeImageObject(track.examLogo || track.examLogoUrl || "", track.examLogoUrl || "", `${track.examName} logo`), active: track.active !== false, displayOrder: track.displayOrder || index + 1 })),
+    ctaHeading: item.ctaHeading || "Talk to Abroadways about your exam and study plan.",
+    ctaText: item.ctaText || "Need guidance now? Contact AbroadWays for counselling while Academy is being built.",
+    ctaButtonText: item.ctaButtonText || item.heroButtonText || "Talk to AbroadWays",
+    ctaButtonLink: item.ctaButtonLink || item.heroButtonLink || routes.contact,
+    seoTitle: item.seoTitle || "AbroadWays Academy | Coming Soon",
+    seoDescription: item.seoDescription || "A future academic preparation platform by AbroadWays for international study readiness.",
+    ogImage: item.ogImage || "",
+    status: item.status || "published",
+  };
+}
+
+function academyPayload(draft) {
+  const cards = [...(draft.examCards || [])].sort((a, b) => Number(a.displayOrder || 99) - Number(b.displayOrder || 99)).map((card) => {
+    const image = normalizeImageObject(card.examLogo || card.examLogoUrl, "", `${card.examName} logo`);
+    return { ...card, examLogo: image, examLogoUrl: image.imageUrl, examLogoAlt: image.altText, statusBadge: card.statusBadge || "Coming Soon" };
+  });
+  return {
+    id: draft.id || "academy",
+    routeKey: "academy",
+    slug: "/academy",
+    title: draft.title || "Academy",
+    heroHeading: draft.heroHeading,
+    heroSubtitle: draft.heroSubtitle,
+    heroImageObject: normalizeImageObject(draft.heroImage, "", "AbroadWays Academy preview"),
+    imageUrls: [imageUrlOf(draft.heroImage)].filter(Boolean),
+    comingSoonText: draft.comingSoonText,
+    ctaHeading: draft.ctaHeading,
+    ctaText: draft.ctaText,
+    ctaButtonText: draft.ctaButtonText,
+    ctaButtonLink: draft.ctaButtonLink,
+    bodySections: [
+      { key: "academy-tracks", title: "Future exam preparation tracks", items: cards },
+      { key: "academy-why", title: "Why Academy", items: [
+        { title: "Structured preparation", description: "Organised learning paths for test and study readiness." },
+        { title: "Expert trainers", description: "Trainer-led academic support planned for future launch." },
+        { title: "Study abroad aligned planning", description: "Exam preparation connected to destination and application goals." },
+      ] },
+    ],
+    seoTitle: draft.seoTitle,
+    seoDescription: draft.seoDescription,
+    ogImage: draft.ogImage || imageUrlOf(draft.heroImage),
+    status: draft.status || "published",
+  };
+}
+
+function AcademyEditor({ draft, setDraft, onSave }) {
+  const set = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+  const updateCard = (index, patch) => setDraft((current) => ({ ...current, examCards: current.examCards.map((card, cardIndex) => cardIndex === index ? { ...card, ...patch } : card) }));
+  const addCard = () => setDraft((current) => ({ ...current, examCards: [...current.examCards, { examName: "New Program", description: "", statusBadge: "Coming Soon", displayOrder: current.examCards.length + 1, active: true, examLogo: normalizeImageObject({}, "", "New program logo") }] }));
+  return h("form", { className: "cms-editor platform-editor", onSubmit: onSave },
+    h("h2", null, "Academy Page Editor"),
+    h("p", null, `Last updated: ${formatDate(draft.updatedAt || draft.createdAt)}`),
+    h("div", { className: "cms-form-grid" },
+      h(TextInput, { label: "Hero heading", value: draft.heroHeading, onChange: (value) => set("heroHeading", value), className: "full" }),
+      h(TextArea, { label: "Hero subtitle", value: draft.heroSubtitle, onChange: (value) => set("heroSubtitle", value), className: "full" }),
+      h(StructuredImageField, { label: "Hero image", value: draft.heroImage, onChange: (value) => set("heroImage", value), className: "full", folder: "abroadways/academy" }),
+      h(TextArea, { label: "Coming soon text", value: draft.comingSoonText, onChange: (value) => set("comingSoonText", value), className: "full" }),
+      h("div", { className: "cms-section-title full" }, h("h3", null, "Exam Cards"), h("p", null, "Edit Academy teaser tracks. Keep this as coming soon; do not build full courses here."), h("button", { type: "button", className: "mini-button", onClick: addCard }, h(Plus, { size: 15 }), "Add Card")),
+      h("div", { className: "visual-repeater full" }, draft.examCards.map((card, index) => h("article", { key: `${card.examName}-${index}`, className: "repeater-item" },
+        h("div", { className: "cms-form-grid repeater-fields" },
+          h(TextInput, { label: "Exam name", value: card.examName, onChange: (value) => updateCard(index, { examName: value, title: value }) }),
+          h(TextInput, { label: "Status badge", value: card.statusBadge, onChange: (value) => updateCard(index, { statusBadge: value }) }),
+          h(TextInput, { label: "Display order", value: card.displayOrder, onChange: (value) => updateCard(index, { displayOrder: value }), type: "number" }),
+          h(SelectInput, { label: "Active", value: String(card.active !== false), onChange: (value) => updateCard(index, { active: value === "true" }), options: ["true", "false"] }),
+          h(StructuredImageField, { label: "Exam logo", value: card.examLogo, onChange: (value) => updateCard(index, { examLogo: value, examLogoUrl: value.imageUrl }), className: "full", folder: "abroadways/academy", objectFitDefault: "contain" }),
+          h(TextArea, { label: "Description", value: card.description, onChange: (value) => updateCard(index, { description: value }), className: "full" }),
+          h("button", { type: "button", className: "mini-button danger", onClick: () => setDraft((current) => ({ ...current, examCards: current.examCards.filter((_, itemIndex) => itemIndex !== index) })) }, h(Trash2, { size: 14 }), "Remove"),
+        ),
+      ))),
+      h(TextInput, { label: "CTA heading", value: draft.ctaHeading, onChange: (value) => set("ctaHeading", value), className: "full" }),
+      h(TextArea, { label: "CTA text", value: draft.ctaText, onChange: (value) => set("ctaText", value), className: "full" }),
+      h(TextInput, { label: "CTA button text", value: draft.ctaButtonText, onChange: (value) => set("ctaButtonText", value) }),
+      h(TextInput, { label: "CTA button link", value: draft.ctaButtonLink, onChange: (value) => set("ctaButtonLink", value) }),
+      h(TextInput, { label: "SEO title", value: draft.seoTitle, onChange: (value) => set("seoTitle", value), className: "full" }),
+      h(TextArea, { label: "SEO description", value: draft.seoDescription, onChange: (value) => set("seoDescription", value), className: "full" }),
+      h(ImageField, { label: "OG image", value: draft.ogImage, onChange: (value) => set("ogImage", value), className: "full", folder: "abroadways/academy" }),
+      h(SelectInput, { label: "Status", value: draft.status, onChange: (value) => set("status", value), options: statusOptions }),
+    ),
+    h("button", { className: "button button-primary", type: "submit" }, h(Save, { size: 18 }), "Save Academy"),
   );
 }
 
@@ -4861,6 +5393,7 @@ function SettingsManager() {
     h(renderAlerts, { ...cms }),
     draft ? h("form", { className: "cms-editor", onSubmit: submit },
       h("h2", null, "Global Settings"),
+      h("div", { className: "settings-tab-row" }, ["Branding", "Contact Info", "Social Links", "SEO Defaults", "Theme", "Integrations", "System"].map((label) => h("span", { key: label }, label))),
       h("div", { className: "cms-form-grid" },
         h(TextInput, { label: "Site name", value: draft.siteName, onChange: (value) => set("siteName", value) }),
         h("div", { className: "cms-section-title full" }, h("h3", null, "Branding"), h("p", null, "Edit navbar and footer logo, alt text, tagline, and footer description.")),
@@ -5136,6 +5669,7 @@ function App() {
   const courseItems = normalizeCourses(cms.courses);
   const scholarshipItems = normalizeScholarships(cms.scholarships);
   const settings = mergeSettings(cms.settings);
+  const partnerItems = normalizePartnerRecords(cms.partners, settings.partners);
   React.useEffect(() => {
     document.documentElement.style.setProperty("--blue", settings.primaryColor || "#1877f2");
     document.documentElement.style.setProperty("--royal", settings.primaryColor || "#1877f2");
@@ -5187,7 +5721,7 @@ function App() {
     if (path === routes.studyAbroad) return h(StudyAbroadPage, { cms, destinations: destinationItems });
     if (path === routes.services) return h(ServicesPage, { cms });
     if (path === routes.academy) return h(AcademyPage, { cms });
-    if (path === routes.partners) return h(PartnersPage, { cms, settings });
+    if (path === routes.partners) return h(PartnersPage, { cms, settings, partners: partnerItems });
     if (path === routes.universities) return h(UniversitiesPage, { universities: universityItems });
     if (path === routes.findStudyOptions) return h(FindStudyOptionsPage, { universities: universityItems, courses: courseItems, scholarships: scholarshipItems });
     if (path === routes.compareCountries) return h(CompareCountriesPage, { destinations: destinationItems });
@@ -5206,7 +5740,7 @@ function App() {
       const item = scholarshipItems.find((entry) => path === `${routes.scholarships}/${entry.slug}`);
       return item ? h(ScholarshipDetailPage, { item }) : h(NotFoundPage);
     }
-    if (path === routes.whoAreWe || path === routes.about) return h(WhoAreWePage, { cms, destinations: destinationItems, settings });
+    if (path === routes.whoAreWe || path === routes.about) return h(WhoAreWePage, { cms, destinations: destinationItems, settings: { ...settings, partners: partnerItems } });
     if (path === routes.planner) return h(PathwayPlannerPage);
     if (path === routes.blog) return h(BlogPage, { blogs: blogItems, cms });
     if (path.startsWith(`${routes.blog}/`)) {
@@ -5217,7 +5751,7 @@ function App() {
     const country = destinationItems.find((destination) => path === `${routes.studyAbroad}/${destination.slug}` || path === `${routes.studyAbroad}/${destination.legacySlug}`);
     if (country) return h(CountryPage, { destination: country, universities: universityItems, courses: courseItems, scholarships: scholarshipItems });
     return h(NotFoundPage);
-  }, [path, cms, destinationItems, blogItems, universityItems, courseItems, scholarshipItems, settings]);
+  }, [path, cms, destinationItems, blogItems, universityItems, courseItems, scholarshipItems, settings, partnerItems]);
 
   const isAdminSurface = path.startsWith("/dashboard") || path === routes.login;
   return h(React.Fragment, null, !isAdminSurface && h(Navbar, { items: destinationItems, settings }), h("main", { className: "app-main" }, page), !isAdminSurface && h(FloatingTestCta), !isAdminSurface && h(FooterPro, { items: destinationItems, settings }));

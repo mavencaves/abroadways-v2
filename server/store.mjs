@@ -40,7 +40,7 @@ async function ensureMongoCollections() {
   for (const collection of collections) {
     if (!existing.has(collection)) await mongoDb.createCollection(collection);
     await mongoDb.collection(collection).createIndex({ id: 1 }, { unique: true, sparse: true });
-    if (["pages", "countries", "blogs", "universities", "courses", "scholarships"].includes(collection)) {
+    if (["pages", "countries", "blogs", "universities", "courses", "scholarships", "partners"].includes(collection)) {
       await mongoDb.collection(collection).createIndex({ slug: 1 }, { sparse: true });
       await mongoDb.collection(collection).createIndex({ status: 1 }, { sparse: true });
     }
@@ -74,7 +74,7 @@ async function seedMongoIfNeeded() {
     );
   }
 
-  for (const collection of ["universities", "courses", "scholarships"]) {
+  for (const collection of ["universities", "courses", "scholarships", "partners"]) {
     for (const item of seedData[collection] || []) {
       await mongoDb.collection(collection).updateOne(
         { $or: [{ id: item.id }, { slug: item.slug }].filter((filter) => Object.values(filter)[0]) },
@@ -437,7 +437,7 @@ function backfillLocalDefaults(data) {
       changed = true;
     }
   }
-  for (const collection of ["universities", "courses", "scholarships"]) {
+  for (const collection of ["universities", "courses", "scholarships", "partners"]) {
     next[collection] = Array.isArray(next[collection]) ? [...next[collection]] : [];
     for (const seedItem of seedData[collection] || []) {
       const exists = next[collection].some((item) => item.id === seedItem.id || item.slug === seedItem.slug);
